@@ -1,6 +1,6 @@
 # Jezera pro dva — plánovač Salzkammergut & Dolomity (brief pro Claude Code)
 
-Jednosouborový plánovač `index.html` (aktuálně **v5.1**).
+Jednosouborový plánovač `index.html` (aktuálně **v9**).
 NIKDY nepřepisuj bez zachování všech funkcí níže. Po každé změně pusť
 `node test/geo.test.js`.
 
@@ -20,10 +20,44 @@ horko, dlouhé etapy a nadmořskou výšku (Tre Cime 2 320 m = jen rovinka
 Auronzo→Lavaredo, pomalu). Druhý uživatel řídí a platí — rozpočet a kilometry
 ho zajímají.
 
+## Co v6–v9 přidalo (zachovat vše)
+
+- **Mapa**: zoom a posun (pinch, tažení, kolečko, dvojklik, tlačítka),
+  stav zvlášť pro každý pohled v `ZOOM`. Velikosti bodů a písma se
+  zadávají v **pixelech obrazovky** — `zsc()` vrací poměr viewBoxu ke
+  skutečné šířce, takže značky na mobilu nezdrobní a při zoomu nerostou.
+  Popisky se ořezávají do `visRect()` a rozestrkávají proti kolizím.
+  Každý úsek má popisek „25 km · 30 min"; výběr dne přepne pohled
+  (`viewForDay`) a přiblíží (`fitToDay`). Filtry kategorií nad mapou
+  (`mapCat`, `mapVisible`). Detail místa je **bublina u bodu**
+  (`selectPlace`/`positionBubble`), ne panel pod mapou.
+- **Koridory**: dlouhé přejezdy v přehledu vedou přes ověřená města na
+  skutečné trase (`CORRIDORS`, `legGeom`), ne vzdušnou čarou.
+- **Časy**: `S.start = {date, dep}`; `calcPlan()` počítá u každé zastávky
+  `arrive`/`leave`, den má `date`, `dow` a `sun`. Otvíračky jsou
+  v tabulce `HOURS` (přiřazují se do ITEMS při startu), kontroluje
+  `openIssue()`. Slunce počítá `sunTimes()` (NOAA) s evropským letním
+  časem (`euOffsetMin`). Nálada dne `dayMood()`, pásek `#tripbar`
+  s odpočtem do odjezdu.
+- **Zábava**: `surpriseDay(mood, anchorLL, rnd)` — náhoda jde zvenčí,
+  aby šla testovat; `tripBadges()`; statistiky v `renderTripStats()`;
+  karta cesty `tripCardSvg()` → PNG přes canvas a `navigator.share`.
+- **Dnes**: šestá záložka, velké karty dne, odškrtávání do `S.done`,
+  lišta „Jedeme →" na nejbližší nesplněnou zastávku, den se vybere
+  podle data (`todayIndex`).
+- **Exporty**: `buildICS()` (CRLF, escapování, převod na UTC podle
+  letního času) a `buildGPX()`; přetahování zastávek za úchyt `.grip`
+  přes pointer events (myš i prst).
+- **PWA a počasí**: `manifest.webmanifest`, `icon.svg`, `sw.js` (síť
+  napřed, při výpadku cache). Předpověď z Open-Meteo jedním dotazem pro
+  všechny dny; bez sítě se tiše neukáže nic (`loadWeather`, `wmoText`).
+- Soubory `sw.js`/`manifest.webmanifest`/`icon.svg` jsou **volitelné** —
+  když chybí (jednosouborová distribuce), appka funguje dál.
+
 ## Co v5 umí (zachovat vše)
 
-- 5 záložek: Objevuj (katalog **93 míst**, filtry kategorie/regionu/🌿 Pro
-  Nikolu/♥), Mapa, Plán (dny 1–5), Rozpočet, Sbalit (checklist).
+- 6 záložek: Objevuj (katalog **93 míst**, filtry kategorie/regionu/🌿 Pro
+  Nikolu/♥), Mapa, Plán (dny 1–5), Dnes, Rozpočet, Sbalit (checklist).
 - **6 kategorií**: Koupání, Kempy & noclehy, Výlety, Farmy & nákup,
   **Pekárny & kavárny** (v5, klíč `pek`, barva `#8A5A33`), Na oběd.
 - **13 regionů**: 10× Salzkammergut (v5 přibyl `goi` Bad Goisern) +
@@ -94,9 +128,13 @@ ho zajímají.
 3. **Uvnitř Claude appky nefungují externí obrázky ani dlaždice.**
    Vektorová mapa je základ a musí zůstat plně funkční.
 4. Jedno-souborová distribuce musí jít vždy vygenerovat (teď = ten soubor).
-5. Po každé změně: `node test/geo.test.js` (syntax obou skriptů, integrita
-   dat, všechny body v rámu / mimo vodu / bez překryvů < 9 px v detailních
-   pohledech, tvar gnavUrl). Žádné dialogy `confirm()`/`alert()`.
+5. Po každé změně pusť **oba** testy — žádné dialogy `confirm()`/`alert()`:
+   - `node test/geo.test.js` — syntax obou skriptů, integrita dat,
+     body v rámu / mimo vodu / bez překryvů, gnavUrl, sdílení, časy,
+     otvíračky, slunce, koridory, generátor dnů, odznaky, ICS/GPX, počasí.
+   - `node test/smoke.test.js` — oba skripty se vyhodnotí nad stubem DOM
+     (chytá překlepy a ReferenceError, které v prohlížeči končí bílou
+     stránkou).
 
 ## Ověřená fakta 2026 (nech v datech)
 
@@ -130,25 +168,19 @@ ho zajímají.
 
 ## Backlog (v pořadí priorit)
 
-### P1 — UX
-- Drag & drop řazení v plánu (touch-friendly, ponech i šipky).
-- Export: GPX trasy dne/celé cesty, .ics událostí dnů, vylepšený tisk
-  (trasa dne jako mini-mapa).
-- „Dnes" režim: velké karty zastávek, odškrtávání, Navigovat na další
-  zastávku (základ — gnavUrl — už existuje).
-- Otvíračky strojově: badge „dnes otevřeno" (data v `price` už často jsou).
-
-### P2 — Nasazená verze (mimo Claude app)
-- Progressive enhancement: Leaflet + OSM dlaždice s fallbackem na vektor.
-- Reálné časy jízdy přes OSRM s cache a fallbackem na současný odhad.
-- Počasí: Open-Meteo (bez klíče); teplotu vody neuvádět z API.
-- PWA: manifest + service worker (offline u jezer).
-- Fotky: NIKDY nehotlinkovat z Google (ToS).
-
-### P3 — Detaily
+### P1 — co dává smysl dál
+- Doplnit `HOURS` u zbylých podniků (teď jich je 35 z 93) — vždy až po
+  ověření, nikdy odhadem.
+- Reálné časy jízdy přes OSRM s cache a fallbackem na současný odhad
+  (`est()` je odhad z ptačí perspektivy × 1,6–1,8).
+- Vylepšený tisk: trasa dne jako mini-mapa vedle rozpisu.
 - Rozpočet: pole „ostatní výdaje", přepočet vinětou za den.
-- Accessibility: aria-live pro změny plánu, focus management v panelu mapy.
+
+### P2 — hezké mít
+- Progressive enhancement: Leaflet + OSM dlaždice s fallbackem na vektor.
+- Accessibility: aria-live pro změny plánu, focus management v bublině.
 - Doplnit `gr` tam, kde je zatím vynecháno (až půjde ověřit přímo z Googlu).
+- Fotky: NIKDY nehotlinkovat z Google (ToS).
 
 ## Rubrika 🌿 Pro Nikolu (drž konzistenci)
 - 5 = bio farma / tichá příroda / zdarma nebo symbolicky, žádné davy
