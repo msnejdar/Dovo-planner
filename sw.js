@@ -1,6 +1,6 @@
 /* Service worker: appka musí fungovat i u jezer bez signálu.
    Strategie: síť napřed (ať máš vždy aktuální verzi), při výpadku cache. */
-const CACHE = 'jezera-v2';
+const CACHE = 'jezera-v3';
 const SHELL = ['/', '/index.html', '/planovac/', '/planovac/index.html', '/manifest.webmanifest', '/icon.svg', '/kral.jpg'];
 
 self.addEventListener('install', e => {
