@@ -461,6 +461,61 @@ svg text{font-family:'Fraunces',Georgia,serif}
 }
 .movepick button.cur{border-style:solid;background:var(--ink);color:var(--paper)}
 @media print{ .daybar,.sortrow,.movepick,.addbtn,.moreday{display:none!important} }
+/* ---------- v13: decentní animace ---------- */
+@media (prefers-reduced-motion:no-preference){
+  /* přepnutí záložky: obsah jemně nadjede, nic nepodskakuje */
+  main section{animation:secin .38s cubic-bezier(.2,.6,.2,1) both}
+  @keyframes secin{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+
+  .mapbub{animation:popin .22s cubic-bezier(.2,.7,.3,1) both;transform-origin:50% 100%}
+  .helppop{animation:popin .18s cubic-bezier(.2,.7,.3,1) both}
+  @keyframes popin{from{opacity:0;transform:translateY(6px) scale(.97)}to{opacity:1;transform:none}}
+
+  /* stisk a najetí — krátké, bez pružin */
+  .chip,.abtn,.wand,.addbtn,.moreday,.pbtn,.tab,.bigbtn,.cta,.gnav,.q,.daybar button,.tpl button,.surprise button{
+    transition:background-color .18s,border-color .18s,color .18s,transform .12s cubic-bezier(.2,.6,.2,1),box-shadow .18s;
+  }
+  .abtn:active,.wand:active,.addbtn:active,.pbtn:active,.chip:active,.q:active,.daybar button:active{transform:scale(.94)}
+  .card{transition:border-color .2s,box-shadow .2s,transform .18s cubic-bezier(.2,.6,.2,1)}
+  .card:hover{box-shadow:0 6px 20px rgba(32,29,23,.07)}
+  .bigcard{transition:opacity .3s}
+  .addbtn:hover,.wand:hover{box-shadow:0 4px 14px rgba(32,29,23,.14)}
+  .nextbar .go{transition:transform .16s cubic-bezier(.2,.6,.2,1),box-shadow .2s}
+  .nextbar .go:hover{transform:translateY(-2px)}
+  /* odškrtnutá zastávka v režimu Dnes se zklidní, ne zmizí */
+  .bigcard.done{transition:opacity .35s ease}
+  /* naskočení statistik a odznaků */
+  .stat,.badge{animation:secin .4s cubic-bezier(.2,.6,.2,1) both}
+  .badge:nth-child(2){animation-delay:.05s}
+  .badge:nth-child(3){animation-delay:.1s}
+  .badge:nth-child(4){animation-delay:.15s}
+  .badge:nth-child(5){animation-delay:.2s}
+  .badge:nth-child(6){animation-delay:.25s}
+}
+
+/* ---------- v13: skutečná mapa s dlaždicemi ---------- */
+#tilemap{
+  position:absolute;inset:0;overflow:hidden;border-radius:12px;background:#DDE7E9;
+  touch-action:none;-webkit-user-select:none;user-select:none;cursor:grab;
+}
+#tilemap[hidden]{display:none}
+#tilemap.drag{cursor:grabbing}
+#tiles{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+#tiles img{position:absolute;width:256px;height:256px;display:block;pointer-events:none}
+#tilesvg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+#tilesvg .tdot,#tilesvg .tstop{pointer-events:auto;cursor:pointer}
+.tattr{
+  position:absolute;right:4px;bottom:3px;z-index:5;font-size:10px;color:#3f3a2c;
+  background:rgba(255,253,246,.82);border-radius:6px;padding:1px 6px;text-decoration:none;
+}
+.tattr:hover{text-decoration:underline}
+.tfail{
+  position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:24px;
+  background:var(--paper);font-size:14px;color:var(--mut);
+}
+.tfail[hidden]{display:none}
+@media print{ #tilemap{display:none!important} }
+
 /* ---------- v11: otazníky s nápovědou ---------- */
 .q{
   border:1.5px solid var(--line);background:#fff;color:var(--mut);
@@ -561,7 +616,7 @@ svg text{font-family:'Fraunces',Georgia,serif}
 
 <!-- ============ MAPA ============ -->
 <section id="tab-mapa" hidden>
-  <div class="filterlabel">Pohled<button class="q" data-help="view" aria-label="Co to znamená" aria-expanded="false">?</button><button class="q" data-help="zoom" aria-label="Přibližování" aria-expanded="false">?</button></div>
+  <div class="filterlabel">Pohled<button class="q" data-help="real" aria-label="Skutečná mapa" aria-expanded="false">?</button><button class="q" data-help="view" aria-label="Co to znamená" aria-expanded="false">?</button><button class="q" data-help="zoom" aria-label="Přibližování" aria-expanded="false">?</button></div>
   <div class="chips" id="viewChips"></div>
   <div class="filterlabel">Trasa na mapě<button class="q" data-help="route" aria-label="Co to znamená" aria-expanded="false">?</button></div>
   <div class="chips" id="routeChips"></div>
@@ -569,6 +624,12 @@ svg text{font-family:'Fraunces',Georgia,serif}
   <div class="chips" id="mapCatChips"></div>
   <div class="mapwrap mapstage" style="padding:8px">
     <svg id="bigsvg" viewBox="0 0 1000 1045" role="img" aria-label="Mapa Salzkammergutu a Dolomit podle skutečných souřadnic"></svg>
+    <div id="tilemap" hidden>
+      <div id="tiles"></div>
+      <svg id="tilesvg"></svg>
+      <div class="tfail" id="tileFail" hidden>Mapové dlaždice se nenačetly. Přepni zpátky na kreslenou mapu — ta funguje i bez sítě.</div>
+      <a class="tattr" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap</a>
+    </div>
     <div class="maptip" id="mapTip" hidden></div>
     <div class="mapbub" id="mapBub" hidden></div>
     <div class="zoomctl">
@@ -1459,7 +1520,7 @@ const NDAYS = 7; /* kolik dnů plánovač nabízí */
 const DAYC = ['#1D7A99','#2F7D4F','#DFA320','#D95A34','#201D17','#8A5A33','#C2497F'];
 const HEART = 'M0,4.6 C-1.4,1.2 -7.2,-1.9 -7.2,2.6 C-7.2,5.7 -2.8,8.6 0,11 C2.8,8.6 7.2,5.7 7.2,2.6 C7.2,-1.9 1.4,1.2 0,4.6 Z';
 
-const VIEW_LBL = {all:'🚐 Celá cesta', szk:'🏔 Salzkammergut', dol:'🇮🇹 Dolomity'};
+const VIEW_LBL = {all:'🚐 Celá cesta', szk:'🏔 Salzkammergut', dol:'🇮🇹 Dolomity', real:'🛰 Skutečná mapa'};
 /* ---- zoom & posun: transform na obalové <g>, stav zvlášť pro každý pohled ---- */
 const ZOOM = {all:{k:1,x:0,y:0}, szk:{k:1,x:0,y:0}, dol:{k:1,x:0,y:0}};
 const ZMAX = 6;
@@ -1497,6 +1558,7 @@ function applyZoom(redraw){
   const tip = document.getElementById('mapTip');
   tip.hidden = z.k<=1;
   if(z.k>1) tip.textContent = Math.round(z.k*10)/10 + '× · táhni prstem';
+  if(MAPVIEW==='real'){ drawRouteChips(); renderRouteInfo(); drawReal(); return; }
   if(redraw!==false){ drawDots(); drawRoutes(); }
   positionBubble();
 }
@@ -1576,6 +1638,7 @@ function initMap(){
   document.getElementById('zIn').addEventListener('click', ()=>zoomAt(VIEWS[MAPVIEW].W/2, VIEWS[MAPVIEW].H/2, 1.6));
   document.getElementById('zOut').addEventListener('click', ()=>zoomAt(VIEWS[MAPVIEW].W/2, VIEWS[MAPVIEW].H/2, 1/1.6));
   document.getElementById('zRst').addEventListener('click', ()=>{ const z=zs(); z.k=1; z.x=0; z.y=0; applyZoom(); });
+  initTileMap();
   drawViewChips(); drawMapCatChips();
 }
 let DRAGGED = false;
@@ -1597,9 +1660,23 @@ function mapVisible(it){
   return it.cat===mapCat;
 }
 function setView(v){
-  if(!VIEWS[v] || MAPVIEW===v) return;
+  if(MAPVIEW===v) return;
+  if(v!=='real' && !VIEWS[v]) return;
   MAPVIEW = v;
-  buildMap(); applyZoom(); drawViewChips();
+  const tm = document.getElementById('tilemap'), svg = document.getElementById('bigsvg');
+  closeBubble();
+  if(v==='real'){
+    tm.hidden = false; svg.style.visibility = 'hidden';
+    document.getElementById('mapTip').hidden = true;
+    const day = (routeMode!=='all' && routeMode!=='none') ? +routeMode : null;
+    const lls = (day!==null ? (S.days[day]||[]) : S.days.flat()).map(byId).filter(Boolean).map(i=>i.ll);
+    if(lls.length) rmFit(lls.concat([CB_LL]));
+    drawReal();
+  } else {
+    tm.hidden = true; svg.style.visibility = '';
+    buildMap(); applyZoom();
+  }
+  drawViewChips();
 }
 /* přibliž na vybraný den, ať zastávky nejsou shluk v rohu */
 function fitToDay(di){
@@ -1711,12 +1788,13 @@ function worldToStage(p){
 function closeBubble(){
   selId = null;
   document.getElementById('mapBub').hidden = true;
-  drawDots();
+  if(MAPVIEW==='real') drawTileOverlay(); else drawDots();
 }
 function selectPlace(id){
   const it = byId(id); if(!it) return;
-  if(MAPVIEW!=='all' && viewOf(it.reg)!==MAPVIEW) return; /* bod tenhle pohled nezobrazuje */
-  selId = id; drawDots();
+  if(MAPVIEW!=='all' && MAPVIEW!=='real' && viewOf(it.reg)!==MAPVIEW) return; /* bod tenhle pohled nezobrazuje */
+  selId = id;
+  if(MAPVIEW==='real') drawTileOverlay(); else drawDots();
   const b = document.getElementById('mapBub');
   b.innerHTML =
     '<button class="x" data-bubx aria-label="Zavřít">×</button>'+
@@ -1737,12 +1815,22 @@ function selectPlace(id){
   b.hidden = false;
   positionBubble();
 }
+function ptLL(ref){ return ref==='home' ? CB_LL : (byId(ref)||{ll:CB_LL}).ll; }
 function positionBubble(){
   const b = document.getElementById('mapBub');
   if(b.hidden || !selId) return;
   const it = byId(selId);
-  if(!it || (MAPVIEW!=='all' && viewOf(it.reg)!==MAPVIEW)){ b.hidden = true; return; }
-  const p = worldToStage(PROJ[MAPVIEW][selId]);
+  if(!it){ b.hidden = true; return; }
+  let p;
+  if(MAPVIEW==='real'){
+    const tm = document.getElementById('tilemap'), stage = tm.parentElement;
+    const tr = tm.getBoundingClientRect(), gr = stage.getBoundingClientRect();
+    const q = rmToScreen(it.ll[0], it.ll[1]);
+    p = {x:q.x + (tr.left-gr.left), y:q.y + (tr.top-gr.top), sw:tr.width, sh:tr.height, ox:tr.left-gr.left, oy:tr.top-gr.top};
+  } else {
+    if(viewOf(it.reg)!==MAPVIEW && MAPVIEW!=='all'){ b.hidden = true; return; }
+    p = worldToStage(PROJ[MAPVIEW][selId]);
+  }
   const w = b.offsetWidth, h = b.offsetHeight, gap = 16;
   const above = p.y - h - gap > p.oy + 2;
   b.classList.toggle('above', above);
@@ -1857,10 +1945,13 @@ function drawRoutes(){
     if(first){ const pa=ptFor(dayAnchorId(di)); svg += '<text x="'+pa.x.toFixed(1)+'" y="'+(pa.y-10*f).toFixed(1)+'" text-anchor="middle" font-size="'+(17*f).toFixed(1)+'">🚐</text>'; }
   }
   document.getElementById('routeLayer').innerHTML = svg;
+  drawRouteChips();
+  renderRouteInfo();
+}
+function drawRouteChips(){
   const chips = [['none','Nic'],['all','Celá cesta']].concat(S.days.map((d,i)=>d.length?[String(i),'Den '+(i+1)]:null).filter(Boolean));
   document.getElementById('routeChips').innerHTML = chips.map(c=>
     '<button class="chip" data-route="'+c[0]+'" aria-pressed="'+String(routeMode===c[0])+'"'+(c[0]!=='none'&&c[0]!=='all'?' style="--cc:'+DAYC[+c[0]%NDAYS]+'"':'')+'>'+c[1]+'</button>').join('');
-  renderRouteInfo();
 }
 function renderRouteInfo(){
   const el = document.getElementById('routeInfo');
@@ -1886,13 +1977,19 @@ document.addEventListener('click', e=>{
     const day = (routeMode!=='all' && routeMode!=='none') ? +routeMode : null;
     const want = day===null ? null : viewForDay(day);
     if(want && want!==MAPVIEW){ MAPVIEW = want; buildMap(); drawViewChips(); } /* skoč tam, kde se ten den jede */
+    if(MAPVIEW==='real'){
+      const lls = (day!==null ? (S.days[day]||[]) : S.days.flat()).map(byId).filter(Boolean).map(i=>i.ll);
+      if(lls.length) rmFit(day!==null ? lls.concat([ptLL(dayAnchorId(day))]) : lls.concat([CB_LL]));
+      drawReal(); drawRouteChips();
+      return;
+    }
     if(day===null){ const z=zs(); z.k=1; z.x=0; z.y=0; applyZoom(); } else fitToDay(day);
     return;
   }
   const v = e.target.closest('[data-view]');
   if(v){ setView(v.dataset.view); return; }
   const mc = e.target.closest('[data-mcat]');
-  if(mc){ mapCat = mc.dataset.mcat; drawMapCatChips(); drawDots(); }
+  if(mc){ mapCat = mc.dataset.mcat; drawMapCatChips(); if(MAPVIEW==='real') drawTileOverlay(); else drawDots(); }
 });
 
 /* ================= FILTRY + KATALOG ================= */
@@ -2697,6 +2794,172 @@ function addCustom(){
   S.custom.push(v); inp.value=''; saveState(); renderChecklist();
 }
 
+/* ================= SKUTEČNÁ MAPA S DLAŽDICEMI =================
+   Vlastní slippy mapa, žádná knihovna: Web Mercator, dlaždice OpenStreetMap
+   jako <img>, body a trasy dnů v SVG nad nimi. Když dlaždice nedorazí,
+   appka to napíše a kreslená mapa zůstává plnohodnotná náhrada. */
+const TILEURL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const RM = {lat:47.55, lng:13.35, z:7.6};
+let tileFails = 0, tilesTried = 0;
+const mercY = lat => {
+  const r = Math.max(-85, Math.min(85, lat)) * Math.PI/180;
+  return (1 - Math.log(Math.tan(r) + 1/Math.cos(r))/Math.PI) / 2;
+};
+const mercLat = y => {
+  const n = Math.PI * (1 - 2*y);
+  return 180/Math.PI * Math.atan(0.5*(Math.exp(n) - Math.exp(-n)));
+};
+/* světové pixely při daném zoomu */
+function wpx(lat, lng, z){
+  const s = 256 * Math.pow(2, z);
+  return {x:(lng+180)/360*s, y:mercY(lat)*s};
+}
+function rmBox(){
+  const el = document.getElementById('tilemap');
+  const r = el.getBoundingClientRect();
+  return {w:r.width||600, h:r.height||400, left:r.left, top:r.top};
+}
+/* zeměpisné → pixely uvnitř kontejneru */
+function rmToScreen(lat, lng){
+  const b = rmBox(), c = wpx(RM.lat, RM.lng, RM.z), p = wpx(lat, lng, RM.z);
+  return {x:p.x - c.x + b.w/2, y:p.y - c.y + b.h/2};
+}
+function rmToLatLng(px, py){
+  const b = rmBox(), c = wpx(RM.lat, RM.lng, RM.z);
+  const s = 256 * Math.pow(2, RM.z);
+  const wx = c.x + px - b.w/2, wy = c.y + py - b.h/2;
+  return [mercLat(wy/s), wx/s*360 - 180];
+}
+function drawTiles(){
+  const b = rmBox();
+  const tz = Math.max(2, Math.min(17, Math.round(RM.z)));
+  const scale = Math.pow(2, RM.z - tz);
+  const c = wpx(RM.lat, RM.lng, tz);
+  /* levý horní roh výřezu ve světových pixelech na úrovni tz */
+  const originX = c.x - (b.w/2)/scale, originY = c.y - (b.h/2)/scale;
+  const t0x = Math.floor(originX/256), t0y = Math.floor(originY/256);
+  const t1x = Math.floor((originX + b.w/scale)/256), t1y = Math.floor((originY + b.h/scale)/256);
+  const max = Math.pow(2, tz);
+  const layer = document.getElementById('tiles');
+  layer.style.transform = 'translate('+(-originX*scale).toFixed(2)+'px,'+(-originY*scale).toFixed(2)+'px) scale('+scale.toFixed(4)+')';
+  let html = '';
+  for(let x=t0x; x<=t1x; x++){
+    for(let y=t0y; y<=t1y; y++){
+      if(y<0 || y>=max) continue;
+      const wx = ((x % max) + max) % max;
+      const url = TILEURL.replace('{z}',tz).replace('{x}',wx).replace('{y}',y);
+      html += '<img src="'+url+'" style="left:'+(x*256)+'px;top:'+(y*256)+'px" loading="lazy" alt="" onerror="tileErr()" onload="tileOk()">';
+    }
+  }
+  layer.innerHTML = html;
+}
+function tileOk(){ tilesTried++; document.getElementById('tileFail').hidden = true; }
+function tileErr(){
+  tilesTried++; tileFails++;
+  /* když selže většina z prvního screenu, podklad zjevně nejde */
+  if(tileFails >= 6 && tileFails/Math.max(1,tilesTried) > 0.6) document.getElementById('tileFail').hidden = false;
+}
+function drawTileOverlay(){
+  const svg = document.getElementById('tilesvg');
+  const b = rmBox();
+  const items = ITEMS.filter(mapVisible);
+  const oneDay = routeMode!=='all' && routeMode!=='none';
+  let out = '';
+  /* trasy dnů */
+  buildLegs().filter(l=> routeMode==='all' ? true : (routeMode==='none' ? false : l.di===+routeMode)).forEach(l=>{
+    const A = l.a==='home' ? CB_LL : (byId(l.a)||{}).ll;
+    const B = l.b==='home' ? CB_LL : (byId(l.b)||{}).ll;
+    if(!A || !B) return;
+    const p1 = rmToScreen(A[0],A[1]), p2 = rmToScreen(B[0],B[1]);
+    out += '<path d="M'+p1.x.toFixed(1)+','+p1.y.toFixed(1)+' L'+p2.x.toFixed(1)+','+p2.y.toFixed(1)+'" fill="none" stroke="'+DAYC[l.di%NDAYS]+
+      '" stroke-width="4" stroke-linecap="round" opacity=".85"'+(l.dash?' stroke-dasharray="8 7"':'')+'/>';
+  });
+  /* body */
+  items.forEach(it=>{
+    const p = rmToScreen(it.ll[0], it.ll[1]);
+    if(p.x < -30 || p.y < -30 || p.x > b.w+30 || p.y > b.h+30) return;
+    const sel = selId===it.id;
+    out += '<circle class="tdot" data-tid="'+it.id+'" cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+(sel?9:7)+
+      '" fill="'+CATS[it.cat].color+'" stroke="'+(sel?'#201D17':'#FFFDF6')+'" stroke-width="'+(sel?3:2.4)+'"><title>'+esc(it.name)+'</title></circle>';
+  });
+  /* čísla zastávek vybraného dne */
+  if(oneDay){
+    let n = 1;
+    (S.days[+routeMode]||[]).forEach(id=>{
+      const it = byId(id); if(!it) return;
+      const p = rmToScreen(it.ll[0], it.ll[1]);
+      out += '<circle class="tstop" data-tid="'+id+'" cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="12" fill="'+DAYC[+routeMode%NDAYS]+'"/>'+
+        '<text x="'+p.x.toFixed(1)+'" y="'+(p.y+4.5).toFixed(1)+'" text-anchor="middle" class="stopnum" style="pointer-events:none">'+(n++)+'</text>';
+    });
+  }
+  const h = rmToScreen(CB_LL[0], CB_LL[1]);
+  out += '<circle cx="'+h.x.toFixed(1)+'" cy="'+h.y.toFixed(1)+'" r="6" fill="#201D17" stroke="#FFFDF6" stroke-width="2"/>';
+  svg.innerHTML = out;
+}
+function drawReal(){ drawTiles(); drawTileOverlay(); positionBubble(); }
+/* přizpůsob výřez tomu, co je v plánu (nebo vybranému dni) */
+function rmFit(lls){
+  if(!lls.length) return;
+  let a=90,b=-90,c=180,d=-180;
+  lls.forEach(l=>{ a=Math.min(a,l[0]); b=Math.max(b,l[0]); c=Math.min(c,l[1]); d=Math.max(d,l[1]); });
+  RM.lat = mercLat((mercY(a)+mercY(b))/2);
+  RM.lng = (c+d)/2;
+  const box = rmBox(), pad = 60;
+  let z = 17;
+  while(z > 3){
+    const p1 = wpx(b, c, z), p2 = wpx(a, d, z);
+    if((p2.x-p1.x) <= box.w-pad*2 && (p2.y-p1.y) <= box.h-pad*2) break;
+    z -= 0.25;
+  }
+  RM.z = z;
+}
+function initTileMap(){
+  const el = document.getElementById('tilemap');
+  const pts = new Map();
+  let last = null, pinch = 0, moved = false;
+  el.addEventListener('pointerdown', e=>{
+    pts.set(e.pointerId, e); moved = false;
+    if(pts.size===1){ last = {x:e.clientX, y:e.clientY}; el.setPointerCapture(e.pointerId); el.classList.add('drag'); }
+    if(pts.size===2){ const a=[...pts.values()]; pinch = Math.hypot(a[0].clientX-a[1].clientX, a[0].clientY-a[1].clientY); }
+  });
+  el.addEventListener('pointermove', e=>{
+    if(!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId, e);
+    const a = [...pts.values()];
+    if(a.length>=2){
+      const d = Math.hypot(a[0].clientX-a[1].clientX, a[0].clientY-a[1].clientY);
+      if(pinch>0 && d>0){ moved = true; RM.z = Math.max(4, Math.min(17, RM.z + Math.log2(d/pinch))); drawReal(); }
+      pinch = d; return;
+    }
+    if(!last) return;
+    const dx = e.clientX-last.x, dy = e.clientY-last.y;
+    if(Math.abs(dx)+Math.abs(dy) > 3) moved = true;
+    const b = rmBox(), s = 256*Math.pow(2, RM.z);
+    const c = wpx(RM.lat, RM.lng, RM.z);
+    const nl = rmLatLngFromWorld(c.x-dx, c.y-dy, s);
+    RM.lat = nl[0]; RM.lng = nl[1];
+    last = {x:e.clientX, y:e.clientY};
+    drawReal();
+  });
+  const up = e=>{ pts.delete(e.pointerId); if(pts.size<2) pinch = 0; if(!pts.size){ last = null; el.classList.remove('drag'); } };
+  el.addEventListener('pointerup', up);
+  el.addEventListener('pointercancel', up);
+  el.addEventListener('wheel', e=>{
+    e.preventDefault();
+    RM.z = Math.max(4, Math.min(17, RM.z + (e.deltaY<0 ? .5 : -.5)));
+    drawReal();
+  }, {passive:false});
+  el.addEventListener('click', e=>{
+    if(moved) return;
+    const m = e.target.closest('[data-tid]');
+    if(m) selectPlace(m.dataset.tid); else closeBubble();
+  });
+  addEventListener('resize', ()=>{ if(MAPVIEW==='real') drawReal(); });
+}
+function rmLatLngFromWorld(wx, wy, s){
+  return [mercLat(wy/s), wx/s*360 - 180];
+}
+
 /* ================= NÁPOVĚDA =================
    Otazník u každé věci. Texty říkají hlavně to, co jinak není vidět:
    odkud se čísla berou a co je ověřené a co odhad. */
@@ -2708,6 +2971,7 @@ reg:['Kde','Filtr podle oblasti. Regiony jdou zhruba v pořadí, jak se jimi pro
 sort:['Seřadit','<b>🌿 můj tip</b> řadí podle toho, jak moc místo sedne Nikole. <b>★ hodnocení</b> podle Googlu. <b>📍 nejblíž dni</b> měří vzdušnou čáru od poslední zastávky dne, do kterého zrovna přidáváš — nahoře je to, co máš cestou.'],
 nik:['🌿 Pro Nikolu','Moje hodnocení, ne Googlu. <b>5</b> = bio farma nebo tichá příroda, zdarma nebo skoro. <b>4</b> = klidné a lokální, snese víkendový provoz. <b>3</b> = fajn, ale komerční nebo rodinné rušno. <b>2</b> = davy, fronty, drahé atrakce.'],
 gr:['Hodnocení Google','Hvězdičky a počet recenzí z Map Google, ověřené v srpnu 2026. Kde číslo chybí, nepodařilo se ho spolehlivě dohledat — radši nic než vymyšlené.'],
+real:['Skutečná mapa','Podklad z OpenStreetMap se silnicemi a městy. Body, trasy dnů i bublina fungují stejně jako v kreslené mapě. Dlaždice se stahují ze sítě — bez signálu se nenačtou a appka to napíše; kreslená mapa jede vždycky.'],
 view:['Pohled na mapu','<b>Celá cesta</b> ukáže všechno od Budějovic po Dolomity; dlouhé přejezdy vedou přes skutečná města na trase, ne vzdušnou čarou. <b>Salzkammergut</b> a <b>Dolomity</b> jsou přiblížené výřezy. V přehledu se dá klepnout na přerušovaný rámeček a mapa do toho regionu skočí.'],
 route:['Trasa na mapě','Vyber den a mapa se sama přepne do správného regionu, přiblíží se na něj a očísluje zastávky. U každého úseku uvidíš kilometry a čas jízdy.'],
 mapcat:['Co ukázat','Nechá na mapě jen jeden typ míst. <b>Jen můj plán</b> ukáže zastávky z plánu a srdíčka. Zastávky vybraného dne jsou vidět vždycky, i když do filtru nepatří.'],

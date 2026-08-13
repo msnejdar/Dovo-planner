@@ -152,6 +152,19 @@ ho zajímají.
   prázdné. Šablony 6 a 7 dnů přidávají Hallstatt s Gosau a druhou noc
   ve stejném kempu, ať se každý den nebalí.
 
+- **Skutečná mapa (v13)**: čtvrtý pohled `real` — vlastní slippy mapa bez
+  knihovny. Web Mercator (`wpx`, `mercY`, `mercLat`), dlaždice
+  OpenStreetMap jako `<img>` v `#tiles` (posun a měřítko přes transform,
+  celočíselný `tz = round(z)` a doškálování), body a trasy v `#tilesvg`.
+  Gesta vlastní, `rmFit()` přizpůsobí výřez plánu nebo vybranému dni.
+  Když se dlaždice nenačtou (`tileErr`), objeví se hláška a kreslená mapa
+  zůstává plnohodnotná náhrada. **Atribuce OpenStreetMap je povinná,
+  neodstraňovat.**
+- **Animace (v13)**: jen decentní — nadjetí sekce při přepnutí záložky,
+  vyskočení bubliny a nápovědy, stisk tlačítek, naskočení statistik
+  a odznaků. Vše uvnitř `prefers-reduced-motion: no-preference`.
+  Na úvodní stránce se navíc při scrollu kreslí náčrt trasy.
+
 ## Tvrdé zásady
 
 1. **Žádná vymyšlená místa ani čísla.** Každé nové místo ověř web searchem:
