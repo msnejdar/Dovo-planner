@@ -3,7 +3,7 @@
 **Živě: https://dovolena1.vercel.app** — úvodní stránka s vtípkem,
 plánovač samotný na **[/planovac](https://dovolena1.vercel.app/planovac/)**.
 
-Plánovač 1–5denní cesty VW Californií z Českých Budějovic: jezera
+Plánovač 1–7denní cesty VW Californií z Českých Budějovic: jezera
 Salzkammergutu a od 4 dnů i severní Itálie — Pustertal, Lago di Braies,
 Misurina, Cortina.
 

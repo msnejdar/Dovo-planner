@@ -524,7 +524,7 @@ svg text{font-family:'Fraunces',Georgia,serif}
   <div class="eyebrow">Salzkammergut & Dolomity · plánovač k Californii</div>
   <h1>Jezera <em>pro dva</em></h1>
   <p class="sub">Vyber si, co tě láká — srdíčkem do výběru, plusem rovnou do dne. Nebo si načti můj hotový návrh a přeskládej ho po svém. Od čtyř dnů se jede i na jih: Braies, Misurina, pekárny v Pustertalu.</p>
-  <div class="metaline"><span>start: České Budějovice</span><span>1–5 dní</span><span>od 4 dnů i severní Itálie</span><span>ceny = hlavní sezóna 2026, pro dva</span></div>
+  <div class="metaline"><span>start: České Budějovice</span><span>1–7 dní</span><span>od 4 dnů i severní Itálie</span><span>ceny = hlavní sezóna 2026, pro dva</span></div>
 </header>
 <div id="tripbar"></div>
 
@@ -591,6 +591,8 @@ svg text{font-family:'Fraunces',Georgia,serif}
     <button data-tpl="3">3 dny · jezera</button>
     <button data-tpl="4">4 dny + Dolomity</button>
     <button data-tpl="5">5 dní + Dolomity</button>
+    <button data-tpl="6">6 dní</button>
+    <button data-tpl="7">7 dní · v klidu</button>
     <small>Klid, farmy a menší kempy místo davů. Hallstatt jen jako ranní zastávka. Od čtyř dnů se jede přes Korutany do Pustertalu — Braies brzy ráno, pekárny a sýrárny po cestě. Načte se do dnů níž — pak přeskládej po svém.</small>
     <small id="tplAsk" hidden></small>
   </div>
@@ -722,13 +724,13 @@ const ITEMS = [
  desc:'Oblázková pláž na jižním konci Traunsee, pod stěnami Höllengebirge. Míň lidí než na severu jezera; parkoviště je ale drahé — přijeď dřív a zůstaň déle.'},
 
 /* ---- kempy & noclehy ---- */
-{id:'k1',cat:'kemp',reg:'att',ll:[47.8367,13.5456],t:'Steinbach am Attersee',dur:0,night:47,gr:[4.4,803],nik:4,nn:'větší, ale s vlastní tichou zátokou',name:'Camping Grabner · Steinbach',price:'47 € · u vody 53 €',web:'https://www.camping-grabner.at/de/preise/preise',
+{id:'k1',cat:'kemp',reg:'att',ll:[47.8367,13.5456],t:'Steinbach am Attersee',dur:0,night:46.6,gr:[4.4,803],nik:4,nn:'větší, ale s vlastní tichou zátokou',name:'Camping Grabner · Steinbach',price:'46,60 € · u vody 52,60 €',web:'https://www.camping-grabner.at/de/preise/preise',
  desc:'Nejlepší koupací kemp regionu: vlastní zátoka s molem a plovoucím ostrovem jen pro hosty, závora ve 22:00 = klid. V srpnu rezervuj.'},
 {id:'k2',cat:'kemp',reg:'mon',ll:[47.8180,13.3644],t:'St. Lorenz am Mondsee',dur:0,night:36,gr:[4.1,458],nik:3,nn:'u vody, ale i u silnice',name:'Camping Nussbaumer · St. Lorenz',price:'~36 €',
  desc:'Jediný velký kemp bez rezervací — přijeď dopoledne a místo bývá. Přímo u vody pod Drachenwand; v noci je slyšet silnice.'},
-{id:'k3',cat:'kemp',reg:'mon',ll:[47.8671,13.3068],t:'Tiefgraben u Mondsee',dur:0,night:48,gr:[4.7,1337],nik:3,nn:'komfortní resort, jezero až autem',name:'Camp MondSeeLand',price:'~45–55 €',web:'https://www.campmondsee.at/',
+{id:'k3',cat:'kemp',reg:'mon',ll:[47.8671,13.3068],t:'Tiefgraben u Mondsee',dur:0,night:49,gr:[4.7,1337],nik:3,nn:'komfortní resort, jezero až autem',name:'Camp MondSeeLand',price:'43,70–55,10 € vč. dvou osob',web:'https://www.campmondsee.at/',
  desc:'Nejlepší zázemí v okolí (4★): krytý vyhřívaný bazén, kuchyňka, bezvadné sprchy. K jezeru ale 5 minut autem.'},
-{id:'k4',cat:'kemp',reg:'irr',ll:[47.9106,13.3136],t:'Zell am Moos',dur:0,night:27,gr:[4.1,159],nik:5,nn:'farma u teplého jezera — její styl',name:'Camping Maier · Zell am Moos',price:'~25–30 € · ověř',
+{id:'k4',cat:'kemp',reg:'irr',ll:[47.9106,13.3136],t:'Zell am Moos',dur:0,night:22,gr:[4.1,159],nik:5,nn:'farma u teplého jezera — její styl',name:'Camping Maier · Zell am Moos',price:'~18–25 € · ceník jen telefonicky',
  desc:'Farma přímo u nejteplejšího jezera. Zázemí jednoduché, cena poloviční — na jednu noc v Californii ideální poměr.'},
 {id:'k5',cat:'kemp',reg:'irr',ll:[47.9307,13.3116],t:'Oberhofen am Irrsee',dur:0,night:25,gr:[4.5,85],nik:5,nn:'malý, rodinný, u louky',name:'Camping Moosmühle · Oberhofen',price:'~25 € · ověř',
  desc:'Malý rodinný kemp s loukou u vody a milými majiteli. Sprchy pamatují lepší časy — bereš, co Californie nedá.'},
@@ -929,7 +931,22 @@ const TPL = {
        ['v1','b1','g4','r7','p4','k1'],
        ['b4','p11','k12'],
        ['v15','b7','g11','r11','v16','k13'],
-       ['v17','v18','g20'] ]
+       ['v17','v18','g20'] ],
+  /* šest a sedm dnů: přidává se Hallstatt s Gosau a druhý den v Dolomitech,
+     ať se nemusí každý den balit a přejíždět */
+  6: [ ['g10','p2','g5','k4'],
+       ['v1','b1','g4','r7','p4','k1'],
+       ['b4','p11','k16'],
+       ['g20','b8','v16','r11','k13'],
+       ['v15','b7','g11','r9','k13'],
+       ['v17','v18'] ],
+  7: [ ['g10','p2','g5','k4'],
+       ['v1','b1','g4','r7','p4','k1'],
+       ['b6','v4','r5','p8','k11'],
+       ['v12','p11','k16'],
+       ['g20','b8','v16','r11','k13'],
+       ['v15','b7','g11','r9','k13'],
+       ['v17','v18','v22'] ]
 };
 
 /* ================= GEO: jezera a mapa (skutečné souřadnice) ================= */
@@ -1112,8 +1129,10 @@ const HOURS = {
   k15:{warn:'Rezervace neberou a chtějí minimálně tři noci — přijeď dopoledne.'},
   k16:{warn:'V hlavní sezóně se přijíždí jen pá–ne. Psi nesmí.'},
   k12:{warn:'V srpnu bez rezervace nespoléhej.'},
+  k4:{warn:'Ceník nikde nezveřejňují — cenu si ověř telefonem (+43 6234 7081). Stání pro obytné vozy 1. 4. – 31. 10.'},
+  k3:{warn:'Elektřina se platí zvlášť po kWh (0,90 €).'},
   k14:{warn:'V srpnu bez rezervace nespoléhej.'},
-  k1:{warn:'V srpnu rezervuj předem.'},
+  k1:{warn:'V srpnu rezervuj předem. Kemp jede 17. 4. – 4. 10. 2026, hlavní sezóna od 1. 7. do 31. 8.'},
   k10:{warn:'Recepce má pověst hrubé — ber to jako placené parkování.'},
   k11:{warn:'Jen hotovost. Po deváté večer je ticho.'}
 };
@@ -1409,7 +1428,7 @@ var APP_PURE = {CATS,TINTS,REGS,FROM_CB,ITEMS,TPL,LAKES,VIEWS,VPOLYS,PROJ,HOMEPT
 <script>
 /* ================= STAV & ULOŽENÍ ================= */
 const KEY = 'salzkammergut-planner-v1';
-let S = { fav:[], days:[[],[],[],[],[]], checked:[], custom:[], vign:true, alp:false,
+let S = { fav:[], days:[[],[],[],[],[],[],[]], checked:[], custom:[], vign:true, alp:false,
           start:{date:'', dep:480}, done:[], addDay:0,
           inputs:{km:650,cons:10,fuel:1.65,foodDay:60,buffer:50,rate:24.6} };
 let saveT = null;
@@ -1431,7 +1450,8 @@ const byId = id => ITEMS.find(i=>i.id===id);
 /* ================= MAPA ================= */
 /* (geometrie, projekce a pohledy žijí v prvním <script> — čisté, kryté testem) */
 let selId = null, routeMode = 'all', MAPVIEW = 'all';
-const DAYC = ['#1D7A99','#2F7D4F','#DFA320','#D95A34','#201D17'];
+const NDAYS = 7; /* kolik dnů plánovač nabízí */
+const DAYC = ['#1D7A99','#2F7D4F','#DFA320','#D95A34','#201D17','#8A5A33','#C2497F'];
 const HEART = 'M0,4.6 C-1.4,1.2 -7.2,-1.9 -7.2,2.6 C-7.2,5.7 -2.8,8.6 0,11 C2.8,8.6 7.2,5.7 7.2,2.6 C7.2,-1.9 1.4,1.2 0,4.6 Z';
 
 const VIEW_LBL = {all:'🚐 Celá cesta', szk:'🏔 Salzkammergut', dol:'🇮🇹 Dolomity'};
@@ -1705,7 +1725,7 @@ function selectPlace(id){
       '<a href="'+gUrl(it)+'" target="_blank" rel="noopener">Google</a>'+
       '<button class="abtn'+(S.fav.includes(id)?' on':'')+'" data-fav="'+id+'">'+(S.fav.includes(id)?'♥':'♡')+'</button></div>'+
     '<div class="cardacts" style="margin-top:9px">'+
-      '<button class="addbtn'+(S.days[activeDay()].includes(id)?' inday':'')+'" data-quick="'+id+'" style="--dc:'+DAYC[activeDay()%5]+'">'+
+      '<button class="addbtn'+(S.days[activeDay()].includes(id)?' inday':'')+'" data-quick="'+id+'" style="--dc:'+DAYC[activeDay()%NDAYS]+'">'+
         (S.days[activeDay()].includes(id)?'✓ v dni '+(activeDay()+1):'+ do dne '+(activeDay()+1))+'</button>'+
     '</div>'+
     '<div class="daypick open">'+dayBtns(it)+'</div>';
@@ -1794,7 +1814,7 @@ function drawRoutes(){
   show.forEach(l=>{
     const p1=ptFor(l.a), p2=ptFor(l.b);
     const g=legGeom(l, p1, p2); if(!g) return;
-    svg += '<path class="'+(l.dash?'legdash':'legsolid')+'" d="'+g.d+'" stroke="'+DAYC[l.di%5]+'" stroke-width="'+(3*f).toFixed(2)+'" opacity=".82"/>';
+    svg += '<path class="'+(l.dash?'legdash':'legsolid')+'" d="'+g.d+'" stroke="'+DAYC[l.di%NDAYS]+'" stroke-width="'+(3*f).toFixed(2)+'" opacity=".82"/>';
     /* km a čas na každý úsek — v přehledu celé cesty jen na delší, ať se popisky nelepí na sebe */
     const leg = legInfo(l);
     const worth = oneDay || leg[1]>=45 || k>=2;
@@ -1812,7 +1832,7 @@ function drawRoutes(){
       const it=byId(id); if(!it) return;
       if(MAPVIEW!=='all' && viewOf(it.reg)!==MAPVIEW){ n++; return; } // zastávka mimo tenhle pohled
       const p=PROJ[MAPVIEW][id], V=VIEWS[MAPVIEW];
-      svg += '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+(10.5*f).toFixed(2)+'" fill="'+DAYC[di%5]+'" opacity=".95"/>'+
+      svg += '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+(10.5*f).toFixed(2)+'" fill="'+DAYC[di%NDAYS]+'" opacity=".95"/>'+
         '<text x="'+p.x.toFixed(1)+'" y="'+(p.y+4.5*f).toFixed(1)+'" text-anchor="middle" class="stopnum" font-size="'+(13*f).toFixed(2)+'">'+n+'</text>';
       const txt = shortName(it, narrow?15:21), w = txt.length*6.1*f + 10*f, h = 15*f;
       const right = p.x < (R.x1+R.x2)/2;
@@ -1834,7 +1854,7 @@ function drawRoutes(){
   document.getElementById('routeLayer').innerHTML = svg;
   const chips = [['none','Nic'],['all','Celá cesta']].concat(S.days.map((d,i)=>d.length?[String(i),'Den '+(i+1)]:null).filter(Boolean));
   document.getElementById('routeChips').innerHTML = chips.map(c=>
-    '<button class="chip" data-route="'+c[0]+'" aria-pressed="'+String(routeMode===c[0])+'"'+(c[0]!=='none'&&c[0]!=='all'?' style="--cc:'+DAYC[+c[0]%5]+'"':'')+'>'+c[1]+'</button>').join('');
+    '<button class="chip" data-route="'+c[0]+'" aria-pressed="'+String(routeMode===c[0])+'"'+(c[0]!=='none'&&c[0]!=='all'?' style="--cc:'+DAYC[+c[0]%NDAYS]+'"':'')+'>'+c[1]+'</button>').join('');
   renderRouteInfo();
 }
 function renderRouteInfo(){
@@ -1876,7 +1896,7 @@ let fCat = 'all', fReg = 'all', fFav = false, fNik = false, fSort = 'nik';
    takže po návratu pokračuješ tam, kde jsi plánoval. */
 function activeDay(){
   const d = S.addDay;
-  return (typeof d==='number' && d>=0 && d<5) ? d : 0;
+  return (typeof d==='number' && d>=0 && d<NDAYS) ? d : 0;
 }
 const SORTS = {
   nik:  {lbl:'🌿 můj tip',      fn:(a,b)=> b.nik-a.nik || (b.gr?b.gr[0]:0)-(a.gr?a.gr[0]:0)},
@@ -1905,7 +1925,7 @@ function renderDayBar(){
   if(!bar) return;
   const ad = activeDay();
   bar.innerHTML = '<span class="lbl">Přidávám do'+q('addday')+'</span>' +
-    S.days.map((d,i)=>'<button data-adday="'+i+'" aria-pressed="'+String(i===ad)+'" style="--dc:'+DAYC[i%5]+'">Den '+(i+1)+
+    S.days.map((d,i)=>'<button data-adday="'+i+'" aria-pressed="'+String(i===ad)+'" style="--dc:'+DAYC[i%NDAYS]+'">Den '+(i+1)+
       (d.length?'<span class="cnt">'+d.length+'</span>':'')+'</button>').join('');
 }
 function renderSortChips(){
@@ -1994,7 +2014,7 @@ function renderCatalog(){
   ));
   document.getElementById('countLine').textContent =
     list.length + ' míst' + (fNik?' · 🌿 4+':'') + (fFav?' ve výběru':'') + (fReg!=='all' ? ' · '+REGS[fReg] : '');
-  const ad = activeDay(), adc = DAYC[ad%5];
+  const ad = activeDay(), adc = DAYC[ad%NDAYS];
   const wrap = document.getElementById('cardList');
   if(!list.length){
     wrap.innerHTML = '<div class="empty">Nic tu není — zkus jiný filtr.</div>';
@@ -2007,7 +2027,7 @@ function renderCatalog(){
     return '<article class="card'+(fav?' faved':'')+'" style="--cc:'+CATS[it.cat].color+';--ct:'+TINTS[it.cat]+'">'+
       '<div class="cardtop"><div class="cardname">'+esc(it.name)+'</div>'+
       (it.price?'<div class="price">'+esc(it.price)+'</div>':'')+'</div>'+
-      '<div class="cardmeta">'+metaFor(it)+(otherDay>=0?' · <b style="color:'+DAYC[otherDay%5]+'">už v dni '+(otherDay+1)+'</b>':'')+'</div>'+
+      '<div class="cardmeta">'+metaFor(it)+(otherDay>=0?' · <b style="color:'+DAYC[otherDay%NDAYS]+'">už v dni '+(otherDay+1)+'</b>':'')+'</div>'+
       grHtml(it) + nikHtml(it) +
       '<p class="carddesc">'+esc(it.desc)+'</p>'+
       (it.warn?'<div class="warnrow">⚠<span>'+esc(it.warn)+'</span></div>':'')+
@@ -2201,7 +2221,7 @@ function renderPlan(){
     if(!day.length) inner = '<div class="empty">Zatím prázdný den — přidej místa v katalogu nebo z mapy, nebo si nahoře načti můj návrh.</div>';
     const mood = dayMood(t);
     const dateLbl = t.date ? '<span class="daydate">'+DOW_SHORT[t.dow]+' '+fmtDate(t.date)+wxHtml(di)+'</span> ' : '';
-    return '<div class="day"><div class="dayhead"><span class="daynum serif">'+(di+1)+'</span>'+
+    return '<div class="day" style="--dc:'+DAYC[di%NDAYS]+'"><div class="dayhead"><span class="daynum serif">'+(di+1)+'</span>'+
       '<h3>Den '+(di+1)+' '+dateLbl+(mood?'<span class="mood m'+mood.i+'">'+mood.txt+'</span>'+q('mood'):'')+sum+'</h3>'+
       (day.length?'<a class="gnav lite daynav" target="_blank" rel="noopener" href="'+gnavUrl(dayStops(di))+'" title="Otevřít den v navigaci Google">🧭 Navigovat</a>'+q('nav')+'<button class="dayclear" data-clear="'+di+'">vyčistit</button>':'')+
       '</div>'+inner+'</div>';
@@ -2261,7 +2281,7 @@ document.addEventListener('click', e=>{
 });
 function applyTpl(n){
   S.days = TPL[n].map(a=>a.slice());
-  while(S.days.length<5) S.days.push([]);
+  while(S.days.length<NDAYS) S.days.push([]);
   S.alp = n>=4; /* návrhy se 4–5 dny jedou přes alpské mýto do Itálie */
   const ask = document.getElementById('tplAsk');
   ask.hidden = true; ask.innerHTML = '';
@@ -2390,7 +2410,7 @@ function tripCardSvg(){
   let y = 252;
   P.days.forEach((d,di)=>{
     if(!d.rows.length) return;
-    s += '<circle cx="60" cy="'+(y-6)+'" r="15" fill="'+DAYC[di%5]+'"/>';
+    s += '<circle cx="60" cy="'+(y-6)+'" r="15" fill="'+DAYC[di%NDAYS]+'"/>';
     s += '<text x="60" y="'+(y-1)+'" text-anchor="middle" font-family="'+SER+'" font-size="15" font-weight="bold" fill="#FFFDF6">'+(di+1)+'</text>';
     const dd = d.date ? DOW_SHORT[d.dow]+' '+fmtDate(d.date)+' · ' : '';
     s += '<text x="88" y="'+(y-10)+'" font-family="'+SAN+'" font-size="12" letter-spacing="1.6" fill="#6E6754">'+esc((dd+d.km+' KM · '+fmtMin(d.drive)).toUpperCase())+'</text>';
@@ -2426,7 +2446,7 @@ function tripCardSvg(){
   });
   buildLegs().forEach(l=>{
     const g = legGeomAll(l);
-    if(g) s += '<path d="'+g+'" fill="none" stroke="'+DAYC[l.di%5]+'" stroke-width="2.4" stroke-linecap="round" opacity=".85"/>';
+    if(g) s += '<path d="'+g+'" fill="none" stroke="'+DAYC[l.di%NDAYS]+'" stroke-width="2.4" stroke-linecap="round" opacity=".85"/>';
   });
   ids.forEach(id=>{
     const it = byId(id); if(!it) return;
@@ -2531,8 +2551,8 @@ document.addEventListener('click', e=>{
   if(e.target.closest('[data-inc-yes]')){
     const o = INCOMING;
     if(o){
-      S.days = o.d.slice(0,5).map(d=>Array.isArray(d) ? d.filter(id=>byId(id)) : []);
-      while(S.days.length<5) S.days.push([]);
+      S.days = o.d.slice(0,NDAYS).map(d=>Array.isArray(d) ? d.filter(id=>byId(id)) : []);
+      while(S.days.length<NDAYS) S.days.push([]);
       if(Array.isArray(o.f)) S.fav = o.f.filter(id=>byId(id));
       S.vign = !!o.v; S.alp = !!o.a;
       if(o.s && typeof o.s==='object'){
@@ -2776,9 +2796,9 @@ function renderDnes(){
   }
   if(dnesDay===null || !avail.includes(dnesDay)) dnesDay = todayIndex();
   if(dnesDay===null || !avail.includes(dnesDay)) dnesDay = avail[0];
-  chips.innerHTML = avail.map(i=>'<button class="chip" data-dnes="'+i+'" aria-pressed="'+String(i===dnesDay)+'" style="--cc:'+DAYC[i%5]+'">Den '+(i+1)+'</button>').join('');
+  chips.innerHTML = avail.map(i=>'<button class="chip" data-dnes="'+i+'" aria-pressed="'+String(i===dnesDay)+'" style="--cc:'+DAYC[i%NDAYS]+'">Den '+(i+1)+'</button>').join('');
   const P = calcPlan(), t = P.days[dnesDay];
-  const col = DAYC[dnesDay%5];
+  const col = DAYC[dnesDay%NDAYS];
   let html = '';
   const dateLbl = t.date ? DOW[t.dow]+' '+fmtDate(t.date) : 'Den '+(dnesDay+1);
   html += '<div class="sechead">'+esc(dateLbl)+' · '+t.km+' km · 🚐 '+fmtMin(t.drive)+
@@ -2977,6 +2997,9 @@ function renderAll(){
   ['km','cons','fuel','foodDay','buffer','rate'].forEach(k=>{ document.getElementById(k).value = I[k]; });
   document.getElementById('vign').checked = !!S.vign;
   document.getElementById('alp').checked = !!S.alp;
+  /* kdo měl uložený plán na pět dnů, dostane dva prázdné dny navíc a nic neztratí */
+  if(!Array.isArray(S.days)) S.days = [];
+  while(S.days.length < NDAYS) S.days.push([]);
   if(!S.start) S.start = {date:'', dep:480};
   if(!Array.isArray(S.done)) S.done = [];
   if(typeof S.addDay !== 'number') S.addDay = 0;

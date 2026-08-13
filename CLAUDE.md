@@ -57,7 +57,7 @@ ho zajímají.
 ## Co v5 umí (zachovat vše)
 
 - 6 záložek: Objevuj (katalog **93 míst**, filtry kategorie/regionu/🌿 Pro
-  Nikolu/♥), Mapa, Plán (dny 1–5), Dnes, Rozpočet, Sbalit (checklist).
+  Nikolu/♥), Mapa, Plán (dny 1–7), Dnes, Rozpočet, Sbalit (checklist).
 - **6 kategorií**: Koupání, Kempy & noclehy, Výlety, Farmy & nákup,
   **Pekárny & kavárny** (v5, klíč `pek`, barva `#8A5A33`), Na oběd.
 - **13 regionů**: 10× Salzkammergut (v5 přibyl `goi` Bad Goisern) +
@@ -145,6 +145,12 @@ ho zajímají.
   Esc nebo scroll. Texty vysvětlují hlavně to, co jinak není vidět —
   odkud se čísla berou a co je ověřené a co odhad. **Když přidáš prvek,
   který počítá nebo hádá číslo, přidej k němu i otazník.**
+
+- **Sedm dnů (v12)**: počet dnů drží konstanta `NDAYS = 7`, barvy dnů
+  `DAYC` mají sedm položek a den si barvu nese inline (nezáleží na
+  `nth-of-type`). Uložený plán z pěti dnů se při načtení doplní o dva
+  prázdné. Šablony 6 a 7 dnů přidávají Hallstatt s Gosau a druhou noc
+  ve stejném kempu, ať se každý den nebalí.
 
 ## Tvrdé zásady
 
