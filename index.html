@@ -22,7 +22,6 @@
   --gold:#DFA320;
   --fire:#D95A34;
   --deep:#1a1208;
-  --p:0;            /* postup scrollování 0–1, dopisuje JS */
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
@@ -31,24 +30,24 @@ body{
   font-family:'Karla',-apple-system,'Segoe UI',sans-serif;
   font-size:16px;line-height:1.5;overflow-x:hidden;
 }
-.serif{font-family:'Fraunces',Georgia,'Times New Roman',serif}
 a{color:inherit}
+a:focus-visible,button:focus-visible{outline:2.5px solid var(--gold);outline-offset:3px}
 
-/* ---------- únikový východ: kdo spěchá, klikne hned ---------- */
+/* ---------- únikový východ: kdo spěchá, je uvnitř na jeden klik ---------- */
 .skip{
   position:fixed;top:max(12px,env(safe-area-inset-top));right:12px;z-index:60;
   display:inline-flex;align-items:center;gap:7px;
   background:rgba(26,18,8,.5);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
   border:1.5px solid rgba(246,240,225,.4);border-radius:999px;
   padding:8px 14px;font-size:13px;font-weight:700;color:var(--paper);text-decoration:none;
+  opacity:var(--skip,1);pointer-events:var(--skippe,auto);
   transition:background .2s,border-color .2s;
 }
 .skip:hover,.skip:focus-visible{background:rgba(217,90,52,.9);border-color:var(--fire)}
-/* v závěru už je velké tlačítko, tak ať zkratka nepřekáží nadpisu */
-.skip{opacity:var(--skip,1);pointer-events:var(--skippe,auto)}
-a:focus-visible,button:focus-visible{outline:2.5px solid var(--gold);outline-offset:3px}
+/* kdo tu byl, ať se nemusí prokousávat vtipem podruhé */
+.skip.known{background:rgba(217,90,52,.92);border-color:var(--fire)}
 
-/* ---------- akt 1–3: lepivé jeviště ---------- */
+/* ---------- lepivé jeviště ---------- */
 .scroller{height:440vh;position:relative}
 .stage{
   position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;
@@ -56,42 +55,49 @@ a:focus-visible,button:focus-visible{outline:2.5px solid var(--gold);outline-off
 }
 .hero{
   position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 34%;
-  transform:scale(calc(1 + var(--p) * .18));
-  opacity:calc(1 - var(--p) * .92);
-  filter:blur(calc(var(--p) * 7px)) saturate(calc(1 - var(--p) * .65));
+  transform:scale(calc(1 + var(--p,0) * .16));
+  opacity:var(--heroO,1);
+  filter:blur(calc(var(--p,0) * 6px)) saturate(calc(1 - var(--p,0) * .7));
   will-change:transform,opacity,filter;
 }
-/* přítmí, které se zatahuje, jak král mizí */
 .scrim{
   position:absolute;inset:0;
-  background:radial-gradient(120% 90% at 50% 38%, rgba(26,18,8,0) 0%, rgba(26,18,8,.75) 65%, rgba(26,18,8,.96) 100%);
-  opacity:calc(var(--p) * 1.15);
+  background:radial-gradient(120% 90% at 50% 38%, rgba(26,18,8,.1) 0%, rgba(26,18,8,.72) 62%, rgba(26,18,8,.96) 100%);
+  opacity:calc(var(--p,0) * 1.2);
 }
 .vign{
   position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(to bottom, rgba(26,18,8,.55) 0%, rgba(26,18,8,0) 28%, rgba(26,18,8,0) 62%, rgba(26,18,8,.75) 100%);
+  background:linear-gradient(to bottom, rgba(26,18,8,.5) 0%, rgba(26,18,8,0) 26%, rgba(26,18,8,0) 60%, rgba(26,18,8,.72) 100%);
 }
-.actwrap{position:relative;z-index:3;text-align:center;padding:0 22px;width:100%}
 
-/* akt 1: koruna a pobídka — nadpis patří nad hlavu, ne přes oči */
-.act1{
+/* titulek nad korunou, ne přes oči */
+.kicker{
   position:absolute;left:0;right:0;z-index:4;text-align:center;
   top:calc(env(safe-area-inset-top) + 74px);
-  opacity:calc(1 - var(--p) * 4.5);
-}
-.kicker{
   font-size:11.5px;letter-spacing:.34em;text-transform:uppercase;font-weight:700;
   color:rgba(246,240,225,.82);text-shadow:0 2px 18px rgba(26,18,8,.9);
+  opacity:calc(1 - var(--p,0) * 5);
 }
-.hint{
+.arrow{
   position:absolute;left:0;right:0;bottom:max(26px,env(safe-area-inset-bottom));z-index:4;
-  text-align:center;font-size:12.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;
-  color:rgba(246,240,225,.8);opacity:calc(1 - var(--p) * 6);text-shadow:0 2px 14px rgba(26,18,8,.9);
+  text-align:center;font-size:19px;color:rgba(246,240,225,.85);
+  opacity:calc(1 - var(--p,0) * 7);text-shadow:0 2px 14px rgba(26,18,8,.9);
 }
-.hint .arrow{display:block;margin-top:7px;font-size:17px;animation:bob 1.9s ease-in-out infinite}
-@keyframes bob{0%,100%{transform:translateY(0);opacity:.75}50%{transform:translateY(6px);opacity:1}}
+/* dýchá jen vnitřní span — animace na rodiči by přebila mizení podle scrollu */
+.arrow span{display:inline-block;animation:bob 2.1s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(7px)}}
 
-/* akt 3: nápis */
+/* všechny repliky sedí přes sebe na stejném místě a střídají se */
+.actwrap{position:relative;z-index:3;display:grid;padding:0 22px;width:100%;text-align:center}
+.actwrap > *{grid-area:1/1;align-self:center;justify-self:center}
+
+.beat{
+  font-family:'Fraunces',Georgia,serif;font-weight:400;font-style:italic;
+  font-size:clamp(24px,7.4vw,44px);line-height:1.22;max-width:15ch;
+  color:var(--paper);text-shadow:0 4px 30px rgba(0,0,0,.6);
+  opacity:var(--o,0);
+  transform:translateY(calc((1 - var(--o,0)) * 16px));
+}
 .necum{
   font-family:'Fraunces',Georgia,serif;font-weight:650;line-height:.95;
   font-size:clamp(58px,19vw,190px);letter-spacing:-.01em;
@@ -102,88 +108,121 @@ a:focus-visible,button:focus-visible{outline:2.5px solid var(--gold);outline-off
   opacity:var(--o,0);
   transform:translateY(calc((1 - var(--o,0)) * 26px)) scale(calc(.86 + var(--o,0) * .14));
   filter:blur(calc((1 - var(--o,0)) * 12px));
-  color:var(--paper);
   text-shadow:0 6px 40px rgba(0,0,0,.55);
 }
 .necum .hl{color:var(--gold)}
+/* nápis a podtitulek jsou jeden blok, ať mezi nimi drží mezera */
+.payoff{display:flex;flex-direction:column;align-items:center;gap:clamp(16px,4.5vw,26px)}
 .sub{
-  margin-top:16px;font-size:clamp(15px,4.2vw,20px);color:rgba(246,240,225,.9);
-  max-width:26ch;margin-left:auto;margin-right:auto;font-style:italic;
-  opacity:var(--sub,0);transform:translateY(calc((1 - var(--sub,0)) * 14px));
+  font-size:clamp(14px,4vw,18px);color:rgba(246,240,225,.85);
+  max-width:24ch;font-style:italic;
+  opacity:var(--sub,0);transform:translateY(calc((1 - var(--sub,0)) * 12px));
 }
+/* odměna pro toho, kdo odscrolluje zpátky nahoru */
+.egg{
+  position:absolute;inset:0;z-index:5;display:grid;place-items:center;text-align:center;
+  padding:0 22px;pointer-events:none;opacity:0;transition:opacity .5s ease;
+}
+.egg.on{opacity:1}
+.egg p{
+  font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:400;
+  font-size:clamp(26px,8vw,52px);line-height:1.25;color:var(--paper);
+  text-shadow:0 4px 30px rgba(0,0,0,.75);
+}
+.egg b{display:block;font-style:normal;font-weight:650;color:var(--gold);margin-top:6px}
 
-/* ---------- akt 4: plánovač ---------- */
+/* ---------- závěr ---------- */
 .outro{
   position:relative;z-index:5;background:var(--paper);color:var(--ink);
   border-top:3px solid var(--ink);
-  padding:clamp(46px,11vw,92px) 22px calc(56px + env(safe-area-inset-bottom));
-  min-height:100svh;display:grid;align-content:center; /* ať pod ní neprosvítá tma */
+  padding:clamp(46px,11vw,86px) 22px calc(52px + env(safe-area-inset-bottom));
+  min-height:100svh;display:grid;align-content:center;
 }
 .band{display:flex;height:10px;position:absolute;top:-13px;left:0;right:0}
 .band i{flex:1}
 .band i:nth-child(1){background:#1D7A99}.band i:nth-child(2){background:#2F7D4F}
 .band i:nth-child(3){background:#DFA320}.band i:nth-child(4){background:#D95A34}
 .band i:nth-child(5){background:#8A5A33}.band i:nth-child(6){background:#C2497F}
-.outro .inner{max-width:660px;margin:0 auto;text-align:center}
-.outro h2{font-family:'Fraunces',Georgia,serif;font-weight:650;font-size:clamp(32px,8.5vw,54px);line-height:1.03}
+.outro .inner{max-width:640px;margin:0 auto;text-align:center}
+.outro .eyebrow{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--mut);font-weight:700}
+.outro h2{font-family:'Fraunces',Georgia,serif;font-weight:650;font-size:clamp(31px,8vw,50px);line-height:1.04;margin-top:8px}
 .outro h2 em{font-style:italic;font-weight:400;color:#1D7A99}
 .outro .lede{color:#57503f;margin-top:14px;font-size:clamp(15px,4vw,18px)}
+.who{
+  display:grid;gap:8px;margin:22px auto 0;max-width:430px;text-align:left;
+}
+.who div{
+  background:#FFFDF6;border:1.5px solid var(--line);border-left:6px solid var(--cc);
+  border-radius:12px;padding:9px 13px;font-size:14.5px;
+}
+.who b{font-family:'Fraunces',Georgia,serif;font-weight:600;margin-right:5px}
 .cta{
-  display:inline-flex;align-items:center;gap:10px;margin-top:26px;
+  display:inline-flex;align-items:center;gap:10px;margin-top:24px;
   background:var(--ink);color:var(--paper);border:1.5px solid var(--ink);border-radius:999px;
   padding:15px 26px;font-size:17px;font-weight:700;text-decoration:none;
   box-shadow:0 10px 26px rgba(32,29,23,.22);
 }
 .cta:hover,.cta:focus-visible{background:var(--fire);border-color:var(--fire)}
-.facts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:26px}
+.facts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:22px}
 .facts span{
   display:inline-flex;align-items:center;gap:7px;background:#FFFDF6;border:1.5px solid var(--line);
   border-radius:999px;padding:6px 13px;font-size:13px;font-weight:700;
 }
 .facts b{font-family:'Fraunces',Georgia,serif;font-size:15px;font-weight:650;color:var(--fire)}
-.foot{margin-top:30px;font-size:12.5px;color:var(--mut);font-style:italic}
+.foot{margin-top:26px;font-size:12.5px;color:var(--mut);font-style:italic}
+.foot a{color:var(--mut)}
 
-/* ---------- kdo nechce animace, dostane to naráz ---------- */
+/* ---------- bez animací: všechno naráz, nic se neztratí ---------- */
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   .scroller{height:auto}
-  /* relative, ne static — jinak by se fotka odkotvila od jeviště a překryla celou stránku */
-  .stage{position:relative;height:auto;min-height:88svh;padding:26vh 0}
-  /* bez animací se král neztrácí — jen ztmavne tak, aby přes něj šel text přečíst */
+  .stage{position:relative;height:auto;min-height:88svh;padding:24vh 0}
   .hero{opacity:.9;filter:none;transform:none}
   .scrim{opacity:.55}
-  .act1{position:static;opacity:1;margin-bottom:12vh}
-  .hint{display:none}
-  .necum span{opacity:1;transform:none;filter:none}
+  .kicker{position:static;opacity:1;margin-bottom:10vh}
+  .arrow,.egg{display:none}
+  .actwrap{gap:26px}
+  .actwrap > *{grid-area:auto}
+  .beat,.necum span{opacity:1;transform:none;filter:none}
   .sub{opacity:1;transform:none}
 }
 </style>
 </head>
-<body>
-<a class="skip" href="/planovac/">rovnou do plánovače →</a>
+<body id="top">
+<a class="skip" id="skip" href="/planovac/">rovnou do plánovače →</a>
 
 <div class="scroller" id="scroller">
   <div class="stage" id="stage">
-    <img class="hero" id="hero" src="/kral.jpg" alt="Zakrvácený král s korunou, za ním Kodaň při západu slunce a vlajka s nápisem Král Kodaně" fetchpriority="high" decoding="async">
+    <img class="hero" src="/kral.jpg" alt="Zakrvácený král s korunou, za ním Kodaň při západu slunce a vlajka s nápisem Král Kodaně" fetchpriority="high" decoding="async">
     <div class="scrim"></div>
     <div class="vign"></div>
 
-    <div class="act1"><div class="kicker">Jezera pro dva</div></div>
+    <div class="kicker">jezera pro dva</div>
 
     <div class="actwrap">
-      <h1 class="necum" id="necum" aria-label="Nečum"></h1>
-      <p class="sub" id="sub"></p>
+      <p class="beat" id="beat1">koukáš na něj už docela dlouho.</p>
+      <p class="beat" id="beat2">on taky.</p>
+      <div class="payoff">
+        <h1 class="necum" id="necum" aria-label="Nečum"></h1>
+        <p class="sub" id="sub">je to jenom fotka. jezera jsou jinde.</p>
+      </div>
     </div>
 
-    <div class="hint">scrolluj<span class="arrow">↓</span></div>
+    <div class="egg" id="egg" aria-hidden="true"><p>vážně?<b>říkal jsem nečum.</b></p></div>
+    <div class="arrow"><span>↓</span></div>
   </div>
 </div>
 
 <section class="outro">
   <div class="band" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
   <div class="inner">
-    <h2>Radši se koukej, <em>kam pojedeme</em></h2>
-    <p class="lede">Devadesát tři ověřených míst od rakouských jezer po Dolomity — kempy, pekárny, farmy a koupání. Ke každému dni kilometry, časy příjezdu, otvíračky a navigace na jeden klik.</p>
+    <div class="eyebrow">tak jo, tady to máš</div>
+    <h2>Pět dní, dvě země, <em>jedna dodávka</em></h2>
+    <p class="lede">Trasa, kde spíme, kolik to stojí a kde se dá ráno koupit chleba. Devadesát tři míst od rakouských jezer po Dolomity — u každého dne kilometry, časy příjezdu, otvíračky a navigace na jeden klik.</p>
+    <div class="who">
+      <div style="--cc:#1D7A99"><b>Marek:</b> kilometry, nafta, kolik to celé stojí.</div>
+      <div style="--cc:#2F7D4F"><b>Nikola:</b> kde je klid a kde mají ráno otevřeno.</div>
+    </div>
     <a class="cta" href="/planovac/">Otevřít plánovač →</a>
     <div class="facts">
       <span><b>93</b> míst</span>
@@ -191,17 +230,16 @@ a:focus-visible,button:focus-visible{outline:2.5px solid var(--gold);outline-off
       <span><b>2</b> země</span>
       <span><b>1</b> král</span>
     </div>
-    <p class="foot">Král na tebe dohlédne, ať to naplánuješ pořádně.</p>
+    <p class="foot">Žádná registrace, běží to na jednom telefonu a jednom notebooku.<br>Král Kodaně na tuhle cestu nejede. — <a href="#top">zpátky nahoru</a>, jestli chceš zase čumět</p>
   </div>
 </section>
 
 <script>
-/* Sdílený plán míří do plánovače, ne na tuhle stránku — staré odkazy nesmí spadnout. */
+/* Sdílený plán míří do plánovače, ne sem — staré odkazy nesmí spadnout. */
 if(location.hash && /[#&]p=/.test(location.hash)){
   location.replace('/planovac/' + location.hash);
 }
 
-const SUB = 'Kouká na tebe od začátku. Ty na něj taky.';
 const NECUM = 'NEČUM';
 const necumEl = document.getElementById('necum');
 NECUM.split('').forEach((ch,i)=>{
@@ -211,29 +249,54 @@ NECUM.split('').forEach((ch,i)=>{
   necumEl.appendChild(s);
 });
 const letters = [...necumEl.children];
+const beat1 = document.getElementById('beat1');
+const beat2 = document.getElementById('beat2');
 const subEl = document.getElementById('sub');
-subEl.textContent = SUB;
-const scroller = document.getElementById('scroller');
+const eggEl = document.getElementById('egg');
 const stage = document.getElementById('stage');
+const scroller = document.getElementById('scroller');
+const skip = document.getElementById('skip');
+const root = document.documentElement;
 
 const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
 const between = (p,a,b) => clamp((p-a)/(b-a), 0, 1);
+/* replika naskočí a zase zhasne, ať se nepřekrývají */
+const pulse = (p,inA,inB,outA,outB) => between(p,inA,inB) * (1 - between(p,outA,outB));
 
-let ticking = false;
+/* kdo už tu byl, dostane rovnou výraznou zkratku místo celého vtipu */
+try{
+  if(localStorage.getItem('necum_seen')){
+    skip.classList.add('known');
+    skip.textContent = 'tohle už znáš → plánovač';
+  }
+}catch(e){}
+
+let seenEnd = false, ticking = false;
 function frame(){
   ticking = false;
   const total = scroller.offsetHeight - window.innerHeight;
   const p = total>0 ? clamp((window.scrollY - scroller.offsetTop) / total, 0, 1) : 0;
   stage.style.setProperty('--p', p.toFixed(4));
-  /* písmena naskakují po jednom, ať to má tempo */
+  stage.style.setProperty('--heroO', (1 - between(p, 0.06, 0.5) * 0.93).toFixed(3));
+
+  beat1.style.setProperty('--o', pulse(p, 0.08, 0.16, 0.26, 0.32).toFixed(3));
+  beat2.style.setProperty('--o', pulse(p, 0.32, 0.40, 0.50, 0.56).toFixed(3));
   letters.forEach((el,i)=>{
-    const start = 0.42 + i*0.05;
-    el.style.setProperty('--o', between(p, start, start+0.16).toFixed(3));
+    const start = 0.56 + i*0.04;
+    el.style.setProperty('--o', between(p, start, start+0.12).toFixed(3));
   });
-  subEl.style.setProperty('--sub', between(p, 0.78, 0.93).toFixed(3));
-  const s = 1 - between(p, 0.88, 1);
-  document.documentElement.style.setProperty('--skip', s.toFixed(3));
-  document.documentElement.style.setProperty('--skippe', s < 0.05 ? 'none' : 'auto');
+  subEl.style.setProperty('--sub', between(p, 0.86, 0.95).toFixed(3));
+
+  const s = 1 - between(p, 0.9, 1);
+  root.style.setProperty('--skip', s.toFixed(3));
+  root.style.setProperty('--skippe', s < 0.05 ? 'none' : 'auto');
+
+  if(p > 0.97 && !seenEnd){
+    seenEnd = true;
+    try{ localStorage.setItem('necum_seen','1'); }catch(e){}
+  }
+  /* vrátil ses nahoru? král má připomínku. */
+  eggEl.classList.toggle('on', seenEnd && p < 0.1);
 }
 function onScroll(){ if(!ticking){ ticking = true; requestAnimationFrame(frame); } }
 
@@ -242,7 +305,7 @@ if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
   window.addEventListener('resize', onScroll);
   frame();
 }else{
-  letters.forEach(el=>el.style.setProperty('--o','1'));
+  [beat1, beat2, ...letters].forEach(el=>el.style.setProperty('--o','1'));
   subEl.style.setProperty('--sub','1');
 }
 </script>
