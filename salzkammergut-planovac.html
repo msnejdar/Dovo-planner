@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>Jezera pro dva · Salzkammergut plánovač</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,650&family=Karla:wght@400;500;700&display=swap');
+
+:root{
+  color-scheme:only light;
+  --paper:#F6F0E1;
+  --panel:#FFFDF6;
+  --ink:#201D17;
+  --mut:#6E6754;
+  --line:#E0D5BC;
+  --plaz:#1D7A99;
+  --kemp:#2F7D4F;
+  --vylet:#DFA320;
+  --gastro:#D95A34;
+  --lakefill:#A7CBD6;
+  --r:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+html,body{background:var(--paper)!important;color:var(--ink)!important}
+body{
+  font-family:'Karla',-apple-system,'Segoe UI',sans-serif;
+  font-size:15.5px;line-height:1.5;
+}
+.bgfix{position:fixed;inset:0;background:var(--paper);z-index:-1;pointer-events:none}
+.serif{font-family:'Fraunces',Georgia,'Times New Roman',serif}
+.band{display:flex;height:10px}
+.band i{flex:1}
+.band i:nth-child(1){background:var(--plaz)}
+.band i:nth-child(2){background:var(--kemp)}
+.band i:nth-child(3){background:var(--vylet)}
+.band i:nth-child(4){background:var(--gastro)}
+
+/* ---------- header ---------- */
+header{padding:24px 18px 10px;max-width:760px;margin:0 auto}
+.eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--mut);font-weight:700}
+h1{font-family:'Fraunces',Georgia,serif;font-weight:650;font-size:40px;line-height:1.02;margin:6px 0 8px;color:var(--ink)}
+h1 em{font-style:italic;font-weight:400;color:var(--plaz)}
+.sub{color:#57503f;max-width:46ch}
+.metaline{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:12.5px;color:var(--mut);font-weight:700}
+.metaline span::before{content:"·";margin-right:14px;color:var(--line)}
+.metaline span:first-child::before{content:""}
+
+/* ---------- nav ---------- */
+nav{
+  position:sticky;top:0;z-index:50;
+  background:var(--paper);
+  border-bottom:2px solid var(--ink);
+  padding:10px 14px;
+}
+.tabs{display:flex;gap:6px;max-width:760px;margin:0 auto;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{
+  border:1.5px solid var(--ink);background:var(--panel);color:var(--ink);
+  border-radius:999px;padding:8px 15px;font:inherit;font-weight:700;font-size:13.5px;
+  white-space:nowrap;cursor:pointer;
+}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--paper)}
+.tab .n{font-weight:400;opacity:.65;margin-left:3px}
+.tab:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2.5px solid var(--plaz);outline-offset:2px}
+
+main{max-width:760px;margin:0 auto;padding:4px 16px 90px}
+section[hidden]{display:none}
+
+/* ---------- chips / filters ---------- */
+.filterlabel{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--mut);font-weight:700;margin:16px 2px 6px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{
+  border:1.5px solid var(--line);background:var(--panel);color:var(--ink);
+  border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.chip .dot{width:9px;height:9px;border-radius:50%;flex:none}
+.chip[aria-pressed="true"]{border-color:var(--cc,var(--ink));background:var(--cc,var(--ink));color:#FFFDF6}
+.chip[aria-pressed="true"] .dot{background:#FFFDF6!important}
+.count{color:var(--mut);font-size:13px;margin:14px 2px 4px;font-weight:700}
+
+/* ---------- cards ---------- */
+.cards{display:flex;flex-direction:column;gap:12px;margin-top:8px}
+.card{
+  background:var(--ct,var(--panel));
+  border:1.5px solid var(--line);
+  border-left:7px solid var(--cc,var(--ink));
+  border-radius:var(--r);
+  padding:14px 14px 12px;position:relative;
+}
+.card.faved{border-color:var(--cc,var(--ink))}
+.cardtop{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.cardname{font-family:'Fraunces',Georgia,serif;font-size:19.5px;font-weight:600;line-height:1.15;color:var(--ink)}
+.cardname .dot{display:none}
+.price{
+  font-size:12.5px;font-weight:700;white-space:nowrap;color:var(--ink);
+  background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:3px 10px;
+}
+.cardmeta{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--cc,var(--mut));font-weight:700;margin:4px 0 6px}
+.carddesc{color:#453f30;font-size:14.5px}
+.cardacts{display:flex;gap:8px;margin-top:11px;align-items:center;flex-wrap:wrap}
+.abtn{
+  border:1.5px solid var(--ink);background:#fff;color:var(--ink);border-radius:999px;
+  padding:6px 13px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;
+  display:inline-flex;align-items:center;gap:5px;
+}
+.abtn.on{background:var(--gastro);border-color:var(--gastro);color:#fff}
+.abtn.link{border-color:var(--line);color:var(--mut);background:transparent}
+.daypick{display:none;gap:6px;margin-top:10px;flex-wrap:wrap}
+.daypick.open{display:flex}
+.daypick button{
+  border:1.5px dashed var(--ink);background:#fff;border-radius:12px;
+  padding:7px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;color:var(--ink);
+}
+.daypick button.added{border-style:solid;background:var(--ink);color:var(--paper)}
+.empty{border:1.5px dashed var(--line);border-radius:var(--r);padding:22px;text-align:center;color:var(--mut);background:var(--panel)}
+
+/* ---------- map ---------- */
+.mapwrap{background:var(--panel);border:1.5px solid var(--ink);border-radius:var(--r);padding:8px 6px 2px;margin-top:14px}
+svg text{font-family:'Fraunces',Georgia,serif}
+.lakelabel{font-size:15px;font-style:italic;fill:var(--ink)}
+.townlabel{font-size:11.5px;letter-spacing:.14em;fill:var(--mut);font-family:'Karla',sans-serif;font-weight:700;text-transform:uppercase}
+.mdot{cursor:pointer;stroke:#FFFDF6;stroke-width:2.2}
+.mdot:hover{stroke:var(--ink)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;padding:10px 10px 14px;font-size:12.5px;color:var(--ink);font-weight:700}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.maphint{font-size:12.5px;color:var(--mut);padding:0 12px 12px;font-style:italic}
+
+/* ---------- plan ---------- */
+.stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.stats span{
+  display:inline-flex;align-items:center;gap:7px;
+  background:var(--ct);border:1.5px solid var(--cc);color:var(--ink);
+  border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:700;
+}
+.stats i{width:9px;height:9px;border-radius:50%;background:var(--cc);flex:none}
+.day{
+  background:var(--panel);border:1.5px solid var(--line);
+  border-top:7px solid var(--dc,var(--ink));
+  border-radius:var(--r);padding:14px;margin-top:14px;
+}
+.day:nth-of-type(5n+1){--dc:var(--plaz)}
+.day:nth-of-type(5n+2){--dc:var(--kemp)}
+.day:nth-of-type(5n+3){--dc:var(--vylet)}
+.day:nth-of-type(5n+4){--dc:var(--gastro)}
+.day:nth-of-type(5n+5){--dc:var(--ink)}
+.dayhead{display:flex;align-items:center;gap:11px;margin-bottom:8px}
+.daynum{
+  width:35px;height:35px;border-radius:50%;background:var(--dc,var(--ink));color:#FFFDF6;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Fraunces',Georgia,serif;font-size:17px;font-weight:600;
+}
+.dayhead h3{font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:18px;flex:1;color:var(--ink)}
+.dayclear{border:none;background:none;color:var(--mut);font:inherit;font-size:12.5px;cursor:pointer;text-decoration:underline}
+.pitem{display:flex;align-items:center;gap:9px;padding:8px 0}
+.pitem .dot{width:10px;height:10px;border-radius:50%;flex:none}
+.pitem .pn{flex:1;min-width:0}
+.pitem .pn b{font-weight:700}
+.pitem .pn small{display:block;color:var(--mut);font-size:12px}
+.pbtn{border:1.5px solid var(--line);background:#fff;border-radius:9px;width:29px;height:29px;font-size:13px;cursor:pointer;color:var(--ink);flex:none}
+.transfer{
+  display:flex;align-items:center;gap:8px;color:var(--mut);font-size:12px;font-weight:700;
+  padding:1px 0 1px 3px;
+}
+.transfer::before,.transfer::after{content:"";flex:0 0 22px;border-top:2px dashed var(--line)}
+.planintro{color:#57503f;font-size:14px;margin-top:10px}
+.bigbtn{
+  border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);border-radius:999px;
+  padding:11px 18px;font:inherit;font-weight:700;font-size:14px;cursor:pointer;margin-top:16px;
+}
+
+/* ---------- budget ---------- */
+.budget{background:var(--panel);border:1.5px solid var(--ink);border-radius:var(--r);padding:16px;margin-top:14px}
+.brow{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1.5px dashed var(--line);font-size:14.5px;align-items:center}
+.brow:last-of-type{border-bottom:none}
+.brow .bl{color:#453f30}
+.brow .bl small{display:block;color:var(--mut);font-size:12px}
+.brow .bv{font-weight:700;white-space:nowrap;color:var(--ink)}
+.binputs{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:12px 0 4px}
+.binput label{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);font-weight:700;margin-bottom:3px}
+.binput input{
+  width:100%;border:1.5px solid var(--line);border-radius:11px;background:#fff;
+  padding:8px 10px;font:inherit;font-size:15px;color:var(--ink);
+}
+.totalbox{
+  margin-top:14px;border-top:2px solid var(--ink);padding-top:12px;
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;
+}
+.totalbox .t1{font-family:'Fraunces',Georgia,serif;font-size:28px;font-weight:650;color:var(--gastro)}
+.totalbox .t2{color:var(--mut);font-size:14px;font-weight:700}
+.togglerow{display:flex;align-items:center;gap:9px;padding:7px 0;font-size:14.5px}
+.togglerow input{width:17px;height:17px;accent-color:var(--kemp)}
+
+/* ---------- checklist ---------- */
+.ckgroup{background:var(--panel);border:1.5px solid var(--line);border-radius:var(--r);padding:14px;margin-top:12px}
+.ckgroup:nth-of-type(5n+1){border-left:7px solid var(--plaz)}
+.ckgroup:nth-of-type(5n+2){border-left:7px solid var(--kemp)}
+.ckgroup:nth-of-type(5n+3){border-left:7px solid var(--vylet)}
+.ckgroup:nth-of-type(5n+4){border-left:7px solid var(--gastro)}
+.ckgroup:nth-of-type(5n+5){border-left:7px solid var(--ink)}
+.ckgroup h3{font-family:'Fraunces',Georgia,serif;font-size:17px;font-weight:600;margin-bottom:6px;color:var(--ink)}
+.ck{display:flex;align-items:flex-start;gap:10px;padding:6px 0;font-size:14.5px}
+.ck input{width:18px;height:18px;margin-top:1px;accent-color:var(--kemp);flex:none}
+.ck label{cursor:pointer;color:var(--ink)}
+.ck input:checked + label{color:var(--mut);text-decoration:line-through}
+.addrow{display:flex;gap:8px;margin-top:12px}
+.addrow input{flex:1;border:1.5px solid var(--line);border-radius:999px;background:#fff;padding:9px 14px;font:inherit;font-size:14px;color:var(--ink)}
+.addrow button{border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);border-radius:999px;padding:0 16px;font:inherit;font-weight:700;cursor:pointer}
+
+.note{font-size:13px;color:var(--mut);margin-top:14px;font-style:italic}
+.savednote{font-size:12px;color:var(--mut);text-align:center;margin-top:26px}
+
+/* ---------- print ---------- */
+#printhead{display:none}
+@media print{
+  nav,#tab-objevuj,#tab-mapa,.cardacts,.daypick,.dayclear,.pbtn,.bigbtn,.addrow,.savednote,.band,.bgfix{display:none!important}
+  section[hidden]{display:block!important}
+  #tab-sbalit{display:none!important}
+  html,body{background:#fff!important;font-size:12.5px}
+  .day,.budget{border-color:#bbb;break-inside:avoid}
+  #printhead{display:block;margin-bottom:10px}
+  main{padding-bottom:0}
+}
+@media (prefers-reduced-motion:no-preference){
+  .card,.chip,.abtn{transition:border-color .15s,background .15s,color .15s}
+}
+@media (min-width:640px){
+  h1{font-size:48px}
+}
+
+/* ---------- v3: rest category, real map, minis, templates, day sums ---------- */
+:root{--rest:#C2497F}
+.band i:nth-child(5){background:var(--rest)}
+#realmap{height:430px;border-radius:12px;overflow:hidden;background:#DDE7E9}
+#realmap .leaflet-container{font-family:'Karla',sans-serif}
+.leaflet-popup-content{font-size:13.5px;line-height:1.4}
+.leaflet-popup-content b{font-family:'Fraunces',Georgia,serif;font-size:15px}
+.leaflet-popup-content a{color:var(--plaz);font-weight:700}
+#svgFallback[hidden]{display:none}
+.mapnote{display:none;font-size:13px;color:var(--gastro);font-weight:700;padding:8px 12px 0}
+.mini{height:175px;border:1.5px solid var(--line);border-radius:12px;overflow:hidden;margin-top:10px;background:#DDE7E9}
+.mini[hidden]{display:none}
+.minifallback{padding:14px;font-size:13px;color:var(--mut);background:var(--panel);height:auto}
+.linkrow{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
+.linkrow a,.linkrow button{
+  border:1.5px solid var(--line);background:#fff;color:var(--ink);border-radius:999px;
+  padding:5px 11px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;text-decoration:none;
+}
+.linkrow .mapbtn{border-color:var(--ink)}
+.tpl{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:14px;background:var(--panel);border:1.5px dashed var(--ink);border-radius:var(--r);padding:12px}
+.tpl b{font-family:'Fraunces',Georgia,serif;font-size:15px;margin-right:2px}
+.tpl button{border:1.5px solid var(--ink);background:#fff;color:var(--ink);border-radius:999px;padding:7px 14px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.tpl button:active{background:var(--ink);color:var(--paper)}
+.tpl small{flex-basis:100%;color:var(--mut)}
+.dsum{display:block;font-family:'Karla',sans-serif;font-size:11.5px;color:var(--mut);letter-spacing:.02em;font-weight:700;margin-top:2px}
+.dsum.full{color:var(--gastro)}
+.usekm{border:1.5px solid var(--ink);background:#fff;border-radius:999px;padding:3px 10px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;margin-left:7px}
+@media print{ #realmap,.mini,.linkrow,.tpl,.mapnote{display:none!important} }
+
+/* ---------- v4: vlastní vektorová mapa, výběr místa, Nikola ---------- */
+#bigsvg{width:100%;height:auto;display:block;border-radius:12px;background:#F1EADA}
+.mdot,.mheart{cursor:pointer;stroke:#FFFDF6;stroke-width:2}
+.mdot.sel,.mheart.sel{stroke:#201D17;stroke-width:2.5}
+.stopnum{font-family:'Karla',sans-serif;font-size:13px;font-weight:700;fill:#FFFDF6}
+#mapSel{background:var(--panel);border:1.5px solid var(--ink);border-radius:var(--r);padding:13px;margin-top:10px}
+#mapSel .cardname{font-size:18px}
+#mapSel .empty{border:none;padding:4px 0;text-align:left}
+.nik{font-size:12.5px;font-weight:700;color:var(--kemp);letter-spacing:.04em}
+.niknote{font-size:12.5px;color:var(--mut);font-style:italic}
+.gr{font-size:12.5px;font-weight:700;color:var(--ink)}
+.gr a{color:var(--ink)}
+.nikrow{margin:5px 0 2px}
+.wandrow{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.wand{border:1.5px solid var(--ink);background:#fff;color:var(--ink);border-radius:999px;padding:8px 14px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.mini{height:auto;background:var(--panel)}
+.mini svg{width:100%;height:175px;display:block}
+.scalebar{stroke:#201D17;stroke-width:2}
+.scaletxt{font-family:'Karla',sans-serif;font-size:11px;font-weight:700;fill:#201D17}
+@media print{ #mapSel,#routeChips{display:none!important} }
+</style>
+</head>
+<body>
+<div class="bgfix" aria-hidden="true"></div>
+<div class="band" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+<header>
+  <div class="eyebrow">Salzkammergut · plánovač k Californii</div>
+  <h1>Jezera <em>pro dva</em></h1>
+  <p class="sub">Vyber si, co tě láká — srdíčkem do výběru, plusem rovnou do dne. Nebo si načti můj hotový návrh a přeskládej ho po svém.</p>
+  <div class="metaline"><span>start: České Budějovice</span><span>1–5 dní</span><span>ceny = hlavní sezóna 2026, pro dva</span></div>
+</header>
+
+<div id="printhead">
+  <div class="eyebrow">Salzkammergut · srpen 2026 · VW California</div>
+  <h1 style="font-size:26px">Jezera pro dva — plán</h1>
+</div>
+
+<nav aria-label="Sekce">
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-tab="objevuj">Objevuj</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="mapa">Mapa</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="plan">Plán <span class="n" id="planCount"></span></button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="rozpocet">Rozpočet</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="sbalit">Sbalit</button>
+  </div>
+</nav>
+
+<main>
+
+<!-- ============ OBJEVUJ ============ -->
+<section id="tab-objevuj">
+  <div class="filterlabel">Co hledáš</div>
+  <div class="chips" id="catChips"></div>
+  <div class="filterlabel">Kde</div>
+  <div class="chips" id="regChips"></div>
+  <div class="count" id="countLine"></div>
+  <div class="cards" id="cardList"></div>
+</section>
+
+<!-- ============ MAPA ============ -->
+<section id="tab-mapa" hidden>
+  <div class="filterlabel">Trasa na mapě</div>
+  <div class="chips" id="routeChips"></div>
+  <div class="mapwrap" style="padding:8px">
+    <svg id="bigsvg" viewBox="0 0 1000 1045" role="img" aria-label="Mapa Salzkammergutu podle skutečných souřadnic"></svg>
+  </div>
+  <div id="mapSel"><div class="empty">Klepni na bod v mapě — srdíčka z výběru tu svítí jako ♥ v barvě kategorie.</div></div>
+  <div class="legend" id="mapLegend"></div>
+  <p class="maphint">Mapa je kreslená podle skutečných souřadnic. Detail místa vždy otevřeš přes Google Maps / Mapy.cz.</p>
+</section>
+
+<!-- ============ PLÁN ============ -->
+<section id="tab-plan" hidden>
+  <div class="tpl">
+    <b>Můj návrh (laděno pro Nikolu):</b>
+    <button data-tpl="3">3 dny</button>
+    <button data-tpl="4">4 dny</button>
+    <button data-tpl="5">5 dní</button>
+    <small>Klid, farmy a menší kempy místo davů. Hallstatt jen jako ranní zastávka. Načte se do dnů níž — pak přeskládej po svém.</small>
+  </div>
+  <div class="wandrow">
+    <button class="wand" id="wandBtn">🪄 Srovnat dny podle mapy</button>
+    <small style="color:var(--mut)">seřadí zastávky v každém dni tak, aby se jelo co nejmíň</small>
+  </div>
+  <p class="planintro">U každého dne vidíš čas za volantem, kilometry a čas na místech — včetně přejezdů mezi dny a návratu domů. Nové místo se do dne zařadí samo tam, kam patří.</p>
+  <div class="stats" id="planStats"></div>
+  <div id="daysWrap"></div>
+  <button class="bigbtn" onclick="window.print()">Vytisknout / uložit PDF</button>
+</section>
+
+<!-- ============ ROZPOČET ============ -->
+<section id="tab-rozpocet" hidden>
+  <div class="budget">
+    <div id="bNights"></div>
+    <div id="bActs"></div>
+    <div id="bKm"></div>
+    <div class="togglerow"><input type="checkbox" id="vign" checked><label for="vign">Digitální dálniční známka 10 dní (~12,50 €)</label></div>
+    <div class="binputs">
+      <div class="binput"><label for="km">Km celkem</label><input id="km" type="number" inputmode="numeric" value="650"></div>
+      <div class="binput"><label for="cons">Spotřeba l/100</label><input id="cons" type="number" inputmode="decimal" step="0.5" value="10"></div>
+      <div class="binput"><label for="fuel">Nafta €/l</label><input id="fuel" type="number" inputmode="decimal" step="0.01" value="1.65"></div>
+      <div class="binput"><label for="foodDay">Jídlo €/den</label><input id="foodDay" type="number" inputmode="numeric" value="60"></div>
+      <div class="binput"><label for="buffer">Rezerva €</label><input id="buffer" type="number" inputmode="numeric" value="50"></div>
+      <div class="binput"><label for="rate">Kurz Kč/€</label><input id="rate" type="number" inputmode="decimal" step="0.1" value="24.6"></div>
+    </div>
+    <div id="bRows"></div>
+    <div class="totalbox"><div class="t1" id="totalEur">0 €</div><div class="t2" id="totalCzk"></div></div>
+  </div>
+  <p class="note">Ceny kempů = 2 osoby + obytné auto + elektřina v hlavní sezóně; obědy v restauracích spadají do položky „Jídlo €/den“. U položek „ověř“ zavolej — menší kempy mění ceník a berou hotovost.</p>
+</section>
+
+<!-- ============ SBALIT ============ -->
+<section id="tab-sbalit" hidden>
+  <div id="ckWrap"></div>
+  <div class="addrow">
+    <input id="ckNew" type="text" placeholder="Přidat vlastní položku…" aria-label="Nová položka">
+    <button onclick="addCustom()">Přidat</button>
+  </div>
+</section>
+
+<p class="savednote">Výběr, plán i odškrtnuté položky zůstávají uložené — příště pokračuješ, kde jsi skončila.</p>
+</main>
+<script>
+/* ================= DATA ================= */
+const CATS = {
+  plaz:   {label:'Koupání',        color:'#1D7A99'},
+  kemp:   {label:'Kempy & noclehy',color:'#2F7D4F'},
+  vylet:  {label:'Výlety',         color:'#DFA320'},
+  gastro: {label:'Farmy & nákup',  color:'#D95A34'},
+  rest:   {label:'Na oběd',        color:'#C2497F'}
+};
+const TINTS = {plaz:'#E4EFF3',kemp:'#E7F0E3',vylet:'#F7EDD2',gastro:'#F9E4D8',rest:'#F6E3ED'};
+const REGS = {
+  cesta:'Po cestě', irr:'Irrsee', mon:'Mondsee', att:'Attersee', fus:'Fuschlsee',
+  wol:'Wolfgangsee', isc:'Bad Ischl', hal:'Hallstatt & Gosau', tra:'Traunsee & Gmunden'
+};
+const FROM_CB = {cesta:[45,40], irr:[170,215], mon:[165,215], att:[150,195], fus:[185,235], wol:[190,240], isc:[185,230], hal:[210,255], tra:[140,175]};
+const CB_LL = [48.9747,14.4744];
+const enc = encodeURIComponent;
+const gUrl = it => 'https://www.google.com/maps/search/?api=1&query=' + enc((it.q || (it.name+', '+it.t)) + ', Österreich');
+const mUrl = it => 'https://mapy.cz/fnc/v1/showmap?mapset=outdoor&center=' + it.ll[1] + ',' + it.ll[0] + '&zoom=16&marker=true';
+
+/* ll:[lat,lng] · t: obec · dur: min na místě · gr:[★,počet] Google · nik: 1–5 pro Nikolu + nn poznámka */
+const ITEMS = [
+/* ---- koupání ---- */
+{id:'p1',cat:'plaz',reg:'irr',ll:[47.8916,13.3168],t:'Zell am Moos',dur:120,gr:[4.7,192],nik:4,nn:'teplo a zázemí, o víkendu plněji',name:'Badeplatz Tiefgraben',price:'park 5 €',q:'Badeplatz Tiefgraben Irrsee',
+ desc:'Nejteplejší voda široko daleko (24–26 °C), mělký vstup po molu, WC i sprchy. Skoro žádný stín — vezmi slunečník.'},
+{id:'p2',cat:'plaz',reg:'irr',ll:[47.9041,13.3158],t:'Zell am Moos',dur:120,gr:[4.5,138],nik:5,nn:'zemská louka, klid a teplá voda',name:'Badeplatz Zell am Moos',price:'zdarma',
+ desc:'Zemská pláž s loukou a restaurací vedle — klidnější sourozenec Tiefgrabenu na stejném teplém jezeře.'},
+{id:'p3',cat:'plaz',reg:'mon',ll:[47.8508,13.3483],t:'Mondsee',dur:150,pp:5,gr:[4.6,3176],nik:3,nn:'fajn, ale plné rodin',name:'Alpenseebad Mondsee',price:'~5 €/os',
+ desc:'Velké jezerní koupaliště: mělká laguna, skluzavky, stín pod stromy, restaurace s výhledem na Drachenwand.'},
+{id:'p4',cat:'plaz',reg:'att',ll:[47.8381,13.5434],t:'Steinbach am Attersee',dur:120,gr:[4.7,254],nik:4,nn:'teplá zátoka, večer se vylidní',name:'Strandbad Steinbach',price:'host Grabner zdarma',
+ desc:'Závětrná zátoka s nejteplejší vodou na Attersee, skokanské prkno a skluzavka. Hosté kempu Grabner mají vstup v ceně; parkoviště je malé, choď pěšky.'},
+{id:'p5',cat:'plaz',reg:'att',ll:[47.8845,13.5265],t:'Nußdorf am Attersee',dur:90,nik:4,nn:'čistá voda, málo lidí',name:'Badeplätze Nußdorf',price:'park 4–8 €',q:'Badeplatz Nußdorf am Attersee',
+ desc:'Průzračná, ale studenější voda (20–22 °C) — na osvěžení v horkém dni. Břeh je z velké části soukromý, drž se značených plácků.'},
+{id:'p6',cat:'plaz',reg:'wol',ll:[47.7350,13.4546],t:'St. Wolfgang',dur:120,gr:[4.6,239],nik:5,nn:'klidná přírodní zátoka zdarma',name:'Badeplatz St. Wolfgang (Bürglstein)',price:'zdarma',q:'Öffentlicher Badeplatz St. Wolfgang',
+ desc:'Veřejná přírodní pláž na poloostrově kousek od městečka — čistá voda, labutě, výhled na Schafberg. Otevřeno nonstop.'},
+{id:'p7',cat:'plaz',reg:'fus',ll:[47.8008,13.2749],t:'Fuschl am See',dur:75,gr:[4.2,476],nik:3,nn:'nádherná voda, ale soukromé a za vstup',name:'Badeplatz Stöllinger · Fuschl',price:'~6 €/os',
+ desc:'Voda pitné kvality v barvě lahvového skla, chladnější (20–22 °C). Soukromá louka — platí se vstup na osobu a majitelka ho vybírá důsledně.'},
+{id:'p8',cat:'plaz',reg:'hal',ll:[47.5586,13.6781],t:'Obertraun',dur:120,gr:[4.8,577],nik:5,nn:'výhled na Hallstatt bez hallstattských davů',name:'Strandbad Obertraun',price:'zdarma',
+ desc:'Obecní pláž na klidné straně Hallstättersee: mola, skluzavka, hřiště, převlékárny — a Hallstatt jako kulisa přes vodu. Voda ledovcová, ~20 °C.'},
+{id:'p9',cat:'plaz',reg:'tra',ll:[47.8095,13.7900],t:'Ebensee',dur:90,gr:[3.7,70],nik:4,nn:'oblázky a hory; jen to parkovné',name:'Rindbach, Ebensee',price:'park až 12 €/den',
+ desc:'Oblázková pláž na jižním konci Traunsee, pod stěnami Höllengebirge. Míň lidí než na severu jezera; parkoviště je ale drahé — přijeď dřív a zůstaň déle.'},
+
+/* ---- kempy & noclehy ---- */
+{id:'k1',cat:'kemp',reg:'att',ll:[47.8367,13.5456],t:'Steinbach am Attersee',dur:0,night:47,gr:[4.4,803],nik:4,nn:'větší, ale s vlastní tichou zátokou',name:'Camping Grabner · Steinbach',price:'47 € · u vody 53 €',web:'https://www.camping-grabner.at/de/preise/preise',
+ desc:'Nejlepší koupací kemp regionu: vlastní zátoka s molem a plovoucím ostrovem jen pro hosty, závora ve 22:00 = klid. V srpnu rezervuj.'},
+{id:'k2',cat:'kemp',reg:'mon',ll:[47.8180,13.3644],t:'St. Lorenz am Mondsee',dur:0,night:36,gr:[4.1,458],nik:3,nn:'u vody, ale i u silnice',name:'Camping Nussbaumer · St. Lorenz',price:'~36 €',
+ desc:'Jediný velký kemp bez rezervací — přijeď dopoledne a místo bývá. Přímo u vody pod Drachenwand; v noci je slyšet silnice.'},
+{id:'k3',cat:'kemp',reg:'mon',ll:[47.8671,13.3068],t:'Tiefgraben u Mondsee',dur:0,night:48,gr:[4.7,1337],nik:3,nn:'komfortní resort, jezero až autem',name:'Camp MondSeeLand',price:'~45–55 €',web:'https://www.campmondsee.at/',
+ desc:'Nejlepší zázemí v okolí (4★): krytý vyhřívaný bazén, kuchyňka, bezvadné sprchy. K jezeru ale 5 minut autem.'},
+{id:'k4',cat:'kemp',reg:'irr',ll:[47.9106,13.3136],t:'Zell am Moos',dur:0,night:27,gr:[4.1,159],nik:5,nn:'farma u teplého jezera — její styl',name:'Camping Maier · Zell am Moos',price:'~25–30 € · ověř',
+ desc:'Farma přímo u nejteplejšího jezera. Zázemí jednoduché, cena poloviční — na jednu noc v Californii ideální poměr.'},
+{id:'k5',cat:'kemp',reg:'irr',ll:[47.9307,13.3116],t:'Oberhofen am Irrsee',dur:0,night:25,gr:[4.5,85],nik:5,nn:'malý, rodinný, u louky',name:'Camping Moosmühle · Oberhofen',price:'~25 € · ověř',
+ desc:'Malý rodinný kemp s loukou u vody a milými majiteli. Sprchy pamatují lepší časy — bereš, co Californie nedá.'},
+{id:'k6',cat:'kemp',reg:'att',ll:[47.8866,13.5239],t:'Nußdorf am Attersee',dur:0,night:39,gr:[4.1,16],nik:2,nn:'praktické parkoviště, žádná romantika',name:'Stellplatz Nußdorf',price:'38,80 € + kWh',
+ desc:'Nocleh bez kempu: samoobslužné stání 24/7 se závorou, voda a výlevka v ceně, elektřina po kWh. K jezeru 1,1 km, obchod vedle.'},
+{id:'k7',cat:'kemp',reg:'wol',ll:[47.7390,13.4005],t:'Abersee',dur:0,night:45,gr:[4.6,1125],nik:4,nn:'vlastní pláž, klidný jižní břeh',name:'Paradiescamping Birkenstrand',price:'HS ~45 €, jinak od 34 €',web:'https://www.paradiescamping.at/de/camping-stellplatz-wolfgangsee/stellplaetze-in-oesterrreich-am-see/',
+ desc:'Vlastní pláž, sauna, půjčovna SUP a kajaků, čerstvé pečivo v recepci. Elektřina se platí zvlášť po kWh.'},
+{id:'k8',cat:'kemp',reg:'wol',ll:[47.7429,13.4333],t:'St. Wolfgang',dur:0,night:45,gr:[4.6,495],nik:5,nn:'malý, tichý, první řada u vody',name:'Seeterrassencamping Wolfgangsee',price:'od 38 € · ověř',
+ desc:'Rodinný kemp přímo u vody s výhledem na jezero i hory, vlastní pláží a pečlivě drženým klidem. Brzy plno, volej dopředu.'},
+{id:'k9',cat:'kemp',reg:'wol',ll:[47.7398,13.4027],t:'St. Gilgen / Abersee',dur:0,night:50,gr:[4.7,1363],nik:3,nn:'komfort a food trucky, víc rušno',name:'Camping Lindenstrand',price:'~50 € · ověř',web:'https://www.lindenstrand.at/',
+ desc:'Nové sanitárky, vlastní břeh, food trucky po večerech. Dražší, ale komfortní volba na Wolfgangsee.'},
+{id:'k10',cat:'kemp',reg:'hal',ll:[47.5527,13.6478],t:'Hallstatt',dur:0,night:55,gr:[2.7,1513],nik:2,nn:'poloha ano, pověstně nerudná recepce',name:'Camping Klausner-Höll · Hallstatt',price:'~50–60 €',web:'https://camping.hallstatt.net/',
+ desc:'Jediný kemp přímo v Hallstattu: pěšky do centra i k vodě. Ale pozor — 2,7★ na Googlu kvůli proslule hrubé recepci. Ber to jako zaplacené parkování s top polohou, ne zážitkový kemp.'},
+{id:'k11',cat:'kemp',reg:'hal',ll:[47.5492,13.6765],t:'Obertraun',dur:0,night:40,gr:[3.0,1094],nik:4,nn:'ticho po deváté je tu pravidlo — jí to sedne',name:'Camping park am See · Obertraun',price:'~40 € · jen hotovost',
+ desc:'Krásně udržované louky na klidné straně jezera, čisté zázemí. Přísný noční klid (po 21. h ticho, zhasnuto v 22) a jen hotovost — pro někoho mínus, pro vás dva spíš plus.'},
+
+/* ---- výlety ---- */
+{id:'v1',cat:'vylet',reg:'irr',ll:[47.9041,13.3158],t:'Zell am Moos',dur:150,nik:5,nn:'louky, ranní mlha, nikde nikdo',name:'Okruh kolem Irrsee',walk:'9,5 km · rovina',q:'Irrsee Rundwanderweg Zell am Moos',
+ desc:'Nejdelší z nabídky — polní a břehové cesty kolem celého jezera, kdykoli jde zkrátit na půlku. Po ránu bývá nad vodou mlha.'},
+{id:'v2',cat:'vylet',reg:'mon',ll:[47.8553,13.3486],t:'Mondsee',dur:90,nik:3,nn:'hezké, ale turistické',name:'Mondsee: promenáda a bazilika',walk:'2–3 km · rovina',
+ desc:'Žlutá bazilika ze Sound of Music, promenáda k jezeru, zmrzlina na náměstí. Parkuj s kotoučem — modrá zóna.'},
+{id:'v3',cat:'vylet',reg:'tra',ll:[47.8348,13.6814],t:'Ebensee',dur:60,gr:[4.9,132],nik:5,nn:'lesní jezírko, ticho',name:'Vorderer Langbathsee',walk:'2,6 km · rovina',
+ desc:'Lesní jezírko pod Höllengebirge s kočárkovým okruhem — půlhodina chůze, křišťálová voda a 4,9★ od těch, kdo ho našli.'},
+{id:'v4',cat:'vylet',reg:'hal',ll:[47.5287,13.5064],t:'Gosau',dur:90,gr:[4.9,1175],nik:4,nn:'ikonické; v osm ráno je tvoje',name:'Gosausee: okruh',walk:'4,3 km · rovina',
+ desc:'Dachstein zrcadlící se v hladině — nejfotogeničtější rovinka v Alpách. Široká cesta kolem dokola; přijeď do osmi, pak dorazí zájezdy.'},
+{id:'v5',cat:'vylet',reg:'wol',ll:[47.7385,13.4462],t:'St. Wolfgang',dur:150,pp:8,nik:4,nn:'břehem pěšky, lodí zpět',name:'St. Wolfgang → Strobl + loď zpět',walk:'5,5 km · rovina',price:'loď ~8 €/os',q:'Wolfgangsee Schifffahrt St. Wolfgang',
+ desc:'Břehová cesta jedním směrem, zpátky lodí po jezeře. Nejhezčí kombinace chůze a plavby v regionu.'},
+{id:'v6',cat:'vylet',reg:'wol',ll:[47.7399,13.4395],t:'St. Wolfgang',dur:180,pp:61,gr:[4.5,7844],nik:2,nn:'parní atrakce s frontami a cenou',name:'Schafbergbahn',price:'~61 €/os zpáteční',walk:'nahoře ~1 km',
+ desc:'Parní zubačka z roku 1893 na vrchol s výhledem na pět jezer najednou. Zážitek ano, ale 61 € za osobu a plno — rezervuj konkrétní čas online a sedni si vpravo.'},
+{id:'v7',cat:'vylet',reg:'tra',ll:[47.9135,13.8079],t:'Gmunden',dur:180,pp:25,gr:[4.6,2589],nik:4,nn:'lanovka, nahoře klid a jezírko',name:'Grünberg + Laudachsee',price:'lanovka ~24,50 €/os',walk:'4,5 km · mírné',
+ desc:'Kabinkou nad Gmunden a po rovině k horskému jezírku Laudachsee. Pohodová verze hor bez převýšení; parkování u lanovky za drobné.'},
+{id:'v8',cat:'vylet',reg:'hal',ll:[47.5563,13.6451],t:'Hallstatt',dur:150,pp:22,gr:[4.3,436],nik:2,nn:'davy; jedině brzy ráno',name:'Hallstatt + Skywalk',price:'lanovka ~22 €/os',walk:'2–3 km po městě',q:'Salzbergbahn Hallstatt',
+ desc:'Uličky, kostnice, lanovkou na vyhlídku Skywalk 350 m nad střechami. Do solného dolu těhotné nesmí (pravidlo Salzwelten) — lanovka a vyhlídka ano. Před devátou ráno je město snesitelné.'},
+{id:'v9',cat:'vylet',reg:'hal',ll:[47.5483,13.7052],t:'Obertraun',dur:150,pp:46,gr:[4.7,4567],nik:3,nn:'velehory bez námahy, dole provoz',name:'Krippenstein: 5fingers',price:'lanovka ~46 €/os',walk:'2,5 km · zpevněná',q:'Dachstein Krippenstein Seilbahn Obertraun',
+ desc:'Lanovkou do 2100 m a po pohodlné cestě k vyhlídce 5fingers nad Hallstattem. Nahoře fouká, vezmi vrstvu.'},
+{id:'v10',cat:'vylet',reg:'isc',ll:[47.7149,13.6209],t:'Bad Ischl',dur:90,pp:6,gr:[4.4,4030],nik:3,nn:'park příjemný, město živé',name:'Bad Ischl: Kaiservilla a Esplanáda',price:'park ~6 €/os',walk:'~2 km',
+ desc:'Letní rezidence Franze Josefa, zámecký park a korzo podél řeky. Spoj s kávou u Zaunera o dvě ulice dál.'},
+{id:'v11',cat:'vylet',reg:'fus',ll:[47.8027,13.2660],t:'Fuschl am See',dur:60,nik:5,nn:'stín, voda, zámeček',name:'Fuschlsee: břehem k zámku',walk:'3 km tam a zpět',q:'Fuschlsee Uferweg Schloss Fuschl',
+ desc:'Stinná cesta po severním břehu k siluetě zámečku Schloss Fuschl. Krátké, rovné, s možností koupele cestou.'},
+{id:'v12',cat:'vylet',reg:'hal',ll:[47.5599,13.7263],t:'Obertraun',dur:90,gr:[4.7,71],nik:5,nn:'lužní les bez turistů',name:'Koppenwinkel, Obertraun',walk:'5 km · rovina',q:'Koppenwinkelsee Obertraun',
+ desc:'Tichá rezervace s jezírkem pod stěnami Dachsteinu, jen pěšky nebo na kole od Obertraun. Únik z hallstattských davů deset minut od nich.'},
+{id:'v13',cat:'vylet',reg:'wol',ll:[47.7659,13.3654],t:'St. Gilgen',dur:120,pp:20,nik:3,nn:'pohoda, v sezóně plné lodě',name:'Plavba po Wolfgangsee',price:'okruh ~20 €/os',walk:'0 km',q:'Wolfgangsee Schifffahrt St. Gilgen',
+ desc:'Dvouhodinové kolečko lodí mezi St. Gilgen, Strobl a St. Wolfgangem — odpočinkový program na rozpálené odpoledne.'},
+{id:'v14',cat:'vylet',reg:'tra',ll:[47.9106,13.7828],t:'Gmunden',dur:75,nik:4,nn:'korzo, večer klid',name:'Gmunden: promenáda a zámek Ort',walk:'~2 km',
+ desc:'Korzo podél Traunsee k vodnímu zámku na ostrůvku, spojenému dřevěnou lávkou. Večer nasvícený.'},
+
+/* ---- farmy & nákup ---- */
+{id:'g1',cat:'gastro',reg:'wol',ll:[47.7400,13.4111],t:'Abersee',dur:25,gr:[4.8,121],nik:5,nn:'bio ovčí farma — přesně její',name:'Seegut Eisl — Wolke7',price:'denně 6–21',web:'https://wolfgangsee.salzkammergut.at/oesterreich-poi/detail/430030315/seegut-eisl-bio-hofladen-wolke7.html',
+ desc:'Samoobslužný bio krám ovčí farmy: sýry a jogurty z ovčího mléka, EISL EIS, ryby z jezera, bio výběr z celého Rakouska. Otevřeno denně 6–21, karty berou.'},
+{id:'g2',cat:'gastro',reg:'att',ll:[47.9023,13.5168],t:'Attersee am Attersee',dur:20,gr:[4.9,57],nik:5,nn:'samoobslužná bio zastávka',name:'Hofladen Weslhof',price:'po–pá 9–17',web:'https://www.weslhof.at/bio-produkte/',
+ desc:'Bio farma nad Attersee se samoobslužnou „GenussHALTESTELLE" — vejce, jogurty, špek a sezónní zelenina. Pozor: o víkendu zavřeno.'},
+{id:'g3',cat:'gastro',reg:'mon',ll:[47.8370,13.3032],t:'Keuschen (Mondseeland)',dur:20,gr:[5.0,2],nik:5,nn:'statek, domácí mléko',name:'Hofladen Teufelmühle',web:'https://mondsee.salzkammergut.at/nachhaltigkeit/naturgenuss-pur/artikel/detail/6392/direktvermarkter-mondsee-irrsee-salzkammergut.html',
+ desc:'Malý samoobslužný krám na statku západně od Mondsee: vlastní mléko, vejce, máslo, pomazánky, nudle. Zásobovací zastávka před nocí u jezera.'},
+{id:'g4',cat:'gastro',reg:'mon',ll:[47.8240,13.3290],t:'St. Lorenz am Mondsee',dur:15,nik:5,nn:'ryba přímo od chovatele',name:'Čerství pstruzi · St. Lorenz',price:'dle váhy',q:'Fischzucht St. Lorenz am Mondsee',web:'https://mondsee.salzkammergut.at/nachhaltigkeit/naturgenuss-pur/artikel/detail/6392/direktvermarkter-mondsee-irrsee-salzkammergut.html',
+ desc:'Pstruzi a siveni z chovu denně po domluvě; uzené jen na objednávku do čtvrtka 9:00, vyzvednutí v pátek. Večeře na grilu vyřešena.'},
+{id:'g5',cat:'gastro',reg:'irr',ll:[47.8800,13.3100],t:'mezi Mondsee a Irrsee',dur:20,nik:5,nn:'senné mléko, bio od 1990',name:'Bio sýrárna Mondseeland',q:'Bio Käserei Hofladen Zell am Moos',web:'https://mondsee.salzkammergut.at/nachhaltigkeit/naturgenuss-pur/artikel/detail/6392/direktvermarkter-mondsee-irrsee-salzkammergut.html',
+ desc:'Rodinná bio farma mezi Mondsee a Irrsee (od 1990) zraje vlastní Bergkäse a Hofkäse ze senného mléka. Volat předem se vyplatí.'},
+{id:'g6',cat:'gastro',reg:'mon',ll:[47.8558,13.3499],t:'Mondsee',dur:40,nik:4,nn:'lokální trh, choď dopoledne',name:'Trh na Marktplatz · Mondsee',
+ desc:'Sezónní trh na náměstí u baziliky — sýry, pečivo, květiny. Choď dopoledne, po poledni se balí.'},
+{id:'g7',cat:'gastro',reg:'isc',ll:[47.7109,13.6219],t:'Bad Ischl',dur:30,gr:[4.4,1981],nik:3,nn:'řemeslo ano, turisté taky',name:'Konditorei Zauner · Bad Ischl',
+ desc:'C. k. dvorní cukrárna od roku 1832. Zaunerstollen je povinnost; krabici snese i lednička v Californii.'},
+{id:'g8',cat:'gastro',reg:'tra',ll:[47.9236,13.7903],t:'Gmunden',dur:45,gr:[4.4,459],nik:4,nn:'manufaktura, ne fabrika na suvenýry',name:'Gmundner Keramik',price:'outlet',
+ desc:'Manufaktura ručně malované keramiky, kterou znáš z rakouských kuchyní — prohlídky výroby, prodejna i outlet. Ceny prémiové, druhá jakost v outletu je sázka.'},
+{id:'g9',cat:'gastro',reg:'hal',ll:[47.5617,13.6488],t:'Hallstatt',dur:20,nik:2,nn:'suvenýrové krámky',name:'Sůl z Hallstattu',q:'Salzkontor Hallstatt',
+ desc:'Krámky v centru prodávají sůl přímo z místního dolu — nejstarší solné doly světa, dárek za pár eur, který v kuchyni nezapadne.'},
+{id:'g10',cat:'gastro',reg:'cesta',ll:[48.5099,14.5012],t:'Freistadt',dur:45,gr:[4.6,91],nik:4,nn:'měšťanský pivovar, po cestě',name:'Braucommune Freistadt',price:'po–pá, so dopoledne',
+ desc:'Pivovar vlastněný freistadtskými měšťany od roku 1777, hradební město 50 minut od Budějovic. V neděli zavřeno — pak aspoň procházka hradbami.'},
+
+/* ---- na oběd ---- */
+{id:'r1',cat:'rest',reg:'wol',ll:[47.7373,13.4481],t:'St. Wolfgang',dur:75,gr:[4.0,430],nik:3,nn:'ikona = turisté; ta terasa ale stojí za to',name:'Weisses Rössl — Seerestaurant',
+ desc:'Legendární hotel z operety, oběd na terase těsně nad hladinou. Kuchyně poctivá, vegetariánské možnosti skromné; v poledne si nech držet stůl.'},
+{id:'r2',cat:'rest',reg:'hal',ll:[47.5610,13.6481],t:'Hallstatt',dur:75,gr:[3.7,489],nik:3,nn:'ryby z jezera, kolem davy',name:'Bräugasthof Hallstatt',price:'jen hotovost',
+ desc:'Terasa přímo nad jezerem — objednej Reinanke (síha) nebo pstruha z Hallstättersee. Obsluha bývá upracovaná a karty neberou; po 17. hodině je klidněji.'},
+{id:'r3',cat:'rest',reg:'att',ll:[47.9157,13.5404],t:'Attersee am Attersee',dur:75,gr:[4.2,226],nik:4,nn:'klasika na břehu',name:'Seegasthof Oberndorfer',
+ desc:'Klasika na břehu Attersee — síh z jezera, Salzburger Nockerl a zahrada u vody.'},
+{id:'r4',cat:'rest',reg:'isc',ll:[47.7095,13.6184],t:'Bad Ischl',dur:60,gr:[4.5,4858],nik:3,nn:'dezerty ano, centrum živé',name:'Zauner Esplanade',
+ desc:'Druhý podnik slavné cukrárny, u řeky Traun: lehčí oběd, vegetariánské možnosti a pak vitrína dezertů, ze které se špatně odchází.'},
+{id:'r5',cat:'rest',reg:'hal',ll:[47.5332,13.4969],t:'Gosau',dur:60,gr:[4.3,1664],nik:4,nn:'chata u hráze, knedlíky s výhledem',name:'Gasthof Gosausee',
+ desc:'U hráze Gosausee — po okruhu kolem jezera Kaiserschmarrn nebo česneková polévka s Dachsteinem za oknem.'},
+{id:'r6',cat:'rest',reg:'tra',ll:[47.8984,13.8191],t:'Gmunden (Grünberg)',dur:60,gr:[4.5,1197],nik:4,nn:'álm nad jezerem, objednáváš u pultu',name:'Grünbergalm',q:'Grünbergalm Gmunden',
+ desc:'Horská chata u lanovky nad Traunsee — Schweinsbraten, Brettljause a výhled. Objednává se u pultu, jídlo nosí ke stolu.'},
+{id:'r7',cat:'rest',reg:'mon',ll:[47.8181,13.3570],t:'St. Lorenz am Mondsee',dur:75,gr:[4.5,1234],nik:4,nn:'místní gasthof, žádný cirkus',name:'Gasthof Drachenwand',price:'zavřeno po–st',
+ desc:'Selská kuchyně pod stěnou Drachenwandu, pět minut od kempu Nussbaumer. Otevřeno čt–ne, oběd 11:30–14:00 — jinam se v pondělí až středu.'}
+];
+
+/* ---- moje návrhy (laděno pro Nikolu): den → pořadí míst ---- */
+const TPL = {
+  3: [ ['g10','p2','g5','k4'],
+       ['v1','g4','r7','p4','k1'],
+       ['v3','r3','g2'] ],
+  4: [ ['g10','p2','g5','k4'],
+       ['v1','g4','r7','p4','k1'],
+       ['g1','v5','r1','k8'],
+       ['v11','p7'] ],
+  5: [ ['g10','p2','g5','k4'],
+       ['v1','g4','r7','p4','k1'],
+       ['v5','r1','g1','k8'],
+       ['g7','v8','r2','k11'],
+       ['v4','r5'] ]
+};
+
+/* ================= GEO: jezera a mapa (skutečné souřadnice) ================= */
+const LAKES = [
+ {n:'Irrsee', lbl:[47.915,13.325], pts:[[13.298,47.935],[13.310,47.930],[13.318,47.910],[13.316,47.888],[13.305,47.882],[13.294,47.894],[13.292,47.920]]},
+ {n:'Mondsee', lbl:[47.845,13.395], pts:[[13.330,47.856],[13.365,47.857],[13.400,47.842],[13.435,47.818],[13.448,47.806],[13.435,47.800],[13.405,47.804],[13.372,47.8185],[13.345,47.824],[13.325,47.840]]},
+ {n:'Fuschlsee', lbl:[47.813,13.262], pts:[[13.243,47.808],[13.270,47.804],[13.297,47.797],[13.301,47.790],[13.272,47.789],[13.246,47.798]]},
+ {n:'Wolfgangsee', lbl:[47.708,13.415], pts:[[13.358,47.757],[13.376,47.746],[13.398,47.7395],[13.418,47.7375],[13.437,47.740],[13.447,47.7375],[13.452,47.732],[13.458,47.7355],[13.468,47.727],[13.474,47.717],[13.450,47.714],[13.424,47.7245],[13.402,47.7355],[13.378,47.746],[13.365,47.762]]},
+ {n:'Attersee', lbl:[47.905,13.605], pts:[[13.583,47.950],[13.596,47.938],[13.586,47.910],[13.573,47.884],[13.558,47.856],[13.537,47.828],[13.530,47.808],[13.515,47.798],[13.494,47.804],[13.489,47.818],[13.504,47.843],[13.518,47.869],[13.529,47.896],[13.538,47.916],[13.553,47.943]]},
+ {n:'Traunsee', lbl:[47.885,13.825], pts:[[13.783,47.918],[13.800,47.910],[13.812,47.885],[13.812,47.850],[13.803,47.820],[13.792,47.806],[13.775,47.806],[13.770,47.832],[13.770,47.870],[13.774,47.900]]},
+ {n:'Hallstättersee', lbl:[47.585,13.695], pts:[[13.655,47.610],[13.671,47.601],[13.677,47.580],[13.686,47.564],[13.676,47.554],[13.658,47.550],[13.649,47.556],[13.646,47.578],[13.647,47.600]]},
+ {n:'Gosausee', lbl:[47.521,13.478], pts:[[13.494,47.533],[13.505,47.531],[13.508,47.525],[13.497,47.524],[13.491,47.529]]},
+ {n:'Langbathsee', lbl:[47.841,13.665], pts:[[13.676,47.836],[13.685,47.836],[13.687,47.833],[13.678,47.832]]}
+];
+const TOWNS = [['Mondsee',47.856,13.348],['St. Gilgen',47.766,13.365],['Strobl',47.716,13.484],['Bad Ischl',47.711,13.620],['Hallstatt',47.5617,13.6488],['Obertraun',47.559,13.690],['Gosau',47.535,13.492],['Ebensee',47.807,13.777],['Gmunden',47.918,13.795],['Zell am Moos',47.902,13.318],['Fuschl',47.799,13.302],['Steinbach',47.837,13.549]];
+const PEAKS = [['Schafberg',47.775,13.435],['Höllengebirge',47.815,13.630],['Dachstein',47.508,13.610],['Drachenwand',47.828,13.343]];
+</script>
+<script>
+/* ================= STAV & ULOŽENÍ ================= */
+const KEY = 'salzkammergut-planner-v1';
+let S = { fav:[], days:[[],[],[],[],[]], checked:[], custom:[], vign:true,
+          inputs:{km:650,cons:10,fuel:1.65,foodDay:60,buffer:50,rate:24.6} };
+let saveT = null;
+async function loadState(){
+  try{ const r = await window.storage.get(KEY, false);
+    if(r && r.value){ Object.assign(S, JSON.parse(r.value)); return; } }catch(e){}
+  try{ const v = localStorage.getItem(KEY); if(v) Object.assign(S, JSON.parse(v)); }catch(e){}
+}
+function saveState(){
+  clearTimeout(saveT);
+  saveT = setTimeout(async ()=>{
+    const v = JSON.stringify(S);
+    try{ await window.storage.set(KEY, v, false); return; }catch(e){}
+    try{ localStorage.setItem(KEY, v); }catch(e){}
+  }, 400);
+}
+const byId = id => ITEMS.find(i=>i.id===id);
+
+/* ================= GEOMETRIE ================= */
+const KX = 1428.4, KY = 2124, LNG0 = 13.20, LATT = 47.98;
+const px = lng => (lng-LNG0)*KX;
+const py = lat => (LATT-lat)*KY;
+function hav(a,b){
+  const R=6371, dLa=(b[0]-a[0])*Math.PI/180, dLo=(b[1]-a[1])*Math.PI/180;
+  const s=Math.sin(dLa/2)**2 + Math.cos(a[0]*Math.PI/180)*Math.cos(b[0]*Math.PI/180)*Math.sin(dLo/2)**2;
+  return 2*R*Math.asin(Math.sqrt(s));
+}
+function est(a,b){
+  const road = Math.max(2, Math.round(hav(a,b)*1.6));
+  const v = road<12 ? 34 : road<35 ? 50 : 62;
+  return [Math.max(5, Math.round(road/v*60)), road];
+}
+function legFor(prevIt, it){ return prevIt ? est(prevIt.ll, it.ll) : FROM_CB[it.reg]; }
+
+function pip(x,y,poly){ // point in polygon (projected)
+  let ins=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+    const xi=poly[i][0], yi=poly[i][1], xj=poly[j][0], yj=poly[j][1];
+    if(((yi>y)!==(yj>y)) && (x < (xj-xi)*(y-yi)/(yj-yi)+xi)) ins=!ins;
+  }
+  return ins;
+}
+const LAKEPOLYS = LAKES.map(L=>({c:centroid(L.pts), pts:L.pts.map(p=>[px(p[0]),py(p[1])])}));
+function centroid(pts){ let x=0,y=0; pts.forEach(p=>{x+=px(p[0]);y+=py(p[1]);}); return [x/pts.length,y/pts.length]; }
+const PROJ = {};
+ITEMS.forEach(it=>{
+  let x=px(it.ll[1]), y=py(it.ll[0]);
+  x = Math.max(14, Math.min(986, x)); y = Math.max(14, Math.min(1031, y));
+  for(const L of LAKEPOLYS){ // vytlač bod z vody
+    let k=0;
+    while(pip(x,y,L.pts) && k<25){
+      const dx=x-L.c[0], dy=y-L.c[1], m=Math.hypot(dx,dy)||1;
+      x+=dx/m*4; y+=dy/m*4; k++;
+    }
+  }
+  PROJ[it.id]={x,y};
+});
+// rozhrň překrývající se body
+(function(){
+  const placed=[];
+  const inWater=(x,y)=>LAKEPOLYS.some(L=>pip(x,y,L.pts));
+  ITEMS.forEach((it,i)=>{
+    const p=PROJ[it.id]; const bx=p.x, by=p.y; let k=0;
+    while((placed.some(q=>Math.hypot(q.x-p.x,q.y-p.y)<13) || inWater(p.x,p.y)) && k<16){
+      const a=(i*2.4)+k*0.8;
+      p.x=bx+Math.cos(a)*(12+k*2); p.y=by+Math.sin(a)*(10+k*2); k++;
+    }
+    placed.push(p);
+  });
+})();
+const ENTRY = {x:px(13.56), y:10};
+
+/* ================= MAPA ================= */
+let selId = null, routeMode = 'all';
+const DAYC = ['#1D7A99','#2F7D4F','#DFA320','#D95A34','#201D17'];
+const HEART = 'M0,4.6 C-1.4,1.2 -7.2,-1.9 -7.2,2.6 C-7.2,5.7 -2.8,8.6 0,11 C2.8,8.6 7.2,5.7 7.2,2.6 C7.2,-1.9 1.4,1.2 0,4.6 Z';
+
+function buildMap(){
+  const lakes = LAKES.map(L=>{
+    const d = 'M'+L.pts.map(p=>px(p[0]).toFixed(1)+','+py(p[1]).toFixed(1)).join(' L ')+' Z';
+    return '<path d="'+d+'" fill="#A7CBD6" stroke="#26241F" stroke-width="1.7"/>'+
+      '<text x="'+px(L.lbl[1])+'" y="'+py(L.lbl[0])+'" class="lakelabel">'+L.n+'</text>';
+  }).join('');
+  const towns = TOWNS.map(t=>'<circle cx="'+px(t[2])+'" cy="'+py(t[1])+'" r="3.5" fill="#26241F"/><text x="'+(px(t[2])+7)+'" y="'+(py(t[1])+4)+'" class="townlabel">'+t[0]+'</text>').join('');
+  const peaks = PEAKS.map(t=>'<text x="'+px(t[2])+'" y="'+py(t[1])+'" class="townlabel" text-anchor="middle">▲ '+t[0]+'</text>').join('');
+  document.getElementById('bigsvg').innerHTML =
+    '<path d="M'+ENTRY.x+',2 L'+ENTRY.x+','+ENTRY.y+'" stroke="#26241F" stroke-width="2"/>'+
+    '<text x="'+(ENTRY.x+10)+'" y="20" class="townlabel">↑ z Č. Budějovic ~2:30 · Freistadt po cestě</text>'+
+    lakes + peaks + towns +
+    '<g id="routeLayer"></g><g id="dotLayer"></g>';
+  document.getElementById('mapLegend').innerHTML =
+    Object.values(CATS).map(c=>'<span><i style="background:'+c.color+'"></i>'+c.label+'</span>').join('') +
+    '<span><i style="background:#fff;border:2px solid #26241F"></i>♥ = tvůj výběr</span>';
+  document.getElementById('bigsvg').addEventListener('click', e=>{
+    const m = e.target.closest('[data-id]'); if(!m) return;
+    selectPlace(m.dataset.id);
+  });
+}
+function drawDots(){
+  document.getElementById('dotLayer').innerHTML = ITEMS.map(it=>{
+    const p = PROJ[it.id], sel = selId===it.id ? ' sel' : '';
+    if(S.fav.includes(it.id)){
+      return '<path class="mheart'+sel+'" data-id="'+it.id+'" transform="translate('+p.x+','+(p.y-5)+') scale(1.25)" d="'+HEART+'" fill="'+CATS[it.cat].color+'"><title>'+it.name+'</title></path>';
+    }
+    return '<circle class="mdot'+sel+'" data-id="'+it.id+'" cx="'+p.x+'" cy="'+p.y+'" r="7.5" fill="'+CATS[it.cat].color+'"><title>'+it.name+'</title></circle>';
+  }).join('');
+}
+function grHtml(it){
+  return it.gr ? '<span class="gr">★ '+String(it.gr[0]).replace('.',',')+' <a href="'+gUrl(it)+'" target="_blank" rel="noopener">('+it.gr[1].toLocaleString('cs-CZ')+' · fotky Google)</a></span>'
+               : '<span class="gr"><a href="'+gUrl(it)+'" target="_blank" rel="noopener">fotky a hodnocení · Google</a></span>';
+}
+function nikHtml(it){
+  return '<div class="nikrow"><span class="nik">🌿 Pro Nikolu: '+'●'.repeat(it.nik)+'○'.repeat(5-it.nik)+'</span> <span class="niknote">'+it.nn+'</span></div>';
+}
+function dayBtns(it){
+  return S.days.map((d,i)=>'<button data-add="'+it.id+'" data-day="'+i+'" class="'+(d.includes(it.id)?'added':'')+'">Den '+(i+1)+'</button>').join('');
+}
+function selectPlace(id){
+  selId = id; drawDots();
+  const it = byId(id);
+  document.getElementById('mapSel').innerHTML =
+    '<div class="cardtop"><div class="cardname">'+it.name+'</div>'+(it.price?'<div class="price">'+it.price+'</div>':'')+'</div>'+
+    '<div class="cardmeta" style="color:'+CATS[it.cat].color+'">'+[it.t,CATS[it.cat].label,(it.cat==='kemp'?'🌙 nocleh':'⏱ ~'+fmtMin(it.dur))].join(' · ')+'</div>'+
+    grHtml(it) + nikHtml(it) +
+    '<div class="linkrow"><a href="'+gUrl(it)+'" target="_blank" rel="noopener">Google Maps</a><a href="'+mUrl(it)+'" target="_blank" rel="noopener">Mapy.cz</a>'+(it.web?'<a href="'+it.web+'" target="_blank" rel="noopener">web ↗</a>':'')+'</div>'+
+    '<div class="cardacts"><button class="abtn'+(S.fav.includes(id)?' on':'')+'" data-fav="'+id+'">'+(S.fav.includes(id)?'♥ Vybráno':'♡ Vybrat')+'</button></div>'+
+    '<div class="daypick open">'+dayBtns(it)+'</div>';
+}
+function buildLegs(){
+  const legs=[]; let prev=null, prevP=ENTRY;
+  S.days.forEach((day,di)=>{
+    day.forEach(id=>{
+      const it=byId(id); if(!it) return;
+      const p=PROJ[id];
+      legs.push({x1:prevP.x,y1:prevP.y,x2:p.x,y2:p.y,di,dash:prev===null||prev.di!==di});
+      prev={it,di}; prevP=p;
+    });
+  });
+  if(prev) legs.push({x1:prevP.x,y1:prevP.y,x2:ENTRY.x,y2:ENTRY.y,di:prev.di,dash:true,home:true});
+  return legs;
+}
+function drawRoutes(){
+  const legs = buildLegs();
+  const show = legs.filter(l=> routeMode==='all' ? true : (routeMode==='none' ? false : l.di===+routeMode || (l.x2!==undefined && l.di===+routeMode)));
+  let svg = show.map(l=>'<line x1="'+l.x1+'" y1="'+l.y1+'" x2="'+l.x2+'" y2="'+l.y2+'" stroke="'+DAYC[l.di%5]+'" stroke-width="3.2" stroke-linecap="round" opacity=".8"'+(l.dash?' stroke-dasharray="7 6"':'')+'/>').join('');
+  if(routeMode!=='all' && routeMode!=='none'){
+    let n=1;
+    (S.days[+routeMode]||[]).forEach(id=>{
+      const p=PROJ[id];
+      svg += '<circle cx="'+p.x+'" cy="'+p.y+'" r="10.5" fill="'+DAYC[+routeMode%5]+'" opacity=".95"/><text x="'+p.x+'" y="'+(p.y+4.5)+'" text-anchor="middle" class="stopnum">'+(n++)+'</text>';
+    });
+  }
+  document.getElementById('routeLayer').innerHTML = svg;
+  const chips = [['none','Nic'],['all','Celá cesta']].concat(S.days.map((d,i)=>d.length?[String(i),'Den '+(i+1)]:null).filter(Boolean));
+  document.getElementById('routeChips').innerHTML = chips.map(c=>
+    '<button class="chip" data-route="'+c[0]+'" aria-pressed="'+String(routeMode===c[0])+'"'+(c[0]!=='none'&&c[0]!=='all'?' style="--cc:'+DAYC[+c[0]%5]+'"':'')+'>'+c[1]+'</button>').join('');
+}
+document.addEventListener('click', e=>{
+  const r = e.target.closest('[data-route]');
+  if(r){ routeMode = r.dataset.route; drawRoutes(); }
+});
+
+/* ================= FILTRY + KATALOG ================= */
+let fCat = 'all', fReg = 'all', fFav = false, fNik = false;
+function chipHtml(id,label,color){
+  return '<button class="chip" data-v="'+id+'" aria-pressed="false"'+(color?' style="--cc:'+color+'"':'')+'>'+
+    (color?'<span class="dot" style="background:'+color+'"></span>':'')+label+'</button>';
+}
+function initFilters(){
+  const cc = document.getElementById('catChips');
+  cc.innerHTML = chipHtml('all','Všechno') + Object.entries(CATS).map(([k,c])=>chipHtml(k,c.label,c.color)).join('') + chipHtml('nik','🌿 Pro Nikolu','#2F7D4F') + chipHtml('fav','Vybrané ♥');
+  const rc = document.getElementById('regChips');
+  rc.innerHTML = chipHtml('all','Celý region') + Object.entries(REGS).map(([k,l])=>chipHtml(k,l)).join('');
+  cc.addEventListener('click', e=>{
+    const b = e.target.closest('.chip'); if(!b) return;
+    const v = b.dataset.v;
+    if(v==='fav'){ fFav = !fFav; }
+    else if(v==='nik'){ fNik = !fNik; }
+    else { fCat = v; fFav = false; }
+    renderCatalog();
+  });
+  rc.addEventListener('click', e=>{
+    const b = e.target.closest('.chip'); if(!b) return;
+    fReg = b.dataset.v; renderCatalog();
+  });
+}
+function fmtMin(m){
+  m = Math.round(m);
+  if(m>=60){ const h=Math.floor(m/60), r=m%60; return h+' h'+(r?' '+String(r).padStart(2,'0'):''); }
+  return m+' min';
+}
+function metaFor(it){
+  const parts = [it.t, CATS[it.cat].label];
+  if(it.walk) parts.push(it.walk);
+  parts.push(it.cat==='kemp' ? '🌙 nocleh' : '⏱ ~'+fmtMin(it.dur));
+  return parts.join(' · ');
+}
+function genMini(it){
+  const p = PROJ[it.id];
+  const vb = (p.x-115).toFixed(0)+' '+(p.y-78).toFixed(0)+' 230 156';
+  const lakes = LAKES.map(L=>'<path d="M'+L.pts.map(q=>px(q[0]).toFixed(1)+','+py(q[1]).toFixed(1)).join(' L ')+' Z" fill="#A7CBD6" stroke="#26241F" stroke-width="1"/>').join('');
+  const others = ITEMS.filter(o=>o.id!==it.id && Math.hypot(PROJ[o.id].x-p.x,PROJ[o.id].y-p.y)<130)
+    .map(o=>'<circle cx="'+PROJ[o.id].x+'" cy="'+PROJ[o.id].y+'" r="3.5" fill="'+CATS[o.cat].color+'" opacity=".75"/>').join('');
+  const pin = '<circle cx="'+p.x+'" cy="'+p.y+'" r="8" fill="'+CATS[it.cat].color+'" stroke="#FFFDF6" stroke-width="2.5"/>';
+  const bx = p.x-105, by = p.y+64;
+  const scale = '<line class="scalebar" x1="'+bx+'" y1="'+by+'" x2="'+(bx+19.1)+'" y2="'+by+'"/><text class="scaletxt" x="'+bx+'" y="'+(by-4)+'">1 km</text>';
+  return '<svg viewBox="'+vb+'">'+lakes+others+pin+scale+'</svg>';
+}
+function linkRow(it){
+  return '<div class="linkrow">'+
+    '<button class="mapbtn" data-map="'+it.id+'">📍 Náhled</button>'+
+    '<a href="'+gUrl(it)+'" target="_blank" rel="noopener">Google Maps</a>'+
+    '<a href="'+mUrl(it)+'" target="_blank" rel="noopener">Mapy.cz</a>'+
+    (it.web?'<a href="'+it.web+'" target="_blank" rel="noopener">web ↗</a>':'')+
+  '</div>';
+}
+function renderCatalog(){
+  document.querySelectorAll('#catChips .chip').forEach(b=>{
+    const v=b.dataset.v;
+    b.setAttribute('aria-pressed', v==='fav' ? String(fFav) : v==='nik' ? String(fNik) : String(!fFav && fCat===v));
+  });
+  document.querySelectorAll('#regChips .chip').forEach(b=>{
+    b.setAttribute('aria-pressed', String(fReg===b.dataset.v));
+  });
+  const list = ITEMS.filter(it=>
+    (fFav ? S.fav.includes(it.id) : (fCat==='all' || it.cat===fCat)) &&
+    (!fNik || it.nik>=4) &&
+    (fReg==='all' || it.reg===fReg)
+  );
+  document.getElementById('countLine').textContent =
+    list.length + ' míst' + (fNik?' · 🌿 4+':'') + (fFav?' ve výběru':'') + (fReg!=='all' ? ' · '+REGS[fReg] : '');
+  const wrap = document.getElementById('cardList');
+  if(!list.length){
+    wrap.innerHTML = '<div class="empty">Nic tu není — zkus jiný filtr.</div>';
+    return;
+  }
+  wrap.innerHTML = list.map(it=>{
+    const fav = S.fav.includes(it.id);
+    return '<article class="card'+(fav?' faved':'')+'" style="--cc:'+CATS[it.cat].color+';--ct:'+TINTS[it.cat]+'">'+
+      '<div class="cardtop"><div class="cardname">'+it.name+'</div>'+
+      (it.price?'<div class="price">'+it.price+'</div>':'')+'</div>'+
+      '<div class="cardmeta">'+metaFor(it)+'</div>'+
+      grHtml(it) + nikHtml(it) +
+      '<p class="carddesc">'+it.desc+'</p>'+
+      linkRow(it)+
+      '<div class="mini" id="mm-'+it.id+'" hidden></div>'+
+      '<div class="cardacts">'+
+        '<button class="abtn'+(fav?' on':'')+'" data-fav="'+it.id+'">'+(fav?'♥ Vybráno':'♡ Vybrat')+'</button>'+
+        '<button class="abtn" data-pick="'+it.id+'">+ Přidat do dne</button>'+
+      '</div>'+
+      '<div class="daypick" id="dp-'+it.id+'">'+dayBtns(it)+'</div>'+
+    '</article>';
+  }).join('');
+}
+document.addEventListener('click', e=>{
+  const f = e.target.closest('[data-fav]');
+  if(f){
+    const id = f.dataset.fav;
+    S.fav.includes(id) ? S.fav = S.fav.filter(x=>x!==id) : S.fav.push(id);
+    saveState(); renderCatalog(); drawDots();
+    if(selId===id) selectPlace(id);
+    return;
+  }
+  const p = e.target.closest('[data-pick]');
+  if(p){ document.getElementById('dp-'+p.dataset.pick).classList.toggle('open'); return; }
+  const mb = e.target.closest('[data-map]');
+  if(mb){
+    const el = document.getElementById('mm-'+mb.dataset.map);
+    if(el){ el.hidden = !el.hidden; if(!el.hidden && !el.innerHTML) el.innerHTML = genMini(byId(mb.dataset.map)); }
+    return;
+  }
+  const a = e.target.closest('[data-add]');
+  if(a){
+    const id = a.dataset.add, d = +a.dataset.day;
+    const arr = S.days[d];
+    if(arr.includes(id)){ S.days[d] = arr.filter(x=>x!==id); }
+    else insertSmart(d, id);
+    saveState(); renderAll();
+    const dp = document.getElementById('dp-'+id); if(dp) dp.classList.add('open');
+    if(selId) selectPlace(selId);
+  }
+});
+
+/* ================= CHYTRÉ ŘAZENÍ ================= */
+function dayAnchor(di){
+  for(let i=di-1;i>=0;i--){
+    const d=S.days[i];
+    if(d.length) return byId(d[d.length-1]).ll;
+  }
+  return CB_LL;
+}
+function insertSmart(di, id){
+  const it = byId(id), arr = S.days[di];
+  if(it.cat==='kemp'){ arr.push(id); return; }
+  const anchor = dayAnchor(di);
+  const kempIdx = arr.findIndex(x=>byId(x).cat==='kemp');
+  const maxPos = kempIdx===-1 ? arr.length : kempIdx;
+  let best=0, bestCost=Infinity;
+  for(let pos=0; pos<=maxPos; pos++){
+    const prevLL = pos===0 ? anchor : byId(arr[pos-1]).ll;
+    const nextLL = pos<arr.length ? byId(arr[pos]).ll : null;
+    const cost = hav(prevLL,it.ll) + (nextLL ? hav(it.ll,nextLL) - hav(prevLL,nextLL) : 0);
+    if(cost<bestCost){ bestCost=cost; best=pos; }
+  }
+  arr.splice(best,0,id);
+}
+function sortAllDays(){
+  S.days.forEach((day,di)=>{
+    if(day.length<2) return;
+    const anchor = dayAnchor(di);
+    const kemps = day.filter(x=>byId(x).cat==='kemp');
+    let rest = day.filter(x=>byId(x).cat!=='kemp');
+    const out=[]; let cur=anchor;
+    while(rest.length){
+      rest.sort((a,b)=>hav(cur,byId(a).ll)-hav(cur,byId(b).ll));
+      const n=rest.shift(); out.push(n); cur=byId(n).ll;
+    }
+    kemps.sort((a,b)=>hav(cur,byId(a).ll)-hav(cur,byId(b).ll));
+    S.days[di]=out.concat(kemps);
+  });
+  saveState(); renderAll();
+}
+
+/* ================= PLÁN ================= */
+let PLANKM = 0;
+function pairFmt(p){ return fmtMin(p[0])+' · '+p[1]+' km'; }
+function renderPlan(){
+  const totals = S.days.map(()=>({drive:0,km:0,dur:0}));
+  const html = S.days.map(()=>({inner:'',len:0}));
+  let prev = null, lastIdx = -1;
+  S.days.forEach((day,di)=>{ if(day.length) lastIdx = di; });
+  S.days.forEach((day,di)=>{
+    html[di].len = day.length;
+    day.forEach((id,ix)=>{
+      const it = byId(id); if(!it) return;
+      let leg, lab;
+      if(!prev){ leg = FROM_CB[it.reg]; lab = '🚐 z Českých Budějovic'; }
+      else if(prev.di !== di){ leg = est(prev.it.ll, it.ll); lab = '🚐 ráno od: '+prev.it.name.split(' ·')[0]; }
+      else { leg = est(prev.it.ll, it.ll); lab = '🚐'; }
+      totals[di].drive += leg[0]; totals[di].km += leg[1];
+      if(it.cat!=='kemp') totals[di].dur += (it.dur||0);
+      html[di].inner += '<div class="transfer">'+lab+' ~'+pairFmt(leg)+'</div>';
+      html[di].inner += '<div class="pitem"><span class="dot" style="background:'+CATS[it.cat].color+'"></span>'+
+        '<span class="pn"><b>'+it.name+'</b><small>'+metaFor(it)+(it.price?' · '+it.price:'')+'</small></span>'+
+        '<button class="pbtn" data-mv="-1" data-day="'+di+'" data-ix="'+ix+'" aria-label="Nahoru">↑</button>'+
+        '<button class="pbtn" data-mv="1" data-day="'+di+'" data-ix="'+ix+'" aria-label="Dolů">↓</button>'+
+        '<button class="pbtn" data-rm data-day="'+di+'" data-ix="'+ix+'" aria-label="Odebrat">✕</button></div>';
+      prev = {it, di};
+    });
+  });
+  if(prev && lastIdx >= 0){
+    const leg = FROM_CB[prev.it.reg];
+    totals[lastIdx].drive += leg[0]; totals[lastIdx].km += leg[1];
+    html[lastIdx].inner += '<div class="transfer">🏠 zpět do Č. Budějovic ~'+pairFmt(leg)+'</div>';
+  }
+  PLANKM = totals.reduce((s,t)=>s+t.km,0);
+  document.getElementById('daysWrap').innerHTML = html.map((d,di)=>{
+    const t = totals[di];
+    const busy = (t.drive + t.dur) > 600;
+    const sum = d.len ? '<small class="dsum'+(busy?' full':'')+'">🚐 '+fmtMin(t.drive)+' · '+t.km+' km &nbsp;·&nbsp; ⏱ program ~'+fmtMin(t.dur)+(busy?' · nabitý den!':'')+'</small>' : '';
+    const inner = d.len ? d.inner : '<div class="empty">Zatím prázdný den — přidej místa v katalogu nebo z mapy, nebo si nahoře načti můj návrh.</div>';
+    return '<div class="day"><div class="dayhead"><span class="daynum serif">'+(di+1)+'</span>'+
+      '<h3>Den '+(di+1)+sum+'</h3>'+
+      (d.len?'<button class="dayclear" data-clear="'+di+'">vyčistit</button>':'')+
+      '</div>'+inner+'</div>';
+  }).join('');
+  const total = S.days.reduce((s,d)=>s+d.length,0);
+  document.getElementById('planCount').textContent = total ? '('+total+')' : '';
+  const cnt = {};
+  S.days.flat().forEach(id=>{const it=byId(id); if(it) cnt[it.cat]=(cnt[it.cat]||0)+1;});
+  document.getElementById('planStats').innerHTML = Object.keys(CATS).map(k=>
+    '<span style="--cc:'+CATS[k].color+';--ct:'+TINTS[k]+'"><i></i>'+(cnt[k]||0)+' × '+CATS[k].label.toLowerCase()+'</span>').join('');
+}
+document.addEventListener('click', e=>{
+  const mv = e.target.closest('[data-mv]');
+  if(mv){
+    const d=+mv.dataset.day, i=+mv.dataset.ix, dir=+mv.dataset.mv, arr=S.days[d], j=i+dir;
+    if(j<0||j>=arr.length) return;
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+    saveState(); renderAll(); return;
+  }
+  const rm = e.target.closest('[data-rm]');
+  if(rm){ S.days[+rm.dataset.day].splice(+rm.dataset.ix,1); saveState(); renderAll(); return; }
+  const cl = e.target.closest('[data-clear]');
+  if(cl){ S.days[+cl.dataset.clear]=[]; saveState(); renderAll(); return; }
+  const tp = e.target.closest('[data-tpl]');
+  if(tp){
+    const n = +tp.dataset.tpl;
+    const hasAny = S.days.some(d=>d.length);
+    if(hasAny && !confirm('Přepsat současný plán mým návrhem na '+n+' dn'+(n>=5?'í':'y')+'?')) return;
+    S.days = TPL[n].map(a=>a.slice());
+    while(S.days.length<5) S.days.push([]);
+    saveState(); renderAll();
+  }
+});
+document.getElementById('wandBtn').addEventListener('click', sortAllDays);
+
+/* ================= ROZPOČET ================= */
+function eur(n){ return (Math.round(n*10)/10).toLocaleString('cs-CZ')+' €'; }
+function usePlanKm(){
+  if(!PLANKM) return;
+  S.inputs.km = PLANKM;
+  document.getElementById('km').value = PLANKM;
+  saveState(); renderBudget();
+}
+function renderBudget(){
+  const planIds = S.days.flat();
+  const nights = planIds.map(byId).filter(it=>it && it.night);
+  const acts   = planIds.map(byId).filter(it=>it && it.pp);
+  const daysUsed = Math.max(1, S.days.filter(d=>d.length).length);
+  document.getElementById('bNights').innerHTML =
+    '<div class="brow"><span class="bl"><b>Noclehy</b><small>'+(nights.length? nights.map(n=>n.name.split(' ·')[0]).join(', ') : 'zatím žádný kemp v plánu')+'</small></span>'+
+    '<span class="bv">'+eur(nights.reduce((s,n)=>s+n.night,0))+'</span></div>';
+  document.getElementById('bActs').innerHTML =
+    '<div class="brow"><span class="bl"><b>Vstupy a lanovky</b> <small>pro dva, z položek v plánu</small></span>'+
+    '<span class="bv">'+eur(acts.reduce((s,a)=>s+a.pp*2,0))+'</span></div>';
+  document.getElementById('bKm').innerHTML = PLANKM
+    ? '<div class="brow"><span class="bl"><b>Km podle plánu</b><small>vč. přejezdů mezi dny a návratu</small></span>'+
+      '<span class="bv">~'+PLANKM+' km<button class="usekm" onclick="usePlanKm()">použít</button></span></div>'
+    : '';
+  const I = S.inputs;
+  const fuelCost = I.km/100*I.cons*I.fuel;
+  const food = I.foodDay*daysUsed;
+  const vign = S.vign ? 12.5 : 0;
+  const total = nights.reduce((s,n)=>s+n.night,0) + acts.reduce((s,a)=>s+a.pp*2,0) + fuelCost + food + vign + (+I.buffer||0);
+  document.getElementById('bRows').innerHTML =
+    '<div class="brow"><span class="bl"><b>Nafta</b><small>'+I.km+' km × '+I.cons+' l/100 × '+I.fuel+' €/l</small></span><span class="bv">'+eur(fuelCost)+'</span></div>'+
+    '<div class="brow"><span class="bl"><b>Jídlo</b><small>'+I.foodDay+' €/den × '+daysUsed+' d. (vč. obědů)</small></span><span class="bv">'+eur(food)+'</span></div>'+
+    '<div class="brow"><span class="bl"><b>Známka + rezerva</b></span><span class="bv">'+eur(vign+(+I.buffer||0))+'</span></div>';
+  document.getElementById('totalEur').textContent = eur(total);
+  document.getElementById('totalCzk').textContent = '≈ '+Math.round(total*I.rate).toLocaleString('cs-CZ')+' Kč (kurz '+I.rate+')';
+}
+['km','cons','fuel','foodDay','buffer','rate'].forEach(k=>{
+  document.getElementById(k).addEventListener('input', e=>{
+    S.inputs[k] = parseFloat(e.target.value)||0; saveState(); renderBudget();
+  });
+});
+document.getElementById('vign').addEventListener('change', e=>{ S.vign=e.target.checked; saveState(); renderBudget(); });
+
+/* ================= CHECKLIST ================= */
+const CK = [
+ ['Auto a papíry',[
+  'Digitální dálniční známka koupená a aktivní',
+  'Malý techničák + zelená karta',
+  'Parkovací kotouč za sklo (modré zóny!)',
+  'Hotovost v € — kempy, parkomaty i hofladeny často bez karet',
+  'CEE adaptér + prodlužka na elektřinu v kempu',
+  'Vyrovnávací klíny pod kola',
+  'Kanystr s pitnou vodou, čelovka, powerbanka'
+ ]],
+ ['Kuchyň v Californii',[
+  'Plná plynová bomba + zapalovač',
+  'Ostrý nůž, prkénko, olej a základní koření',
+  'Káva + moka konvička',
+  'Jar, houbička, utěrky',
+  'Lednici/box zapnout večer před odjezdem',
+  'Plátěnky a prázdné boxy na úlovky z farem'
+ ]],
+ ['Koupání',[
+  'Plavky ×2 a ručníky + rychloschnoucí osuška',
+  'Žabky do vody — vstupy bývají kamenité',
+  'Slunečník nebo plachta (Tiefgraben je bez stínu)',
+  'Krém SPF 50, kšiltovky, sluneční brýle',
+  'Deka na louku, clony do oken auta'
+ ]],
+ ['Pohodlí na cestu',[
+  'Velký polštář navíc na spaní i do auta',
+  'Dost pití a svačiny do ruky',
+  'Repelent na večer u vody',
+  'Mikiny — večery u jezer jsou svěží',
+  'Pohodlné boty na 2–3 hodiny chůze'
+ ]],
+ ['Doklady',[
+  'Občanky / pasy',
+  'Kartičky pojištěnce (EHIC)',
+  'Řidičák',
+  'Potvrzení rezervace kempu'
+ ]]
+];
+function renderChecklist(){
+  const wrap = document.getElementById('ckWrap');
+  let n = 0;
+  wrap.innerHTML = CK.map(([title,items])=>{
+    const rows = items.map(txt=>{
+      const id = 'ck'+(n++);
+      const on = S.checked.includes(txt);
+      return '<div class="ck"><input type="checkbox" id="'+id+'" data-ck="'+txt.replace(/"/g,'&quot;')+'" '+(on?'checked':'')+'><label for="'+id+'">'+txt+'</label></div>';
+    }).join('');
+    return '<div class="ckgroup"><h3>'+title+'</h3>'+rows+'</div>';
+  }).join('') +
+  (S.custom.length?'<div class="ckgroup"><h3>Vlastní</h3>'+S.custom.map(txt=>{
+    const id='ck'+(n++), on=S.checked.includes(txt);
+    return '<div class="ck"><input type="checkbox" id="'+id+'" data-ck="'+txt.replace(/"/g,'&quot;')+'" '+(on?'checked':'')+'><label for="'+id+'">'+txt+'</label></div>';
+  }).join('')+'</div>':'');
+}
+document.addEventListener('change', e=>{
+  const c = e.target.closest('[data-ck]'); if(!c) return;
+  const t = c.dataset.ck;
+  c.checked ? (S.checked.includes(t)||S.checked.push(t)) : S.checked = S.checked.filter(x=>x!==t);
+  saveState();
+});
+function addCustom(){
+  const inp = document.getElementById('ckNew');
+  const v = inp.value.trim(); if(!v) return;
+  S.custom.push(v); inp.value=''; saveState(); renderChecklist();
+}
+
+/* ================= TABY + START ================= */
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected', String(t.dataset.tab===name)));
+  ['objevuj','mapa','plan','rozpocet','sbalit'].forEach(n=>{
+    document.getElementById('tab-'+n).hidden = (n!==name);
+  });
+}
+document.querySelector('.tabs').addEventListener('click', e=>{
+  const t = e.target.closest('.tab'); if(!t) return;
+  switchTab(t.dataset.tab);
+  window.scrollTo({top:0});
+});
+function renderAll(){ renderPlan(); renderCatalog(); renderBudget(); drawDots(); drawRoutes(); }
+(async function(){
+  await loadState();
+  const I = S.inputs;
+  ['km','cons','fuel','foodDay','buffer','rate'].forEach(k=>{ document.getElementById(k).value = I[k]; });
+  document.getElementById('vign').checked = !!S.vign;
+  initFilters(); buildMap(); renderAll(); renderChecklist();
+})();
+</script>
+</body>
+</html>
