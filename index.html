@@ -172,6 +172,30 @@ a:focus-visible,button:focus-visible{outline:2.5px solid var(--gold);outline-off
 .foot{margin-top:26px;font-size:12.5px;color:var(--mut);font-style:italic}
 .foot a{color:var(--mut)}
 
+/* ---------- náčrt trasy, kreslí se sám při scrollu ---------- */
+.routewrap{margin:30px auto 0;max-width:420px}
+.routewrap svg{width:100%;height:auto;display:block}
+.rghost{fill:none;stroke:#DFD3B6;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round}
+.rline{fill:none;stroke:var(--fire);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round;
+  stroke-dasharray:var(--len,2000);stroke-dashoffset:calc(var(--len,2000) * (1 - var(--draw,0)))}
+.rstop circle{fill:var(--fire);stroke:var(--paper);stroke-width:3}
+.rstop text{font-family:'Karla',sans-serif;font-size:15px;font-weight:700;fill:#4a4436}
+.rstop{opacity:var(--o,0);transform:translateY(calc((1 - var(--o,0)) * 7px))}
+.rstop.rhome circle{fill:var(--ink)}
+.routecap{font-size:12.5px;color:var(--mut);text-align:center;margin-top:12px;font-style:italic}
+
+/* ---------- decentní animace ---------- */
+@media (prefers-reduced-motion:no-preference){
+  .fadein{opacity:0;transform:translateY(14px);
+    transition:opacity .6s cubic-bezier(.2,.6,.2,1),transform .6s cubic-bezier(.2,.6,.2,1)}
+  .fadein.seen{opacity:1;transform:none}
+  .cta{transition:background .25s,border-color .25s,transform .18s cubic-bezier(.2,.6,.2,1),box-shadow .25s}
+  .cta:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(32,29,23,.26)}
+  .cta:active{transform:translateY(1px)}
+  .facts span{transition:transform .18s cubic-bezier(.2,.6,.2,1)}
+  .facts span:hover{transform:translateY(-2px)}
+}
+
 /* ---------- bez animací: všechno naráz, nic se neztratí ---------- */
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
@@ -181,6 +205,9 @@ a:focus-visible,button:focus-visible{outline:2.5px solid var(--gold);outline-off
   .scrim{opacity:.55}
   .kicker{position:static;opacity:1;margin-bottom:10vh}
   .arrow,.egg{display:none}
+  .fadein{opacity:1;transform:none}
+  .rline{stroke-dashoffset:0}
+  .rstop{opacity:1;transform:none}
   .actwrap{gap:26px}
   .actwrap > *{grid-area:auto}
   .beat,.necum span{opacity:1;transform:none;filter:none}
@@ -216,20 +243,21 @@ a:focus-visible,button:focus-visible{outline:2.5px solid var(--gold);outline-off
 <section class="outro">
   <div class="band" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
   <div class="inner">
-    <div class="eyebrow">tak jo, tady to máš</div>
-    <h2>Pět dní, dvě země, <em>jedna dodávka</em></h2>
-    <p class="lede">Trasa, kde spíme, kolik to stojí a kde se dá ráno koupit chleba. Devadesát tři míst od rakouských jezer po Dolomity — u každého dne kilometry, časy příjezdu, otvíračky a navigace na jeden klik.</p>
-    <div class="who">
+    <div class="eyebrow fadein">tak jo, tady to máš</div>
+    <h2 class="fadein">Sedm dní, dvě země, <em>jedna dodávka</em></h2>
+    <p class="lede fadein">Trasa, kde spíme, kolik to stojí a kde se dá ráno koupit chleba. Devadesát tři míst od rakouských jezer po Dolomity — u každého dne kilometry, časy příjezdu, otvíračky a navigace na jeden klik.</p>
+    <div class="who fadein">
       <div style="--cc:#1D7A99"><b>Marek:</b> kilometry, nafta, kolik to celé stojí.</div>
       <div style="--cc:#2F7D4F"><b>Nikola:</b> kde je klid a kde mají ráno otevřeno.</div>
     </div>
-    <a class="cta" href="/planovac/">Otevřít plánovač →</a>
-    <div class="facts">
+    <a class="cta fadein" href="/planovac/">Otevřít plánovač →</a>
+    <div class="facts fadein">
       <span><b>93</b> míst</span>
-      <span><b>5</b> dní</span>
+      <span><b>7</b> dní</span>
       <span><b>2</b> země</span>
       <span><b>1</b> král</span>
     </div>
+    <div class="routewrap fadein"><svg viewBox="0 0 600 780" role="img" aria-label="Náčrt trasy z Českých Budějovic přes Salzkammergut a Korutany do Dolomit"><path class="rghost" d="M505.1,62 Q510.1,191.9 490.2,220.2 Q470.3,248.5 407.1,283.9 Q343.9,319.4 320.8,346.3 Q297.6,373.1 299.1,385.3 Q300.7,397.5 324.3,405.1 Q347.9,412.6 350.4,433.0 Q352.9,453.4 307.9,448.1 Q262.8,442.9 290.1,471.9 Q317.4,501 318.6,546.8 Q319.9,592.5 322.4,626.3 Q324.9,660 338.9,664.4 Q352.8,668.7 338.9,664.4 Q324.9,660 276.4,667.0 Q227.8,674 209.3,663.1 Q190.7,652.2 158.6,662.9 Q126.4,673.5 108.2,675.5 Q89.9,677.6 92.7,697.8 L95.4,718"/><path class="rline" id="rline" d="M505.1,62 Q510.1,191.9 490.2,220.2 Q470.3,248.5 407.1,283.9 Q343.9,319.4 320.8,346.3 Q297.6,373.1 299.1,385.3 Q300.7,397.5 324.3,405.1 Q347.9,412.6 350.4,433.0 Q352.9,453.4 307.9,448.1 Q262.8,442.9 290.1,471.9 Q317.4,501 318.6,546.8 Q319.9,592.5 322.4,626.3 Q324.9,660 338.9,664.4 Q352.8,668.7 338.9,664.4 Q324.9,660 276.4,667.0 Q227.8,674 209.3,663.1 Q190.7,652.2 158.6,662.9 Q126.4,673.5 108.2,675.5 Q89.9,677.6 92.7,697.8 L95.4,718"/><g class="rstop rhome" data-stop="0"><circle cx="505.1" cy="62" r="7"/><text x="491.1" y="67" text-anchor="end">České Budějovice</text></g><g class="rstop " data-stop="1"><circle cx="297.6" cy="373.1" r="7"/><text x="313.6" y="378.1" text-anchor="start">Salzkammergut</text></g><g class="rstop " data-stop="2"><circle cx="352.9" cy="453.4" r="7"/><text x="368.9" y="458.4" text-anchor="start">Hallstatt</text></g><g class="rstop " data-stop="3"><circle cx="324.9" cy="660" r="7"/><text x="340.9" y="665" text-anchor="start">Korutany</text></g><g class="rstop " data-stop="4"><circle cx="95.4" cy="718" r="7"/><text x="111.4" y="723" text-anchor="start">Dolomity</text></g></svg><p class="routecap">České Budějovice → Salzkammergut → Korutany → Dolomity a zase domů</p></div>
     <p class="foot">Žádná registrace, běží to na jednom telefonu a jednom notebooku.<br>Král Kodaně na tuhle cestu nejede. — <a href="#top">zpátky nahoru</a>, jestli chceš zase čumět</p>
   </div>
 </section>
@@ -308,6 +336,36 @@ if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
   [beat1, beat2, ...letters].forEach(el=>el.style.setProperty('--o','1'));
   subEl.style.setProperty('--sub','1');
 }
+
+/* Náčrt trasy se kreslí, jak se k němu blížíš; karty závěru jemně naskakují. */
+(function(){
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const io = new IntersectionObserver(es=>{
+    es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('seen'); io.unobserve(e.target); } });
+  }, {threshold:.18, rootMargin:'0px 0px -8% 0px'});
+  document.querySelectorAll('.fadein').forEach((el,i)=>{ el.style.transitionDelay = (i*70)+'ms'; io.observe(el); });
+
+  const line = document.getElementById('rline');
+  if(!line) return;
+  const wrap = line.closest('.routewrap');
+  const len = line.getTotalLength();
+  line.style.setProperty('--len', len.toFixed(0));
+  const stops = [...wrap.querySelectorAll('.rstop')];
+  function draw(){
+    const r = wrap.getBoundingClientRect(), vh = window.innerHeight;
+    /* 0 když je náčrt teprve pod okrajem, 1 když je celý nad polovinou obrazovky */
+    const p = Math.max(0, Math.min(1, (vh*0.92 - r.top) / Math.max(1, r.height*0.82)));
+    line.style.setProperty('--draw', p.toFixed(3));
+    stops.forEach((el,i)=>{
+      const at = i/(stops.length-1);
+      el.style.setProperty('--o', Math.max(0, Math.min(1, (p - at*0.86)/0.1)).toFixed(3));
+    });
+  }
+  let t=false;
+  addEventListener('scroll', ()=>{ if(!t){ t=true; requestAnimationFrame(()=>{ t=false; draw(); }); } }, {passive:true});
+  addEventListener('resize', draw);
+  draw();
+})();
 </script>
 </body>
 </html>
