@@ -147,9 +147,11 @@ a:focus-visible,button:focus-visible{outline:2.5px solid var(--gold);outline-off
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   .scroller{height:auto}
-  .stage{position:static;height:auto;min-height:88svh;padding:26vh 0}
-  .hero{opacity:.4;filter:none;transform:none}
-  .scrim{opacity:.6}
+  /* relative, ne static — jinak by se fotka odkotvila od jeviště a překryla celou stránku */
+  .stage{position:relative;height:auto;min-height:88svh;padding:26vh 0}
+  /* bez animací se král neztrácí — jen ztmavne tak, aby přes něj šel text přečíst */
+  .hero{opacity:.9;filter:none;transform:none}
+  .scrim{opacity:.55}
   .act1{position:static;opacity:1;margin-bottom:12vh}
   .hint{display:none}
   .necum span{opacity:1;transform:none;filter:none}
