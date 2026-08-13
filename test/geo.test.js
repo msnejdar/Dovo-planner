@@ -201,5 +201,13 @@ if (!gpx.includes('Freistadt &lt;test&gt;')) fail('buildGPX: název bodu se neza
 if (buildGPX([]).includes('<trk>')) fail('buildGPX: prázdný vstup nemá dělat trasu');
 if (!fails) console.log('OK  exporty: ICS s CRLF a escapováním, GPX s body i trasou');
 
+/* --- počasí: překlad kódů WMO --- */
+const { wmoText } = A;
+[[0, 'jasno'], [3, 'zataženo'], [45, 'mlha'], [63, 'déšť'], [81, 'přeháňky'], [95, 'bouřky']].forEach(([c, t]) => {
+  if (wmoText(c).t !== t) fail('wmoText(' + c + '): čekám "' + t + '", dostal "' + wmoText(c).t + '"');
+});
+if (wmoText(999).t !== '' || wmoText(0).e === '') fail('wmoText: neznámý kód má vrátit prázdno, známý emoji');
+if (!fails) console.log('OK  počasí: překlad kódů WMO do češtiny');
+
 if (fails) { console.error('\n' + fails + ' chyb.'); process.exit(1); }
 console.log('\nVŠE OK');

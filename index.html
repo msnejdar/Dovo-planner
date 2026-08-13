@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="only light">
+<meta name="theme-color" content="#F6F0E1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Jezera">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
 <title>Jezera pro dva · Salzkammergut & Dolomity plánovač</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,650&family=Karla:wght@400;500;700&display=swap');
@@ -352,6 +358,7 @@ svg text{font-family:'Fraunces',Georgia,serif}
 .startrow input{border:1.5px solid var(--line);border-radius:11px;background:#fff;padding:7px 9px;font:inherit;font-size:15px;color:var(--ink);letter-spacing:normal;text-transform:none}
 .startrow .hint{font-size:12.5px;color:var(--mut);font-style:italic;flex:1;min-width:150px;letter-spacing:normal;text-transform:none;font-weight:400}
 .daydate{font-family:'Karla',sans-serif;font-size:11.5px;font-weight:700;color:var(--mut);letter-spacing:.06em}
+.wx{color:var(--plaz);font-weight:700;white-space:nowrap}
 .mood{display:inline-block;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-left:2px}
 .mood.m0{background:#E7F0E3;color:#2F7D4F}
 .mood.m1{background:#E4EFF3;color:#1D7A99}
@@ -1146,6 +1153,22 @@ function surpriseDay(mood, anchorLL, rnd){
   if(camp) out.push(camp.id);
   return out;
 }
+/* ================= POČASÍ =================
+   Kódy počasí podle WMO, jak je vrací Open-Meteo. Překlad je čistá funkce. */
+function wmoText(code){
+  const c = +code;
+  if(c===0) return {e:'☀️', t:'jasno'};
+  if(c===1||c===2) return {e:'🌤', t:'skoro jasno'};
+  if(c===3) return {e:'☁️', t:'zataženo'};
+  if(c===45||c===48) return {e:'🌫', t:'mlha'};
+  if(c>=51&&c<=57) return {e:'🌦', t:'mrholení'};
+  if(c>=61&&c<=67) return {e:'🌧', t:'déšť'};
+  if(c>=71&&c<=77) return {e:'🌨', t:'sněžení'};
+  if(c>=80&&c<=82) return {e:'🌧', t:'přeháňky'};
+  if(c===85||c===86) return {e:'🌨', t:'sněhové přeháňky'};
+  if(c>=95 && c<=99) return {e:'⛈', t:'bouřky'};
+  return {e:'', t:''};
+}
 /* ================= EXPORTY =================
    Čisté generátory — berou hotová data, ať jdou otestovat bez prohlížeče. */
 function icsEscape(s){ return String(s).replace(/([,;\\])/g,'\\$1').replace(/\r?\n/g,'\\n'); }
@@ -1264,7 +1287,7 @@ function decodePlanData(s){
 /* export pro test (v prohlížeči neškodí) */
 var APP_PURE = {CATS,TINTS,REGS,FROM_CB,ITEMS,TPL,LAKES,VIEWS,VPOLYS,PROJ,HOMEPT,EXITPT,viewOf,pip,hav,est,gUrl,navUrl,gnavUrl,genMini,lakesFor,CB_LL,encodePlanData,decodePlanData,esc,shortName,
   HOURS,DOW,DOW_SHORT,fmtClock,euOffsetMin,parseISO,addDays,fmtDate,sunTimes,openIssue,corridorFor,ZONE,smoothPath,
-  MOODS,surpriseDay,tripBadges,buildICS,buildGPX,icsEscape};
+  MOODS,surpriseDay,tripBadges,buildICS,buildGPX,icsEscape,wmoText};
 </script>
 <script>
 /* ================= STAV & ULOŽENÍ ================= */
@@ -1967,7 +1990,7 @@ function renderPlan(){
     }
     if(!day.length) inner = '<div class="empty">Zatím prázdný den — přidej místa v katalogu nebo z mapy, nebo si nahoře načti můj návrh.</div>';
     const mood = dayMood(t);
-    const dateLbl = t.date ? '<span class="daydate">'+DOW_SHORT[t.dow]+' '+fmtDate(t.date)+'</span> ' : '';
+    const dateLbl = t.date ? '<span class="daydate">'+DOW_SHORT[t.dow]+' '+fmtDate(t.date)+wxHtml(di)+'</span> ' : '';
     return '<div class="day"><div class="dayhead"><span class="daynum serif">'+(di+1)+'</span>'+
       '<h3>Den '+(di+1)+' '+dateLbl+(mood?'<span class="mood m'+mood.i+'">'+mood.txt+'</span>':'')+sum+'</h3>'+
       (day.length?'<a class="gnav lite daynav" target="_blank" rel="noopener" href="'+gnavUrl(dayStops(di))+'" title="Otevřít den v navigaci Google">🧭 Navigovat</a><button class="dayclear" data-clear="'+di+'">vyčistit</button>':'')+
@@ -2457,7 +2480,7 @@ function renderDnes(){
   let html = '';
   const dateLbl = t.date ? DOW[t.dow]+' '+fmtDate(t.date) : 'Den '+(dnesDay+1);
   html += '<div class="sechead">'+esc(dateLbl)+' · '+t.km+' km · 🚐 '+fmtMin(t.drive)+
-    (t.sun?' · ☀ '+fmtClock(t.sun.rise)+'–'+fmtClock(t.sun.set):'')+'</div>';
+    (t.sun?' · ☀ '+fmtClock(t.sun.rise)+'–'+fmtClock(t.sun.set):'')+wxHtml(dnesDay)+'</div>';
   let next = null;
   t.rows.forEach((r,ix)=>{
     const done = S.done.includes(r.it.id);
@@ -2580,6 +2603,53 @@ document.getElementById('gpxBtn').addEventListener('click', exportGPX);
   });
 })();
 
+/* ================= POČASÍ (Open-Meteo, bez klíče) =================
+   Tichý doplněk: když síť není (offline u jezer, Claude appka), nic se nestane. */
+let WX = null;
+async function loadWeather(){
+  const d0 = parseISO(S.start && S.start.date);
+  if(!d0 || typeof fetch!=='function') return;
+  const P = calcPlan();
+  const pts = [];
+  P.days.forEach((d,di)=>{
+    if(!d.rows.length || !d.date) return;
+    const last = d.rows[d.rows.length-1].it;
+    pts.push({di, date:d.date, ll:last.ll});
+  });
+  if(!pts.length) return;
+  const days = Math.round((pts[pts.length-1].date - pts[0].date)/86400000);
+  /* předpověď dává smysl nanejvýš na 16 dní dopředu */
+  const ahead = Math.round((pts[0].date - Date.now())/86400000);
+  if(ahead < -1 || ahead > 16 || days > 16) return;
+  const iso = d => d.toISOString().slice(0,10);
+  const url = 'https://api.open-meteo.com/v1/forecast'+
+    '?latitude='+pts.map(p=>p.ll[0].toFixed(3)).join(',')+
+    '&longitude='+pts.map(p=>p.ll[1].toFixed(3)).join(',')+
+    '&daily=weather_code,temperature_2m_max,precipitation_probability_max'+
+    '&timezone=Europe%2FVienna&start_date='+iso(pts[0].date)+'&end_date='+iso(pts[pts.length-1].date);
+  try{
+    const r = await fetch(url);
+    if(!r.ok) return;
+    const j = await r.json();
+    const arr = Array.isArray(j) ? j : [j];
+    const out = {};
+    pts.forEach((p,i)=>{
+      const block = arr[i] && arr[i].daily;
+      if(!block) return;
+      const k = block.time.indexOf(iso(p.date));
+      if(k<0) return;
+      out[p.di] = {code:block.weather_code[k], tmax:block.temperature_2m_max[k], rain:block.precipitation_probability_max[k]};
+    });
+    if(Object.keys(out).length){ WX = out; renderPlan(); renderDnes(); }
+  }catch(e){ /* bez počasí se dá žít */ }
+}
+function wxHtml(di){
+  if(!WX || !WX[di]) return '';
+  const w = WX[di], m = wmoText(w.code);
+  return ' <span class="wx">'+m.e+' '+Math.round(w.tmax)+' °C'+
+    (w.rain>=30?' · '+w.rain+' % déšť':'')+'</span>';
+}
+
 /* ================= TABY + START ================= */
 function switchTab(name){
   document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected', String(t.dataset.tab===name)));
@@ -2606,6 +2676,11 @@ function renderAll(){ renderPlan(); renderCatalog(); renderBudget(); renderTripb
   syncStartInputs();
   initFilters(); initMap(); buildMap(); renderAll(); renderChecklist();
   checkIncoming();
+  loadWeather();
+  /* offline u jezer: registrace tiše selže, když appka běží z jednoho souboru */
+  if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
 })();
 </script>
 </body>
