@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="only light">
-<title>Jezera pro dva · Salzkammergut plánovač</title>
+<title>Jezera pro dva · Salzkammergut & Dolomity plánovač</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,650&family=Karla:wght@400;500;700&display=swap');
 
@@ -281,20 +281,54 @@ svg text{font-family:'Fraunces',Georgia,serif}
 .scalebar{stroke:#201D17;stroke-width:2}
 .scaletxt{font-family:'Karla',sans-serif;font-size:11px;font-weight:700;fill:#201D17}
 @media print{ #mapSel,#routeChips{display:none!important} }
+
+/* ---------- v5: Dolomity, pohledy mapy, navigace ---------- */
+:root{--pek:#8A5A33}
+.band i:nth-child(6){background:var(--pek)}
+#routeInfo{
+  display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap;
+  background:var(--panel);border:1.5px solid var(--ink);border-radius:var(--r);
+  padding:10px 14px;margin-top:10px;font-size:13px;font-weight:700;
+}
+#routeInfo:empty{display:none}
+#routeInfo .ri-mut{color:var(--mut);font-weight:700}
+.gnav{
+  border:1.5px solid var(--ink);background:var(--ink);color:var(--paper)!important;
+  border-radius:999px;padding:6px 13px;font:inherit;font-size:12.5px;font-weight:700;
+  text-decoration:none;display:inline-flex;align-items:center;gap:5px;cursor:pointer;white-space:nowrap;
+}
+.gnav.lite{background:#fff;color:var(--ink)!important}
+.daynav{margin-left:auto;padding:4px 10px;font-size:12px}
+.regframe{fill:rgba(255,253,246,.0);stroke:#26241F;stroke-width:1.6;stroke-dasharray:5 5;cursor:pointer}
+.regframe:hover{fill:rgba(255,253,246,.45)}
+.regframelbl{font-size:21px;font-style:italic;fill:#201D17;cursor:pointer}
+.regframesub{font-family:'Karla',sans-serif;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;fill:#6E6754;font-weight:700;cursor:pointer}
+.kmlbl{font-family:'Karla',sans-serif;font-size:11.5px;font-weight:700;fill:#57503f;paint-order:stroke;stroke:#F1EADA;stroke-width:3.5}
+.homelbl{font-size:15px;font-style:italic;fill:#201D17}
+.legsolid{fill:none;stroke-linecap:round}
+.legdash{fill:none;stroke-linecap:round;stroke-dasharray:7 6}
+@media (prefers-reduced-motion:no-preference){
+  .legdash{animation:legflow 1.15s linear infinite}
+  @keyframes legflow{to{stroke-dashoffset:-13}}
+}
+#tplAsk{flex-basis:100%;color:var(--ink)}
+#tplAsk button{margin:4px 6px 0 0}
+#tplAsk .yes{background:var(--gastro);border-color:var(--gastro);color:#fff}
+@media print{ #routeInfo,.gnav,#viewChips{display:none!important} }
 </style>
 </head>
 <body>
 <div class="bgfix" aria-hidden="true"></div>
-<div class="band" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+<div class="band" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
 <header>
-  <div class="eyebrow">Salzkammergut · plánovač k Californii</div>
+  <div class="eyebrow">Salzkammergut & Dolomity · plánovač k Californii</div>
   <h1>Jezera <em>pro dva</em></h1>
-  <p class="sub">Vyber si, co tě láká — srdíčkem do výběru, plusem rovnou do dne. Nebo si načti můj hotový návrh a přeskládej ho po svém.</p>
-  <div class="metaline"><span>start: České Budějovice</span><span>1–5 dní</span><span>ceny = hlavní sezóna 2026, pro dva</span></div>
+  <p class="sub">Vyber si, co tě láká — srdíčkem do výběru, plusem rovnou do dne. Nebo si načti můj hotový návrh a přeskládej ho po svém. Od čtyř dnů se jede i na jih: Braies, Misurina, pekárny v Pustertalu.</p>
+  <div class="metaline"><span>start: České Budějovice</span><span>1–5 dní</span><span>od 4 dnů i severní Itálie</span><span>ceny = hlavní sezóna 2026, pro dva</span></div>
 </header>
 
 <div id="printhead">
-  <div class="eyebrow">Salzkammergut · srpen 2026 · VW California</div>
+  <div class="eyebrow">Salzkammergut & Dolomity · srpen 2026 · VW California</div>
   <h1 style="font-size:26px">Jezera pro dva — plán</h1>
 </div>
 
@@ -322,30 +356,34 @@ svg text{font-family:'Fraunces',Georgia,serif}
 
 <!-- ============ MAPA ============ -->
 <section id="tab-mapa" hidden>
+  <div class="filterlabel">Pohled</div>
+  <div class="chips" id="viewChips"></div>
   <div class="filterlabel">Trasa na mapě</div>
   <div class="chips" id="routeChips"></div>
   <div class="mapwrap" style="padding:8px">
-    <svg id="bigsvg" viewBox="0 0 1000 1045" role="img" aria-label="Mapa Salzkammergutu podle skutečných souřadnic"></svg>
+    <svg id="bigsvg" viewBox="0 0 1000 1045" role="img" aria-label="Mapa Salzkammergutu a Dolomit podle skutečných souřadnic"></svg>
   </div>
-  <div id="mapSel"><div class="empty">Klepni na bod v mapě — srdíčka z výběru tu svítí jako ♥ v barvě kategorie.</div></div>
+  <div id="routeInfo"></div>
+  <div id="mapSel"><div class="empty">Klepni na bod v mapě — srdíčka z výběru tu svítí jako ♥ v barvě kategorie. V přehledu celé cesty tě rámečky prokliknou do regionů.</div></div>
   <div class="legend" id="mapLegend"></div>
-  <p class="maphint">Mapa je kreslená podle skutečných souřadnic. Detail místa vždy otevřeš přes Google Maps / Mapy.cz.</p>
+  <p class="maphint">Mapa je kreslená podle skutečných souřadnic. Vyber den a pusť ho tlačítkem 🧭 rovnou do navigace Google. Detail místa vždy otevřeš přes Google Maps / Mapy.cz.</p>
 </section>
 
 <!-- ============ PLÁN ============ -->
 <section id="tab-plan" hidden>
   <div class="tpl">
     <b>Můj návrh (laděno pro Nikolu):</b>
-    <button data-tpl="3">3 dny</button>
-    <button data-tpl="4">4 dny</button>
-    <button data-tpl="5">5 dní</button>
-    <small>Klid, farmy a menší kempy místo davů. Hallstatt jen jako ranní zastávka. Načte se do dnů níž — pak přeskládej po svém.</small>
+    <button data-tpl="3">3 dny · jezera</button>
+    <button data-tpl="4">4 dny + Dolomity</button>
+    <button data-tpl="5">5 dní + Dolomity</button>
+    <small>Klid, farmy a menší kempy místo davů. Hallstatt jen jako ranní zastávka. Od čtyř dnů se jede přes Korutany do Pustertalu — Braies brzy ráno, pekárny a sýrárny po cestě. Načte se do dnů níž — pak přeskládej po svém.</small>
+    <small id="tplAsk" hidden></small>
   </div>
   <div class="wandrow">
     <button class="wand" id="wandBtn">🪄 Srovnat dny podle mapy</button>
     <small style="color:var(--mut)">seřadí zastávky v každém dni tak, aby se jelo co nejmíň</small>
   </div>
-  <p class="planintro">U každého dne vidíš čas za volantem, kilometry a čas na místech — včetně přejezdů mezi dny a návratu domů. Nové místo se do dne zařadí samo tam, kam patří.</p>
+  <p class="planintro">U každého dne vidíš čas za volantem, kilometry a čas na místech — včetně přejezdů mezi dny a návratu domů. Nové místo se do dne zařadí samo tam, kam patří. Tlačítkem 🧭 pustíš celý den i se zastávkami rovnou do navigace Google.</p>
   <div class="stats" id="planStats"></div>
   <div id="daysWrap"></div>
   <button class="bigbtn" onclick="window.print()">Vytisknout / uložit PDF</button>
@@ -357,7 +395,8 @@ svg text{font-family:'Fraunces',Georgia,serif}
     <div id="bNights"></div>
     <div id="bActs"></div>
     <div id="bKm"></div>
-    <div class="togglerow"><input type="checkbox" id="vign" checked><label for="vign">Digitální dálniční známka 10 dní (~12,50 €)</label></div>
+    <div class="togglerow"><input type="checkbox" id="vign" checked><label for="vign">Digitální dálniční známka 10 dní (12,80 €)</label></div>
+    <div class="togglerow"><input type="checkbox" id="alp"><label for="alp" id="alpLabel">Alpské mýto na jih, tam i zpět (Felbertauern 13,50 € + Tauern 15 €)</label></div>
     <div class="binputs">
       <div class="binput"><label for="km">Km celkem</label><input id="km" type="number" inputmode="numeric" value="650"></div>
       <div class="binput"><label for="cons">Spotřeba l/100</label><input id="cons" type="number" inputmode="decimal" step="0.5" value="10"></div>
@@ -390,18 +429,33 @@ const CATS = {
   kemp:   {label:'Kempy & noclehy',color:'#2F7D4F'},
   vylet:  {label:'Výlety',         color:'#DFA320'},
   gastro: {label:'Farmy & nákup',  color:'#D95A34'},
+  pek:    {label:'Pekárny & kavárny', color:'#8A5A33'},
   rest:   {label:'Na oběd',        color:'#C2497F'}
 };
-const TINTS = {plaz:'#E4EFF3',kemp:'#E7F0E3',vylet:'#F7EDD2',gastro:'#F9E4D8',rest:'#F6E3ED'};
+const TINTS = {plaz:'#E4EFF3',kemp:'#E7F0E3',vylet:'#F7EDD2',gastro:'#F9E4D8',pek:'#F0E4D2',rest:'#F6E3ED'};
 const REGS = {
   cesta:'Po cestě', irr:'Irrsee', mon:'Mondsee', att:'Attersee', fus:'Fuschlsee',
-  wol:'Wolfgangsee', isc:'Bad Ischl', hal:'Hallstatt & Gosau', tra:'Traunsee & Gmunden'
+  wol:'Wolfgangsee', isc:'Bad Ischl', goi:'Bad Goisern', hal:'Hallstatt & Gosau', tra:'Traunsee & Gmunden',
+  jih:'Cesta na jih', dol:'Pustertal & Braies', cor:'Cortina & Misurina'
 };
-const FROM_CB = {cesta:[45,40], irr:[170,215], mon:[165,215], att:[150,195], fus:[185,235], wol:[190,240], isc:[185,230], hal:[210,255], tra:[140,175]};
+/* [min, km] z ČB po silnici — jih dle OSRM 8/2026: Döbriach 392 km/4:34 (A10),
+   Toblach 462 km/5:57 (nejrychleji přes Felbertauern), Misurina/Cortina ~490 km */
+const FROM_CB = {cesta:[45,40], irr:[170,215], mon:[165,215], att:[150,195], fus:[185,235], wol:[190,240], isc:[185,230], goi:[200,245], hal:[210,255], tra:[140,175], jih:[275,390], dol:[355,460], cor:[380,490]};
 const CB_LL = [48.9747,14.4744];
 const enc = encodeURIComponent;
-const gUrl = it => 'https://www.google.com/maps/search/?api=1&query=' + enc((it.q || (it.name+', '+it.t)) + ', Österreich');
+const CNTRY = it => (it.reg==='dol'||it.reg==='cor') ? 'Italien' : 'Österreich';
+const gUrl = it => 'https://www.google.com/maps/search/?api=1&query=' + enc((it.q || (it.name+', '+it.t)) + ', ' + CNTRY(it));
 const mUrl = it => 'https://mapy.cz/fnc/v1/showmap?mapset=outdoor&center=' + it.ll[1] + ',' + it.ll[0] + '&zoom=16&marker=true';
+/* navigace Google: na jedno místo (z aktuální polohy)… */
+const navUrl = it => 'https://www.google.com/maps/dir/?api=1&destination=' + it.ll[0].toFixed(5) + ',' + it.ll[1].toFixed(5) + '&travelmode=driving';
+/* …a na celý den: origin → waypoints → destination (Google URL bere max 9 zastávek mezi krajními body) */
+function gnavUrl(stops){
+  const f = ll => ll[0].toFixed(5) + ',' + ll[1].toFixed(5);
+  let wp = stops.slice(1, -1);
+  if(wp.length > 9) wp = wp.slice(0, 9);
+  return 'https://www.google.com/maps/dir/?api=1&origin=' + f(stops[0]) + '&destination=' + f(stops[stops.length-1]) +
+    (wp.length ? '&waypoints=' + enc(wp.map(f).join('|')) : '') + '&travelmode=driving';
+}
 
 /* ll:[lat,lng] · t: obec · dur: min na místě · gr:[★,počet] Google · nik: 1–5 pro Nikolu + nn poznámka */
 const ITEMS = [
@@ -492,7 +546,7 @@ const ITEMS = [
  desc:'Rodinná bio farma mezi Mondsee a Irrsee (od 1990) zraje vlastní Bergkäse a Hofkäse ze senného mléka. Volat předem se vyplatí.'},
 {id:'g6',cat:'gastro',reg:'mon',ll:[47.8558,13.3499],t:'Mondsee',dur:40,nik:4,nn:'lokální trh, choď dopoledne',name:'Trh na Marktplatz · Mondsee',
  desc:'Sezónní trh na náměstí u baziliky — sýry, pečivo, květiny. Choď dopoledne, po poledni se balí.'},
-{id:'g7',cat:'gastro',reg:'isc',ll:[47.7109,13.6219],t:'Bad Ischl',dur:30,gr:[4.4,1981],nik:3,nn:'řemeslo ano, turisté taky',name:'Konditorei Zauner · Bad Ischl',
+{id:'g7',cat:'pek',reg:'isc',ll:[47.7109,13.6219],t:'Bad Ischl',dur:30,gr:[4.4,1981],nik:3,nn:'řemeslo ano, turisté taky',name:'Konditorei Zauner · Bad Ischl',
  desc:'C. k. dvorní cukrárna od roku 1832. Zaunerstollen je povinnost; krabici snese i lednička v Californii.'},
 {id:'g8',cat:'gastro',reg:'tra',ll:[47.9236,13.7903],t:'Gmunden',dur:45,gr:[4.4,459],nik:4,nn:'manufaktura, ne fabrika na suvenýry',name:'Gmundner Keramik',price:'outlet',
  desc:'Manufaktura ručně malované keramiky, kterou znáš z rakouských kuchyní — prohlídky výroby, prodejna i outlet. Ceny prémiové, druhá jakost v outletu je sázka.'},
@@ -515,23 +569,125 @@ const ITEMS = [
 {id:'r6',cat:'rest',reg:'tra',ll:[47.8984,13.8191],t:'Gmunden (Grünberg)',dur:60,gr:[4.5,1197],nik:4,nn:'álm nad jezerem, objednáváš u pultu',name:'Grünbergalm',q:'Grünbergalm Gmunden',
  desc:'Horská chata u lanovky nad Traunsee — Schweinsbraten, Brettljause a výhled. Objednává se u pultu, jídlo nosí ke stolu.'},
 {id:'r7',cat:'rest',reg:'mon',ll:[47.8181,13.3570],t:'St. Lorenz am Mondsee',dur:75,gr:[4.5,1234],nik:4,nn:'místní gasthof, žádný cirkus',name:'Gasthof Drachenwand',price:'zavřeno po–st',
- desc:'Selská kuchyně pod stěnou Drachenwandu, pět minut od kempu Nussbaumer. Otevřeno čt–ne, oběd 11:30–14:00 — jinam se v pondělí až středu.'}
+ desc:'Selská kuchyně pod stěnou Drachenwandu, pět minut od kempu Nussbaumer. Otevřeno čt–ne, oběd 11:30–14:00 — jinam se v pondělí až středu.'},
+
+/* ---- pekárny & kavárny (Salzkammergut) ---- */
+{id:'b1',cat:'pek',reg:'mon',ll:[47.85488,13.34906],t:'Mondsee',dur:25,nik:5,nn:'peče se tu od roku 1603',name:'Bäckerei Frank Berger',price:'út–so od 6:30',web:'https://frankberger.at/',q:'Bäckerei Frank Berger Mondsee',
+ desc:'Na stejném místě se peče od roku 1603, dnes pátá generace — vlastní kvásky, žádná aditiva, koláče podle starých receptů. Backstube otevírá v 6:30, do kempu vezeš housky ještě teplé. V neděli a pondělí nepečou.'},
+{id:'b2',cat:'pek',reg:'wol',ll:[47.73832,13.44785],t:'St. Wolfgang',dur:30,gr:[4.7,443],nik:4,nn:'perník ze 17. generace',name:'Konditorei Wallner',price:'pá zavřeno',web:'https://www.cafe-wallner.at/',q:'Konditorei Wallner St. Wolfgang',
+ desc:'Rodina Wallnerů tu peče od roku 1520 — perník z medu pro poutníky, dnes k tomu dorty a domácí zmrzlina. Horká čokoláda s rumem stojí za hřích; v pátek mají zavřeno.'},
+{id:'b3',cat:'pek',reg:'wol',ll:[47.73925,13.44716],t:'St. Wolfgang',dur:20,nik:4,nn:'denně od 6:30 — jistota pro kempaře',name:'Bäckerei Nahmer (bývalý Gandl)',price:'denně 6:30–18',web:'https://www.nahmer.at',q:'Bäckerei Nahmer St. Wolfgang',
+ desc:'V domě staré pekárny Gandl, kde se peklo od roku 1806, dnes peče ischlská rodina Nahmerových. Jediná pekárna na Wolfgangsee otevřená denně od půl sedmé — čerstvé rohlíky máš jisté i v pondělí.'},
+{id:'b4',cat:'pek',reg:'isc',ll:[47.71252,13.62321],t:'Bad Ischl',dur:45,gr:[4.4,444],nik:4,nn:'nejstarší kavárna Rakouska, pořád žije',name:'Café Ramsauer',price:'st + ne zavřeno',web:'https://www.cafe-ramsauer.at/',q:'Café Ramsauer Bad Ischl',
+ desc:'Kavárna z roku 1826, nejstarší nepřetržitě fungující v zemi — thonetky, mramorové stolky, zákusky pečené v domě. Sedávali tu Strauss i Kálmán; ty stihni snídani do půl dvanácté. Ve středu a v neděli zavřeno.'},
+{id:'b5',cat:'pek',reg:'tra',ll:[47.91659,13.79667],t:'Gmunden',dur:40,gr:[4.2,901],nik:3,nn:'terasa u jezera; čt a pá zavřeno!',name:'Konditorei Baumgartner',price:'čt + pá zavřeno',web:'https://www.konditorei-baumgartner.at/',q:'Konditorei Baumgartner Esplanade Gmunden',
+ desc:'Cukrárna na Esplanade od roku 1962 — dort, kopeček a Traunstein přes vodu. Pozor na bizarní zavírací dny čtvrtek a pátek; Gmunden si nech na začátek týdne nebo víkend.'},
+{id:'b6',cat:'pek',reg:'goi',ll:[47.64122,13.61665],t:'Bad Goisern',dur:25,gr:[4.5,118],nik:5,nn:'Keltenbrot se solankou z hor',name:'Bäckerei Maislinger',price:'denně, ne od 7:00',web:'https://www.keltenbrot.at/',q:'Bäckerei Maislinger Bad Goisern',
+ desc:'Rodinná pekárna od roku 1932: Keltenbrot z regionálního obilí, dlouho zrajícího kvasu a solanky ze solných hor. Otevřeno denně včetně neděle — a filiálku mají i v Hallstattu, kdybys tam byla dřív než davy.'},
+
+/* ---- pekárny & kavárny (Dolomity) ---- */
+{id:'b7',cat:'pek',reg:'dol',ll:[46.79559,11.93999],t:'Bruneck',dur:30,nik:4,nn:'štrůdl, za kterým se jezdí přes údolí',name:'Acherer Patisserie',price:'ne zavřeno',web:'https://www.acherer.com/',q:'Acherer Patisserie Bruneck',
+ desc:'Patisserie Andrease Acherera na Stadtgasse — štrůdl a sachr, o kterých Gambero Rosso píše jako o nejlepších v okolí, a k pultu přilepené květinářství. V neděli zavřeno.'},
+{id:'b8',cat:'pek',reg:'dol',ll:[46.73519,12.22298],t:'Toblach',dur:20,nik:4,nn:'kváskový chleba od roku 1954',name:'Bäckerei Trenker',price:'od 6:00 ráno',web:'https://www.trenker.com/en/',q:'Bäckerei Trenker Rathausplatz Toblach',
+ desc:'Toblašská pekárna třetí generace: přírodní kvásek, Pusterer Breatl, buchteln a mákovo-brusinkový koláč. Krám na náměstí otevírá v šest ráno — snídaně do kempu vyřešená; filiálky i v Niederdorfu a San Candidu.'},
+{id:'b9',cat:'pek',reg:'dol',ll:[46.7334,12.2800],t:'San Candido',dur:40,gr:[4.3,226],nik:4,nn:'snídaně ve dvě stě let staré stube',name:'Wachtler — krám a bistro',price:'boční ulička u pěší zóny',web:'https://www.wachtler.com/en/wachtler-store/',q:'Wachtler San Candido',
+ desc:'Rodinný krám s regionálními dobrotami a bistro ve dvě stě let staré stube, v boční uličce mimo hlavní proud — snídaně, zákusky, terasa s bylinkami a výhledem na Baranci.'},
+{id:'b10',cat:'pek',reg:'cor',ll:[46.5387,12.1362],t:'Cortina',dur:30,gr:[4.3,999],nik:4,nn:'pekárna i cukrárna, od sedmi ráno',name:'Pasticceria Alverà',price:'po zavřeno (mimo sezónu)',web:'https://www.pasticceriaalvera.com/',q:'Pasticceria Alvera Cortina',
+ desc:'Pekárna a cukrárna rodiny Alverà kousek od Corso Italia — chleba z výběrových mouk mlýna Petra, brioche, monoporce. V hlavní sezóně denně od 7:00 do večera bez pauzy.'},
+
+/* ---- koupání: jih ---- */
+{id:'p10',cat:'plaz',reg:'dol',ll:[46.7353,12.2177],t:'Toblach',dur:120,pp:5.6,nik:4,nn:'jediná legální voda široko daleko',name:'Naturbadeteich Toblach',price:'5,60 €/os · po 16 h 4 €',web:'https://www.sport-toblach.com/schwimmbad-toblach/',q:'Naturbadeteich Toblach',
+ desc:'Přírodní koupací jezírko bez chloru na kraji Toblachu — voda v létě až 25 °C, což horská jezera v okolí neumí. V Braies je koupání zakázané a Toblašské jezero je ptačí rezervace; tohle je jediná legální voda daleko široko. Denně 11–19.'},
+{id:'p11',cat:'plaz',reg:'jih',ll:[46.77443,13.64245],t:'Döbriach · Millstätter See',dur:90,pp:7,nik:4,nn:'teplé jezero přesně na půl cesty',name:'Millstätter See: Parkbad Döbriach',price:'Sittlinger 7 € · Parkbad ověř',q:'Parkbad Döbriach Millstätter See',web:'https://www.parkbad-doebriach.at/',
+ desc:'Rozbití dlouhého přejezdu na jih: jezero drží v srpnu 24–26 °C. Obecní Parkbad má 180 metrů přírodního břehu a obří louku na ležení, vedle je soukromý Sittlinger za 7 €. Hodina plavání a volant je zase snesitelný.'},
+{id:'p12',cat:'plaz',reg:'jih',ll:[46.71410,13.29618],t:'Techendorf · Weissensee',dur:120,pp:4.5,nik:5,nn:'nejčistší jezero, dvě třetiny břehů prázdné',name:'Weissensee: Strandbad Techendorf',price:'~4,50 € · ověř',q:'Strandbad Techendorf Weissensee',
+ desc:'Nejčistší koupací jezero široko daleko: v 930 metrech drží v létě přes 24 °C a dvě třetiny břehu jsou bez jediné stavby. Z Drautalu 12 km serpentin navíc — jeď sem, jen když máš aspoň hodinu a půl.'},
+
+/* ---- kempy: Dolomity a cesta ---- */
+{id:'k12',cat:'kemp',reg:'dol',ll:[46.73487,12.19441],t:'Toblach',dur:0,night:55,nik:3,nn:'resort se vším — a s lidmi',name:'Camping Olympia · Toblach',price:'~50–60 € · ověř',web:'https://www.camping-olympia.com',
+ desc:'Komfortní základna pro celý Pustertal: venkovní i nový krytý bazén, sauna, parcely po devadesáti metrech, bus na Braies od brány. Na srpen rezervuj hodně dopředu.'},
+{id:'k13',cat:'kemp',reg:'dol',ll:[46.70640,12.21663],t:'Toblacher See',dur:0,night:60,nik:4,nn:'první řada u jezera, drží si klid',name:'Camping Toblacher See',price:'~60 € vč. tax · elektřina po kWh',web:'https://www.toblachersee.com',
+ desc:'Jediný kemp přímo na břehu Toblašského jezera — Sextenské Dolomity z postele. Pozor: příjezdová silnice je denně 12–15 h zavřená, přijeď dopoledne nebo po třetí. Check-in od 15:00.'},
+{id:'k14',cat:'kemp',reg:'dol',ll:[46.66799,12.40007],t:'Sexten',dur:0,night:66,nik:3,nn:'devět saun už není kempování',name:'Caravan Park Sexten',price:'od 63 € + taxa',web:'https://www.caravanparksexten.it',
+ desc:'Pětihvězdičkový luxus v 1 520 m: devět saun, bazény, vlastní pekárna v areálu, nejblíž k Fischleintalu. Za ten komfort se platí — a v srpnu bez rezervace neuspěješ.'},
+{id:'k15',cat:'kemp',reg:'cor',ll:[46.52336,12.13351],t:'Cortina',dur:0,night:55,nik:4,nn:'férový, jednoduchý, bez rezervací',name:'Camping Rocchetta · Cortina',price:'55 € vč. elektřiny · min. 3 noci',web:'https://www.campingrocchetta.it',
+ desc:'Jednoduchý kemp u řeky dva kilometry pod Cortinou, teplá voda i elektřina v ceně. Rezervace zásadně neberou a chtějí minimálně tři noci — na jednu noc se nehodí, na cortinskou základnu ano; přijeď dopoledne.'},
+{id:'k16',cat:'kemp',reg:'jih',ll:[46.76768,13.64850],t:'Döbriach · Millstätter See',dur:0,night:59,nik:4,nn:'u vody, spořádaný, plný',name:'Camping Brunner am See',price:'~59 € · parcela u vody +15,50',web:'https://www.campingbrunner.at',
+ desc:'Kemp s vlastní pláží přímo na břehu — ideální nocleh na rozbití cesty tam nebo zpět. Jeden z nejlíp hodnocených kempů Korutan; psi nesmí a v hlavní sezóně se přijíždí jen pá–ne, rezervuj dlouho dopředu.'},
+
+/* ---- výlety: Dolomity a cesta ---- */
+{id:'v15',cat:'vylet',reg:'dol',ll:[46.69444,12.08528],t:'Braies',dur:150,pp:24.5,gr:[4.7,17965],nik:3,nn:'v sedm ráno pohádka, v deset Hallstatt na vodě',name:'Lago di Braies: okruh a loďky',price:'9–16 h jen s rezervací · obytňák ~49 €',walk:'3,6 km · rovina, na V břehu schody',web:'https://www.prags.bz/en',q:'Lago di Braies',
+ desc:'Smaragdová ikona Dolomit: okruh 3,6 km skoro po rovině (východní břeh má schody, jde to pomalu), dřevěné loďky 20 €/os. na 45 minut, koupání zakázáno. Od 1. 7. do 15. 9. se mezi 9–16 h vjíždí jen s rezervací z prags.bz — a online rezervace parkoviště u jezera bere jen auta do 2 m, California se zvednutou střechou tam neprojde. Řešení: přijeď před devátou, stejně je nejhezčí světlo.'},
+{id:'v16',cat:'vylet',reg:'dol',ll:[46.70833,12.21944],t:'Toblach',dur:90,gr:[4.6,2263],nik:4,nn:'lávky, ticho a šlapadla',name:'Toblacher See: naučná stezka',price:'park ~2 €',walk:'4,5 km · rovina, dřevěné lávky',web:'https://www.dreizinnen.com/en/activity/theme-path-toblach-dobbiaco-toblach-dobbiaco-lake-nature-educational-trail-toblach-dobbiaco_553',q:'Toblacher See',
+ desc:'Okruh po dřevěných lávkách s jedenácti zastaveními o ptačí rezervaci — celý rovný, hodinka v klidu. Šlapadlo 8 € za půl hodiny, platí se hotově. Koupat se choď do jezírka v Toblachu.'},
+{id:'v17',cat:'vylet',reg:'cor',ll:[46.63296,12.23023],t:'Val di Landro',dur:30,gr:[4.7,237],nik:4,nn:'pět minut od auta, velké kino',name:'Lago di Landro: vyhlídka',price:'park 2 €/h',walk:'0,6 km · rovina',q:'Lago di Landro',
+ desc:'Mléčně tyrkysové jezírko u silnice na Misurinu — pět minut od auta, severní stěna Cristalla přes vodu a o kus dál průhled na Tre Cime. Ideální protáhnutí nohou mezi Toblachem a Misurinou.'},
+{id:'v18',cat:'vylet',reg:'cor',ll:[46.58421,12.25232],t:'Misurina',dur:75,gr:[4.7,4931],nik:4,nn:'rovinka kolem vody, hory ze všech stran',name:'Lago di Misurina: okruh',price:'park 2 €/h · 14 €/den',walk:'2,6 km · rovina',q:'Lago di Misurina',
+ desc:'Okruh kolem jezera za čtyřicet minut po rovině, nad hlavou Sorapiss a Cadini. Parkoviště od května do října placená; hodina u Desparu s kotoučem zdarma. Odtud startuje mýtná silnice k Tre Cime.'},
+{id:'v19',cat:'vylet',reg:'cor',ll:[46.6123,12.2951],t:'Tre Cime · Rifugio Auronzo',dur:180,pp:30,gr:[4.8,1426],nik:2,nn:'velehory bez námahy, za velehorské ceny',name:'Tre Cime: Auronzo → Lavaredo',price:'mýto 40 €/auto · obytňák 60 € + rezervace',walk:'4 km tam a zpět · téměř rovina',web:'https://auronzo.info/en/parking-tre-cime-di-lavaredo/',q:'Rifugio Auronzo Tre Cime',
+ desc:'Mýtná silnice vytáhne auto do 2 320 m k Rifugiu Auronzo; odtud dva kilometry po staré vojenské cestě k Rifugiu Lavaredo, jižní stěny Tre Cime celou dobu nad hlavou. Od roku 2026 jen s online rezervací na SPZ (auronzo.info): auto 40 €, obytňák 60 €. Výš nelez — rovinka k Lavaredu je v téhle výšce akorát, dýchej pomalu a pij.'},
+{id:'v20',cat:'vylet',reg:'dol',ll:[46.64667,12.19889],t:'Prags',dur:120,pp:3.5,nik:5,nn:'kočárková rovina ve dvou tisících',name:'Plätzwiese / Prato Piazza',price:'mýto 7 €/auto · limit 100 aut',walk:'2–5 km · rovina po plošině',web:'https://www.prags.bz/en/plaetzwiese',q:'Prato Piazza',
+ desc:'Náhorní plošina ve 2 000 m: Croda Rossa na dosah, cesty rovné, ticho — nahoru smí jen sto aut (7 €), zbytek vozí shuttle z Brückele. V červnu a od půlky září vjezd jen do 10:00 a po 15:00; v létě spadá pod rezervaci údolí Prags.'},
+{id:'v21',cat:'vylet',reg:'dol',ll:[46.88800,12.16300],t:'Antholz',dur:90,gr:[4.8,2622],nik:5,nn:'bezbariérový okruh, biatlonová aréna spí',name:'Antholzer See: okruh',price:'park placené',walk:'4,3 km · rovina, bezbariérové',web:'https://www.antholzertal.com/en/water-highlights/lake-antholz',q:'Antholzer See',
+ desc:'Třetí největší jezero Jižního Tyrolska v 1 642 m, okruh po bezbariérovém chodníku s lavičkami a panely. Půlhodinová odbočka z Pustertalu do přírodního parku Rieserferner-Ahrn — v létě tu bývá božský klid.'},
+{id:'v22',cat:'vylet',reg:'dol',ll:[46.73283,12.28020],t:'San Candido',dur:75,nik:4,nn:'nejhezčí městečko údolí',name:'San Candido: pěší zóna a Stiftskirche',price:'zdarma',walk:'~1 km · rovina',q:'Innichen Stiftskirche',
+ desc:'Živá pěší zóna s pekárnami a kavárnami a hned vedle největší románský kostel Tyrolska s freskovou kupolí Stvoření. Rovina, zmrzlina, hotovo — přesně na podvečer po horách.'},
+{id:'v23',cat:'vylet',reg:'cor',ll:[46.53722,12.13611],t:'Cortina',dur:90,nik:3,nn:'butiky a passeggiata, hory jako kulisa',name:'Cortina: Corso Italia',price:'parkuj ve Fiames',walk:'~1 km · rovina',q:'Corso Italia Cortina',
+ desc:'Večerní korzo pod Tofanami, po olympiádě 2026 vyleštěné. S obytňákem do centra nejezdi — nech ho ve Fiames a dojdi po staré železnici, je to rovina.'},
+{id:'v24',cat:'vylet',reg:'jih',ll:[46.82942,12.76898],t:'Lienz',dur:45,nik:3,nn:'hezká pauza, ne cíl',name:'Lienz: Hauptplatz',price:'zdarma',walk:'~1 km · rovina',q:'Hauptplatz Lienz',
+ desc:'Barevné náměstí s Liebburgem přesně na půl cesty mezi Felbertauernem a Pustertalem — kafe, zmrzlina, protáhnout nohy. Víc než hodinu tu nenechávej, hory čekají.'},
+
+/* ---- farmy & nákup: Dolomity ---- */
+{id:'g11',cat:'gastro',reg:'dol',ll:[46.79681,11.93814],t:'Bruneck',dur:40,gr:[4.8,1078],nik:5,nn:'dvě stě farmářů pod jednou střechou',name:'Pur Südtirol · Bruneck',price:'ne zavřeno',web:'https://www.pursuedtirol.com/',q:'Pur Südtirol Bruneck',
+ desc:'Přes dva tisíce produktů od dvou stovek jihotyrolských sedláků — sýry, špek, mouky, vína. V poledne teplá regionální jídla nebo Brettljause; zásobárna na zbytek cesty. U nádraží, po–pá do 19:15, v sobotu do 14.'},
+{id:'g12',cat:'gastro',reg:'dol',ll:[46.81122,11.84642],t:'Issing u Pfalzen',dur:45,nik:5,nn:'bio palírna s volnou zahradou',name:'Bergila — bylinková palírna',price:'zahrada zdarma · ne zavřeno',web:'https://www.bergila.com/',q:'Bergila Issing Pfalzen',
+ desc:'Sto let stará rodinná bio palírna éterických olejů — borovice kleč, bylinkové čaje, sirupy. Bylinková zahrada je od května do října volně přístupná zdarma; hned vedle je koupací rybník Issinger Weiher.'},
+{id:'g13',cat:'gastro',reg:'dol',ll:[46.81543,11.73790],t:'Vintl',dur:45,pp:8,nik:4,nn:'kozí sýry za sklem, u hlavního tahu',name:'Capriz — zážitková sýrárna',price:'muzeum 8 € · denně',web:'https://www.capriz.it/',q:'Capriz Vintl',
+ desc:'Prosklená kozí sýrárna přímo u silnice Pustertalem: přes sklo vidíš výrobu, v muzeu za 8 € ochutnáš, v krámu koupíš. Ideální technická zastávka na západním konci údolí — otevřeno denně.'},
+{id:'g14',cat:'gastro',reg:'dol',ll:[46.7950,11.9340],t:'Bruneck',dur:45,nik:5,nn:'selský trh, jen ve středu',name:'Středeční trh · Bruneck',price:'STŘEDA 8–13:30',q:'Rathausplatz Bruneck',
+ desc:'Selský trh na Rathausplatz — sýry, uzeniny, pečivo a zelenina z okolních dvorů. Koná se jen ve středu dopoledne, klidně si podle něj přeskládej dny; Pur Südtirol je pět minut pěšky.'},
+{id:'g15',cat:'gastro',reg:'dol',ll:[46.74036,12.28319],t:'San Candido · Innichberg',dur:25,nik:5,nn:'bio statek, otvírá až k večeru',name:'Ranerhof — bio krám na statku',price:'denně 17–20',web:'https://www.raner.it/de/hofladen-bauernhof-innichen.html',q:'Ranerhof Innichen',
+ desc:'První bio statek v San Candidu, v 1 375 m na slunečném svahu: sirupy, marmelády, uzené, vejce od slepic z výběhu. Krámek jede denně, ale až od pěti — udělej si z něj podvečerní vycházku s výhledem na Dolomity.'},
+
+/* ---- farmy & nákup: doplňky Salzkammergut ---- */
+{id:'g16',cat:'gastro',reg:'tra',ll:[47.93193,13.79177],t:'Gmunden',dur:20,nik:3,nn:'fabrika, ne farma — ale poctivá',name:'Gmundner Molkerei — kiosk',price:'po–pá 8–12',web:'https://www.gmundner-molkerei.com/',q:'Gmundner Molkerei Gmunden',
+ desc:'Podnikový kiosk mlékárny, do které vozí mléko skoro dva tisíce okolních farem — sýry a máslo za ceny, které v regálu neuvidíš. Jen všední dny dopoledne; odpoledne máš smůlu.'},
+{id:'g17',cat:'gastro',reg:'isc',ll:[47.71094,13.62289],t:'Bad Ischl',dur:40,nik:5,nn:'selský trh u kostela',name:'Páteční trh · Bad Ischl',price:'PÁTEK 7–12',q:'Auböckplatz Bad Ischl',
+ desc:'Selský trh na Auböckplatz u farního kostela — sýry, med, uzeniny, v sezóně se před Trinkhalle smaží Bauernkrapfen. Jen v pátek dopoledne; jindy tě utěší Zauner o dvě ulice dál.'},
+{id:'g18',cat:'gastro',reg:'att',ll:[47.94569,13.57264],t:'Seewalchen am Attersee',dur:25,nik:5,nn:'ryba z jezera od třetí generace',name:'Fischerei Ecker',price:'po zavřeno',web:'https://www.fischerei-ecker.at/',q:'Fischerei Ecker Seewalchen',
+ desc:'Rybářství na Attersee od roku 1944: síh uzený i čerstvý, siven, domácí pomazánky — ryby čekají živé v sádkách s jezerní vodou. V srpnu otevřeno i v neděli dopoledne, v pondělí nikdy.'},
+{id:'g19',cat:'gastro',reg:'goi',ll:[47.64099,13.61780],t:'Bad Goisern',dur:45,pp:5.5,nik:4,nn:'živá řemesla, ne skanzen',name:'Hand.Werk.Haus',price:'vstup 5,50 € · ne zavřeno',web:'https://handwerkhaus.at/',q:'Hand.Werk.Haus Bad Goisern',
+ desc:'Dům řemesel v zámečku Neuwildenstein: goiserky, brýle z rohoviny, sedlářina — a mistři, kteří tu opravdu pracují. Polední pauza 12–14; v létě běží Meistersommer s dílnami.'},
+{id:'g20',cat:'gastro',reg:'jih',ll:[46.74910,12.44910],t:'Heinfels u Sillianu',dur:45,nik:3,nn:'korporátní, ale chytře po cestě',name:'Loacker Genusswelt',price:'vstup zdarma · denně 9–18',web:'https://www.loacker.com/de/de/loacker-erleben/loacker-genusswelt/',q:'Loacker Genusswelt Heinfels',
+ desc:'Svět oplatek přímo na tahu mezi Lienzem a Pustertalem: expozice zdarma, kavárna s terasou, krám s dvěma sty produkty. Pečení vlastních oplatek (10 €) je potřeba rezervovat dopředu.'},
+
+/* ---- na oběd: jih + Goisern ---- */
+{id:'r8',cat:'rest',reg:'goi',ll:[47.61212,13.63221],t:'Bad Goisern · Steeg',dur:75,gr:[4.5,3274],nik:4,nn:'renesanční hospoda solné stezky',name:'Steegwirt',price:'kuchyně 11:30–20:30',web:'https://www.steegwirt.at/',q:'Steegwirt Bad Goisern',
+ desc:'Asi 450 let starý wirtshaus u odtoku Traunu z Hallstättersee — nocovali tu formani se solí, dnes vaří bratři Grampelhuberové (dvě čepice Gault&Millau): uzený pstruh s křenem, Bratl in der Rein. V srpnu denně.'},
+{id:'r9',cat:'rest',reg:'dol',ll:[46.81227,11.96304],t:'Amaten nad Bruneckem',dur:90,gr:[4.7,332],nik:5,nn:'Slow Food samota nad údolím',name:'Gasthof Oberraut',price:'čt zavřeno · rezervuj',web:'https://oberraut.it/',q:'Gasthof Oberraut Bruneck',
+ desc:'Gasthaus roku 2024 podle Gault&Millau: hovězí z vlastního chovu, zvěřina od místních myslivců, bylinky z luk za domem. Padesát míst v 1 240 metrech — bez rezervace nejezdi, ve čtvrtek vůbec.'},
+{id:'r10',cat:'rest',reg:'cor',ll:[46.55231,12.17481],t:'Larieto u Cortiny',dur:90,gr:[4.3,1426],nik:4,nn:'malga s vlastní sýrárnou',name:'El Brite de Larieto',price:'rezervace nutná',web:'https://www.elbritedelarieto.it/',q:'El Brite de Larieto Cortina',
+ desc:'Agriturismus v modřínovém lese nad Cortinou — sýry, máslo i zmrzlina z vlastní malgy, sesterský podnik michelinské SanBrite. Jídlo celý den do šesti; zavolej předem, rezervace si spravují sami.'},
+{id:'r11',cat:'rest',reg:'dol',ll:[46.7340,12.2189],t:'Toblach',dur:75,gr:[4.5,1621],nik:4,nn:'poctivá klasika přímo v Toblachu',name:'Restaurant Winkelkeller',price:'12–14 a 18–22:30',q:'Winkelkeller Toblach',
+ desc:'Nejlíp hodnocená kuchyně v Toblachu: canederli se speckem, gnocchi s jelením ragú, štrůdl na závěr. V centru, pět minut od kempu — po okruhu kolem jezera přesně ono.'}
 ];
 
-/* ---- moje návrhy (laděno pro Nikolu): den → pořadí míst ---- */
+/* ---- moje návrhy (laděno pro Nikolu): den → pořadí míst ----
+   3 dny = klasika kolem jezer; 4–5 dní = přes Millstätter See do Dolomit.
+   Braies vždy brzy ráno (rezervace 9–16!), pekárny na start dne, kemp vždy poslední. */
 const TPL = {
   3: [ ['g10','p2','g5','k4'],
-       ['v1','g4','r7','p4','k1'],
-       ['v3','r3','g2'] ],
+       ['v1','b1','g4','r7','p4','k1'],
+       ['v3','r3','g2','g18'] ],
   4: [ ['g10','p2','g5','k4'],
-       ['v1','g4','r7','p4','k1'],
-       ['g1','v5','r1','k8'],
-       ['v11','p7'] ],
+       ['b1','p11','k12'],
+       ['b8','v15','v16','r11','g15','k13'],
+       ['v17','v18','g20'] ],
   5: [ ['g10','p2','g5','k4'],
-       ['v1','g4','r7','p4','k1'],
-       ['v5','r1','g1','k8'],
-       ['g7','v8','r2','k11'],
-       ['v4','r5'] ]
+       ['v1','b1','g4','r7','p4','k1'],
+       ['b4','p11','k12'],
+       ['v15','b7','g11','r11','v16','k13'],
+       ['v17','v18','g20'] ]
 };
 
 /* ================= GEO: jezera a mapa (skutečné souřadnice) ================= */
@@ -544,15 +700,140 @@ const LAKES = [
  {n:'Traunsee', lbl:[47.885,13.825], pts:[[13.783,47.918],[13.800,47.910],[13.812,47.885],[13.812,47.850],[13.803,47.820],[13.792,47.806],[13.775,47.806],[13.770,47.832],[13.770,47.870],[13.774,47.900]]},
  {n:'Hallstättersee', lbl:[47.585,13.695], pts:[[13.655,47.610],[13.671,47.601],[13.677,47.580],[13.686,47.564],[13.676,47.554],[13.658,47.550],[13.649,47.556],[13.646,47.578],[13.647,47.600]]},
  {n:'Gosausee', lbl:[47.521,13.478], pts:[[13.494,47.533],[13.505,47.531],[13.508,47.525],[13.497,47.524],[13.491,47.529]]},
- {n:'Langbathsee', lbl:[47.841,13.665], pts:[[13.676,47.836],[13.685,47.836],[13.687,47.833],[13.678,47.832]]}
+ {n:'Langbathsee', lbl:[47.841,13.665], pts:[[13.676,47.836],[13.685,47.836],[13.687,47.833],[13.678,47.832]]},
+ /* — jih: Korutany (jen v přehledu celé cesty) — */
+ {view:'jih', big:1, n:'Millstätter See', lbl:[46.835,13.565], pts:[[13.506,46.8175],[13.545,46.8130],[13.585,46.8075],[13.625,46.7990],[13.652,46.7905],[13.638,46.7860],[13.600,46.7930],[13.560,46.8010],[13.520,46.8090],[13.502,46.8140]]},
+ {view:'jih', big:1, n:'Weissensee', lbl:[46.732,13.290], pts:[[13.228,46.7155],[13.270,46.7160],[13.310,46.7130],[13.352,46.7075],[13.345,46.7035],[13.305,46.7070],[13.262,46.7110],[13.230,46.7115]]},
+ /* — Dolomity — */
+ {view:'dol', n:'Lago di Braies', lbl:[46.703,12.078], pts:[[12.0835,46.6995],[12.0873,46.6985],[12.0885,46.6945],[12.0872,46.6895],[12.0838,46.6890],[12.0827,46.6940]]},
+ {view:'dol', n:'Toblacher See', lbl:[46.716,12.213], pts:[[12.2185,46.7125],[12.2225,46.7118],[12.2238,46.7075],[12.2222,46.7042],[12.2188,46.7048],[12.2180,46.7090]]},
+ {view:'dol', n:'Dürrensee', lbl:[46.634,12.218], pts:[[12.2245,46.6300],[12.2285,46.6295],[12.2295,46.6250],[12.2270,46.6225],[12.2242,46.6242]]},
+ {view:'dol', n:'Misurina', lbl:[46.590,12.245], pts:[[12.2515,46.5880],[12.2560,46.5875],[12.2575,46.5822],[12.2555,46.5785],[12.2515,46.5795],[12.2508,46.5840]]},
+ {view:'dol', n:'Antholzer See', lbl:[46.8965,12.1520], pts:[[12.1600,46.8900],[12.1660,46.8912],[12.1706,46.8880],[12.1690,46.8830],[12.1635,46.8822],[12.1595,46.8858]]}
 ];
 const TOWNS = [['Mondsee',47.856,13.348],['St. Gilgen',47.766,13.365],['Strobl',47.716,13.484],['Bad Ischl',47.711,13.620],['Hallstatt',47.5617,13.6488],['Obertraun',47.559,13.690],['Gosau',47.535,13.492],['Ebensee',47.807,13.777],['Gmunden',47.918,13.795],['Zell am Moos',47.902,13.318],['Fuschl',47.799,13.302],['Steinbach',47.837,13.549]];
 const PEAKS = [['Schafberg',47.775,13.435],['Höllengebirge',47.815,13.630],['Dachstein',47.508,13.610],['Drachenwand',47.828,13.343]];
+const TOWNS_DOL = [['Bruneck',46.7975,11.9385],['Vintl',46.8180,11.7570],['Niederdorf',46.7395,12.1710],['Toblach',46.7345,12.2225],['San Candido',46.7330,12.2800],['Sexten',46.7025,12.3495],['Cortina',46.5380,12.1355]];
+const PEAKS_DOL = [['Tre Cime',46.6188,12.3025],['Monte Cristallo',46.5825,12.1890],['Hochpustertal',46.760,12.100]];
+const TOWNS_ALL = [['Salzburg',47.8095,13.0550],['Lienz',46.8290,12.7690],['Villach',46.6111,13.8558],['Freistadt',48.5099,14.5012]];
+
+/* ================= ČISTÁ GEOMETRIE & POHLEDY (bez DOM — kryté testem test/geo.test.js) ================= */
+function hav(a,b){
+  const R=6371, dLa=(b[0]-a[0])*Math.PI/180, dLo=(b[1]-a[1])*Math.PI/180;
+  const s=Math.sin(dLa/2)**2 + Math.cos(a[0]*Math.PI/180)*Math.cos(b[0]*Math.PI/180)*Math.sin(dLo/2)**2;
+  return 2*R*Math.asin(Math.sqrt(s));
+}
+function est(a,b){
+  const air = hav(a,b);
+  /* alpské dálky mají větší oklikovost: Strobl→Toblach je 263 km po silnici, 145 vzdušně (OSRM 8/2026) */
+  const road = Math.max(2, Math.round(air * (air>100 ? 1.8 : 1.6)));
+  const v = road<12 ? 34 : road<35 ? 50 : road<90 ? 62 : 72;
+  return [Math.max(5, Math.round(road/v*60)), road];
+}
+function pip(x,y,poly){ // point in polygon (projected)
+  let ins=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+    const xi=poly[i][0], yi=poly[i][1], xj=poly[j][0], yj=poly[j][1];
+    if(((yi>y)!==(yj>y)) && (x < (xj-xi)*(y-yi)/(yj-yi)+xi)) ins=!ins;
+  }
+  return ins;
+}
+/* tři pohledy: szk = rám v4 (neměnit), dol = Pustertal+Cortina, all = celá cesta od ČB */
+const VIEW_REGS = { dol:['dol','cor'], jih:['jih'] };
+function viewOf(reg){ return VIEW_REGS.dol.includes(reg) ? 'dol' : VIEW_REGS.jih.includes(reg) ? 'jih' : 'szk'; }
+function mkView(o){
+  const kx = o.kx || o.ky*Math.cos((o.latT+o.latMin)/2*Math.PI/180);
+  const v = Object.assign({}, o, {kx});
+  v.W = o.W || Math.round((o.lngMax-o.lng0)*kx);
+  v.H = o.H || Math.round((o.latT-o.latMin)*o.ky);
+  v.px = lng => (lng-v.lng0)*v.kx;
+  v.py = lat => (v.latT-lat)*v.ky;
+  return v;
+}
+function fitView(id, lls, ky, maxW, maxH, padLng, padLat){
+  let latA=Infinity, lngA=Infinity, latB=-Infinity, lngB=-Infinity;
+  lls.forEach(l=>{ latA=Math.min(latA,l[0]); latB=Math.max(latB,l[0]); lngA=Math.min(lngA,l[1]); lngB=Math.max(lngB,l[1]); });
+  const o = {id, lng0:lngA-padLng, lngMax:lngB+padLng, latT:latB+padLat, latMin:latA-padLat, ky};
+  let v = mkView(o);
+  const k = Math.min(1, maxW/v.W, maxH/v.H);
+  if(k<1){ o.ky = ky*k; v = mkView(o); }
+  return v;
+}
+const lakeLL = view => LAKES.filter(L=>(L.view||'szk')===view).flatMap(L=>L.pts.map(p=>[p[1],p[0]]));
+const V_SZK = mkView({id:'szk', lng0:13.20, latT:47.98, lngMax:13.90, latMin:47.488, kx:1428.4, ky:2124, W:1000, H:1045});
+const V_DOL = fitView('dol', ITEMS.filter(i=>viewOf(i.reg)==='dol').map(i=>i.ll).concat(lakeLL('dol')), 2124, 1080, 1150, .05, .03);
+const V_ALL = fitView('all', ITEMS.map(i=>i.ll).concat([CB_LL], lakeLL('jih')), 2124, 940, 1150, .10, .07);
+const VIEWS = {szk:V_SZK, dol:V_DOL, all:V_ALL};
+function lakesFor(view){ return view==='all' ? LAKES : LAKES.filter(L=>(L.view||'szk')===view); }
+function polysFor(view){
+  const V = VIEWS[view];
+  return lakesFor(view).map(L=>{
+    const pts = L.pts.map(p=>[V.px(p[0]), V.py(p[1])]);
+    let cx=0, cy=0; pts.forEach(p=>{cx+=p[0]; cy+=p[1];});
+    return {pts, c:[cx/pts.length, cy/pts.length]};
+  });
+}
+const VPOLYS = {szk:polysFor('szk'), dol:polysFor('dol'), all:polysFor('all')};
+const PROJ = {szk:{}, dol:{}, all:{}};
+function buildProj(view){
+  const V = VIEWS[view], polys = VPOLYS[view];
+  const items = view==='all' ? ITEMS : ITEMS.filter(i=>viewOf(i.reg)===view);
+  const step = view==='all' ? 2.5 : 4;
+  items.forEach(it=>{
+    let x = Math.max(14, Math.min(V.W-14, V.px(it.ll[1])));
+    let y = Math.max(14, Math.min(V.H-14, V.py(it.ll[0])));
+    for(const L of polys){ // vytlač bod z vody
+      let k=0;
+      while(pip(x,y,L.pts) && k<25){
+        const dx=x-L.c[0], dy=y-L.c[1], m=Math.hypot(dx,dy)||1;
+        x+=dx/m*step; y+=dy/m*step; k++;
+      }
+    }
+    PROJ[view][it.id]={x,y};
+  });
+  if(view!=='all'){ // v detailu rozhrň překrývající se body
+    const placed=[];
+    const inWater=(x,y)=>polys.some(L=>pip(x,y,L.pts));
+    items.forEach((it,i)=>{
+      const p=PROJ[view][it.id]; const bx=p.x, by=p.y; let k=0;
+      while((placed.some(q=>Math.hypot(q.x-p.x,q.y-p.y)<13) || inWater(p.x,p.y)) && k<28){
+        const a=(i*2.4)+k*0.8;
+        p.x=bx+Math.cos(a)*(12+k*2); p.y=by+Math.sin(a)*(10+k*2); k++;
+      }
+      placed.push(p);
+    });
+  }
+}
+buildProj('szk'); buildProj('dol'); buildProj('all');
+/* kotvy: domov (start trasy v pohledu) a výjezd z rámu směrem k druhému regionu */
+const HOMEPT = {
+  szk:{x:V_SZK.px(13.56), y:10},
+  dol:{x:V_DOL.W-40, y:14},
+  all:{x:V_ALL.px(CB_LL[1]), y:V_ALL.py(CB_LL[0])}
+};
+const EXITPT = {
+  szk:{x:V_SZK.px(13.62), y:V_SZK.H-12},
+  dol:{x:V_DOL.W-40, y:14}
+};
+/* mini-mapa: lokální projekce se středem v místě — funguje pro každý region vč. Freistadtu */
+function genMini(it){
+  const ky=2124, kx=ky*Math.cos(it.ll[0]*Math.PI/180);
+  const mpx = lng => (lng-it.ll[1])*kx + 115;
+  const mpy = lat => (it.ll[0]-lat)*ky + 78;
+  const lakes = LAKES.map(L=>'<path d="M'+L.pts.map(q=>mpx(q[0]).toFixed(1)+','+mpy(q[1]).toFixed(1)).join(' L ')+' Z" fill="#A7CBD6" stroke="#26241F" stroke-width="1"/>').join('');
+  const others = ITEMS.filter(o=>o.id!==it.id && hav(o.ll,it.ll)<7)
+    .map(o=>'<circle cx="'+mpx(o.ll[1]).toFixed(1)+'" cy="'+mpy(o.ll[0]).toFixed(1)+'" r="3.5" fill="'+CATS[o.cat].color+'" opacity=".75"/>').join('');
+  const pin = '<circle cx="115" cy="78" r="8" fill="'+CATS[it.cat].color+'" stroke="#FFFDF6" stroke-width="2.5"/>';
+  const scale = '<line class="scalebar" x1="10" y1="142" x2="29.1" y2="142"/><text class="scaletxt" x="10" y="138">1 km</text>';
+  return '<svg viewBox="0 0 230 156">'+lakes+others+pin+scale+'</svg>';
+}
+/* export pro test (v prohlížeči neškodí) */
+var APP_PURE = {CATS,TINTS,REGS,FROM_CB,ITEMS,TPL,LAKES,VIEWS,VPOLYS,PROJ,HOMEPT,EXITPT,viewOf,pip,hav,est,gUrl,navUrl,gnavUrl,genMini,lakesFor,CB_LL};
 </script>
 <script>
 /* ================= STAV & ULOŽENÍ ================= */
 const KEY = 'salzkammergut-planner-v1';
-let S = { fav:[], days:[[],[],[],[],[]], checked:[], custom:[], vign:true,
+let S = { fav:[], days:[[],[],[],[],[]], checked:[], custom:[], vign:true, alp:false,
           inputs:{km:650,cons:10,fuel:1.65,foodDay:60,buffer:50,rate:24.6} };
 let saveT = null;
 async function loadState(){
@@ -570,89 +851,85 @@ function saveState(){
 }
 const byId = id => ITEMS.find(i=>i.id===id);
 
-/* ================= GEOMETRIE ================= */
-const KX = 1428.4, KY = 2124, LNG0 = 13.20, LATT = 47.98;
-const px = lng => (lng-LNG0)*KX;
-const py = lat => (LATT-lat)*KY;
-function hav(a,b){
-  const R=6371, dLa=(b[0]-a[0])*Math.PI/180, dLo=(b[1]-a[1])*Math.PI/180;
-  const s=Math.sin(dLa/2)**2 + Math.cos(a[0]*Math.PI/180)*Math.cos(b[0]*Math.PI/180)*Math.sin(dLo/2)**2;
-  return 2*R*Math.asin(Math.sqrt(s));
-}
-function est(a,b){
-  const road = Math.max(2, Math.round(hav(a,b)*1.6));
-  const v = road<12 ? 34 : road<35 ? 50 : 62;
-  return [Math.max(5, Math.round(road/v*60)), road];
-}
-function legFor(prevIt, it){ return prevIt ? est(prevIt.ll, it.ll) : FROM_CB[it.reg]; }
-
-function pip(x,y,poly){ // point in polygon (projected)
-  let ins=false;
-  for(let i=0,j=poly.length-1;i<poly.length;j=i++){
-    const xi=poly[i][0], yi=poly[i][1], xj=poly[j][0], yj=poly[j][1];
-    if(((yi>y)!==(yj>y)) && (x < (xj-xi)*(y-yi)/(yj-yi)+xi)) ins=!ins;
-  }
-  return ins;
-}
-const LAKEPOLYS = LAKES.map(L=>({c:centroid(L.pts), pts:L.pts.map(p=>[px(p[0]),py(p[1])])}));
-function centroid(pts){ let x=0,y=0; pts.forEach(p=>{x+=px(p[0]);y+=py(p[1]);}); return [x/pts.length,y/pts.length]; }
-const PROJ = {};
-ITEMS.forEach(it=>{
-  let x=px(it.ll[1]), y=py(it.ll[0]);
-  x = Math.max(14, Math.min(986, x)); y = Math.max(14, Math.min(1031, y));
-  for(const L of LAKEPOLYS){ // vytlač bod z vody
-    let k=0;
-    while(pip(x,y,L.pts) && k<25){
-      const dx=x-L.c[0], dy=y-L.c[1], m=Math.hypot(dx,dy)||1;
-      x+=dx/m*4; y+=dy/m*4; k++;
-    }
-  }
-  PROJ[it.id]={x,y};
-});
-// rozhrň překrývající se body
-(function(){
-  const placed=[];
-  const inWater=(x,y)=>LAKEPOLYS.some(L=>pip(x,y,L.pts));
-  ITEMS.forEach((it,i)=>{
-    const p=PROJ[it.id]; const bx=p.x, by=p.y; let k=0;
-    while((placed.some(q=>Math.hypot(q.x-p.x,q.y-p.y)<13) || inWater(p.x,p.y)) && k<16){
-      const a=(i*2.4)+k*0.8;
-      p.x=bx+Math.cos(a)*(12+k*2); p.y=by+Math.sin(a)*(10+k*2); k++;
-    }
-    placed.push(p);
-  });
-})();
-const ENTRY = {x:px(13.56), y:10};
-
 /* ================= MAPA ================= */
-let selId = null, routeMode = 'all';
+/* (geometrie, projekce a pohledy žijí v prvním <script> — čisté, kryté testem) */
+let selId = null, routeMode = 'all', MAPVIEW = 'all';
 const DAYC = ['#1D7A99','#2F7D4F','#DFA320','#D95A34','#201D17'];
 const HEART = 'M0,4.6 C-1.4,1.2 -7.2,-1.9 -7.2,2.6 C-7.2,5.7 -2.8,8.6 0,11 C2.8,8.6 7.2,5.7 7.2,2.6 C7.2,-1.9 1.4,1.2 0,4.6 Z';
 
-function buildMap(){
-  const lakes = LAKES.map(L=>{
-    const d = 'M'+L.pts.map(p=>px(p[0]).toFixed(1)+','+py(p[1]).toFixed(1)).join(' L ')+' Z';
-    return '<path d="'+d+'" fill="#A7CBD6" stroke="#26241F" stroke-width="1.7"/>'+
-      '<text x="'+px(L.lbl[1])+'" y="'+py(L.lbl[0])+'" class="lakelabel">'+L.n+'</text>';
-  }).join('');
-  const towns = TOWNS.map(t=>'<circle cx="'+px(t[2])+'" cy="'+py(t[1])+'" r="3.5" fill="#26241F"/><text x="'+(px(t[2])+7)+'" y="'+(py(t[1])+4)+'" class="townlabel">'+t[0]+'</text>').join('');
-  const peaks = PEAKS.map(t=>'<text x="'+px(t[2])+'" y="'+py(t[1])+'" class="townlabel" text-anchor="middle">▲ '+t[0]+'</text>').join('');
-  document.getElementById('bigsvg').innerHTML =
-    '<path d="M'+ENTRY.x+',2 L'+ENTRY.x+','+ENTRY.y+'" stroke="#26241F" stroke-width="2"/>'+
-    '<text x="'+(ENTRY.x+10)+'" y="20" class="townlabel">↑ z Č. Budějovic ~2:30 · Freistadt po cestě</text>'+
-    lakes + peaks + towns +
-    '<g id="routeLayer"></g><g id="dotLayer"></g>';
+const VIEW_LBL = {all:'🚐 Celá cesta', szk:'🏔 Salzkammergut', dol:'🇮🇹 Dolomity'};
+function initMap(){
   document.getElementById('mapLegend').innerHTML =
     Object.values(CATS).map(c=>'<span><i style="background:'+c.color+'"></i>'+c.label+'</span>').join('') +
     '<span><i style="background:#fff;border:2px solid #26241F"></i>♥ = tvůj výběr</span>';
   document.getElementById('bigsvg').addEventListener('click', e=>{
+    const g = e.target.closest('[data-goview]');
+    if(g){ setView(g.dataset.goview); return; }
     const m = e.target.closest('[data-id]'); if(!m) return;
     selectPlace(m.dataset.id);
   });
+  drawViewChips();
+}
+function drawViewChips(){
+  document.getElementById('viewChips').innerHTML = Object.entries(VIEW_LBL).map(([k,l])=>
+    '<button class="chip" data-view="'+k+'" aria-pressed="'+String(MAPVIEW===k)+'">'+l+'</button>').join('');
+}
+function setView(v){
+  if(!VIEWS[v] || MAPVIEW===v) return;
+  MAPVIEW = v;
+  buildMap(); drawDots(); drawRoutes(); drawViewChips();
+}
+function townSvg(t,V){
+  const x=V.px(t[2]), y=V.py(t[1]), flip = x > V.W-95; /* u pravého okraje piš doleva, ať jméno nepřeteče */
+  return '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3.5" fill="#26241F"/><text x="'+(flip?x-7:x+7).toFixed(1)+'" y="'+(y+4).toFixed(1)+'" class="townlabel"'+(flip?' text-anchor="end"':'')+'>'+t[0]+'</text>';
+}
+function peakSvg(t,V){ return '<text x="'+V.px(t[2]).toFixed(1)+'" y="'+V.py(t[1]).toFixed(1)+'" class="townlabel" text-anchor="middle">▲ '+t[0]+'</text>'; }
+function regFrame(view,label){
+  const items = ITEMS.filter(i=>viewOf(i.reg)===view && i.reg!=='cesta');
+  if(!items.length) return '';
+  let x1=1e9,y1=1e9,x2=-1e9,y2=-1e9;
+  items.forEach(i=>{const p=PROJ.all[i.id]; x1=Math.min(x1,p.x); y1=Math.min(y1,p.y); x2=Math.max(x2,p.x); y2=Math.max(y2,p.y);});
+  x1-=22; y1-=26; x2+=22; y2+=20;
+  return '<g class="clusterhit" data-goview="'+view+'"><rect class="regframe" x="'+x1.toFixed(0)+'" y="'+y1.toFixed(0)+'" width="'+(x2-x1).toFixed(0)+'" height="'+(y2-y1).toFixed(0)+'" rx="18"/>'+
+    '<text class="regframelbl serif" x="'+(x1+4).toFixed(0)+'" y="'+(y1-9).toFixed(0)+'">'+label+'</text>'+
+    '<text class="regframesub" x="'+(x1+5).toFixed(0)+'" y="'+Math.min(y2+16, VIEWS.all.H-6).toFixed(0)+'">'+items.length+' míst · klepni pro detail</text></g>';
+}
+function buildMap(){
+  const V = VIEWS[MAPVIEW];
+  const svg = document.getElementById('bigsvg');
+  svg.setAttribute('viewBox','0 0 '+V.W+' '+V.H);
+  const lakes = lakesFor(MAPVIEW).map(L=>{
+    const d = 'M'+L.pts.map(p=>V.px(p[0]).toFixed(1)+','+V.py(p[1]).toFixed(1)).join(' L ')+' Z';
+    const lbl = (MAPVIEW!=='all' || L.big)
+      ? '<text x="'+V.px(L.lbl[1]).toFixed(1)+'" y="'+V.py(L.lbl[0]).toFixed(1)+'" class="lakelabel"'+(MAPVIEW==='all'?' font-size="12.5"':'')+'>'+L.n+'</text>' : '';
+    return '<path d="'+d+'" fill="#A7CBD6" stroke="#26241F" stroke-width="'+(MAPVIEW==='all'?1.1:1.7)+'"/>'+lbl;
+  }).join('');
+  let deco = '';
+  if(MAPVIEW==='szk'){
+    deco = '<path d="M'+HOMEPT.szk.x.toFixed(1)+',2 L'+HOMEPT.szk.x.toFixed(1)+','+HOMEPT.szk.y+'" stroke="#26241F" stroke-width="2"/>'+
+      '<text x="'+(HOMEPT.szk.x+10).toFixed(1)+'" y="20" class="townlabel">↑ z Č. Budějovic ~2:30 · Freistadt po cestě</text>'+
+      '<text x="'+EXITPT.szk.x.toFixed(1)+'" y="'+(EXITPT.szk.y-4)+'" class="townlabel" text-anchor="middle">↓ na jih: Korutany a Dolomity ~3:45</text>'+
+      PEAKS.map(t=>peakSvg(t,V)).join('') + TOWNS.map(t=>townSvg(t,V)).join('');
+  } else if(MAPVIEW==='dol'){
+    deco = '<text x="'+EXITPT.dol.x.toFixed(1)+'" y="'+(EXITPT.dol.y+14)+'" class="townlabel" text-anchor="end">↖ od Lienz a Felbertauernu · domů ~6 h</text>'+
+      PEAKS_DOL.map(t=>peakSvg(t,V)).join('') + TOWNS_DOL.map(t=>townSvg(t,V)).join('');
+  } else {
+    deco = TOWNS_ALL.map(t=>townSvg(t,V)).join('') +
+      '<text x="'+HOMEPT.all.x.toFixed(1)+'" y="'+(HOMEPT.all.y-12).toFixed(1)+'" text-anchor="middle" style="font-size:24px">🏠</text>'+
+      '<text x="'+Math.min(HOMEPT.all.x+14, V.W-8).toFixed(1)+'" y="'+(HOMEPT.all.y+26).toFixed(1)+'" text-anchor="end" class="homelbl">České Budějovice</text>'+
+      regFrame('szk','Salzkammergut') + regFrame('dol','Dolomity');
+  }
+  svg.innerHTML = lakes + deco + '<g id="routeLayer"></g><g id="dotLayer"></g>';
 }
 function drawDots(){
-  document.getElementById('dotLayer').innerHTML = ITEMS.map(it=>{
-    const p = PROJ[it.id], sel = selId===it.id ? ' sel' : '';
+  const items = MAPVIEW==='all' ? ITEMS : ITEMS.filter(i=>viewOf(i.reg)===MAPVIEW);
+  document.getElementById('dotLayer').innerHTML = items.map(it=>{
+    const p = PROJ[MAPVIEW][it.id], sel = selId===it.id ? ' sel' : '';
+    if(MAPVIEW==='all'){
+      const solo = viewOf(it.reg)==='jih' || it.reg==='cesta';
+      const hot = sel || S.fav.includes(it.id);
+      return '<circle class="mdot'+sel+'" data-id="'+it.id+'" cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+(solo?6.5:4.4)+'" fill="'+CATS[it.cat].color+'" style="stroke-width:'+(hot?2:1.2)+(hot?';stroke:#201D17':'')+'"><title>'+it.name+'</title></circle>';
+    }
     if(S.fav.includes(it.id)){
       return '<path class="mheart'+sel+'" data-id="'+it.id+'" transform="translate('+p.x+','+(p.y-5)+') scale(1.25)" d="'+HEART+'" fill="'+CATS[it.cat].color+'"><title>'+it.name+'</title></path>';
     }
@@ -676,42 +953,86 @@ function selectPlace(id){
     '<div class="cardtop"><div class="cardname">'+it.name+'</div>'+(it.price?'<div class="price">'+it.price+'</div>':'')+'</div>'+
     '<div class="cardmeta" style="color:'+CATS[it.cat].color+'">'+[it.t,CATS[it.cat].label,(it.cat==='kemp'?'🌙 nocleh':'⏱ ~'+fmtMin(it.dur))].join(' · ')+'</div>'+
     grHtml(it) + nikHtml(it) +
-    '<div class="linkrow"><a href="'+gUrl(it)+'" target="_blank" rel="noopener">Google Maps</a><a href="'+mUrl(it)+'" target="_blank" rel="noopener">Mapy.cz</a>'+(it.web?'<a href="'+it.web+'" target="_blank" rel="noopener">web ↗</a>':'')+'</div>'+
+    '<div class="linkrow"><a class="gnav" href="'+navUrl(it)+'" target="_blank" rel="noopener">🧭 Navigovat</a><a href="'+gUrl(it)+'" target="_blank" rel="noopener">Google Maps</a><a href="'+mUrl(it)+'" target="_blank" rel="noopener">Mapy.cz</a>'+(it.web?'<a href="'+it.web+'" target="_blank" rel="noopener">web ↗</a>':'')+'</div>'+
     '<div class="cardacts"><button class="abtn'+(S.fav.includes(id)?' on':'')+'" data-fav="'+id+'">'+(S.fav.includes(id)?'♥ Vybráno':'♡ Vybrat')+'</button></div>'+
     '<div class="daypick open">'+dayBtns(it)+'</div>';
 }
 function buildLegs(){
-  const legs=[]; let prev=null, prevP=ENTRY;
+  const legs=[]; let prev=null;
   S.days.forEach((day,di)=>{
     day.forEach(id=>{
       const it=byId(id); if(!it) return;
-      const p=PROJ[id];
-      legs.push({x1:prevP.x,y1:prevP.y,x2:p.x,y2:p.y,di,dash:prev===null||prev.di!==di});
-      prev={it,di}; prevP=p;
+      legs.push({a:prev?prev.id:'home', b:id, di, dash:prev===null||prev.di!==di});
+      prev={id,di};
     });
   });
-  if(prev) legs.push({x1:prevP.x,y1:prevP.y,x2:ENTRY.x,y2:ENTRY.y,di:prev.di,dash:true,home:true});
+  if(prev) legs.push({a:prev.id, b:'home', di:prev.di, dash:true, home:true});
   return legs;
+}
+function ptFor(ref){
+  if(ref==='home') return HOMEPT[MAPVIEW];
+  const it = byId(ref);
+  if(MAPVIEW==='all') return PROJ.all[ref];
+  return viewOf(it.reg)===MAPVIEW ? PROJ[MAPVIEW][ref] : EXITPT[MAPVIEW];
+}
+function legPath(p1,p2){
+  const dx=p2.x-p1.x, dy=p2.y-p1.y, d=Math.hypot(dx,dy);
+  if(d<1) return null; // oba konce mimo pohled → nekreslit
+  const k=Math.min(30, d*0.16); // jemná křivka, ať čáry neřežou jezera
+  const mx=(p1.x+p2.x)/2 - dy/d*k, my=(p1.y+p2.y)/2 + dx/d*k;
+  return 'M'+p1.x.toFixed(1)+','+p1.y.toFixed(1)+' Q'+mx.toFixed(1)+','+my.toFixed(1)+' '+p2.x.toFixed(1)+','+p2.y.toFixed(1);
 }
 function drawRoutes(){
   const legs = buildLegs();
-  const show = legs.filter(l=> routeMode==='all' ? true : (routeMode==='none' ? false : l.di===+routeMode || (l.x2!==undefined && l.di===+routeMode)));
-  let svg = show.map(l=>'<line x1="'+l.x1+'" y1="'+l.y1+'" x2="'+l.x2+'" y2="'+l.y2+'" stroke="'+DAYC[l.di%5]+'" stroke-width="3.2" stroke-linecap="round" opacity=".8"'+(l.dash?' stroke-dasharray="7 6"':'')+'/>').join('');
+  const show = legs.filter(l=> routeMode==='all' ? true : (routeMode==='none' ? false : l.di===+routeMode));
+  let svg = '';
+  show.forEach(l=>{
+    const p1=ptFor(l.a), p2=ptFor(l.b);
+    const path=legPath(p1,p2); if(!path) return;
+    svg += '<path class="'+(l.dash?'legdash':'legsolid')+'" d="'+path+'" stroke="'+DAYC[l.di%5]+'" stroke-width="'+(MAPVIEW==='all'?2.6:3.2)+'" opacity=".8"/>';
+    if(MAPVIEW==='all'){
+      const kmv = (l.a==='home'||l.b==='home') ? FROM_CB[byId(l.a==='home'?l.b:l.a).reg][1] : est(byId(l.a).ll, byId(l.b).ll)[1];
+      if(kmv>=60) svg += '<text class="kmlbl" x="'+((p1.x+p2.x)/2).toFixed(1)+'" y="'+((p1.y+p2.y)/2-7).toFixed(1)+'" text-anchor="middle">'+kmv+' km</text>';
+    }
+  });
   if(routeMode!=='all' && routeMode!=='none'){
+    const di=+routeMode;
     let n=1;
-    (S.days[+routeMode]||[]).forEach(id=>{
-      const p=PROJ[id];
-      svg += '<circle cx="'+p.x+'" cy="'+p.y+'" r="10.5" fill="'+DAYC[+routeMode%5]+'" opacity=".95"/><text x="'+p.x+'" y="'+(p.y+4.5)+'" text-anchor="middle" class="stopnum">'+(n++)+'</text>';
+    (S.days[di]||[]).forEach(id=>{
+      const it=byId(id); if(!it) return;
+      if(MAPVIEW!=='all' && viewOf(it.reg)!==MAPVIEW){ n++; return; } // zastávka mimo tenhle pohled
+      const p=PROJ[MAPVIEW][id];
+      svg += '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="10.5" fill="'+DAYC[di%5]+'" opacity=".95"/><text x="'+p.x.toFixed(1)+'" y="'+(p.y+4.5).toFixed(1)+'" text-anchor="middle" class="stopnum">'+(n++)+'</text>';
     });
+    const first=(S.days[di]||[])[0];
+    if(first){ const pa=ptFor(dayAnchorId(di)); svg += '<text x="'+pa.x.toFixed(1)+'" y="'+(pa.y-10).toFixed(1)+'" text-anchor="middle" style="font-size:17px">🚐</text>'; }
   }
   document.getElementById('routeLayer').innerHTML = svg;
   const chips = [['none','Nic'],['all','Celá cesta']].concat(S.days.map((d,i)=>d.length?[String(i),'Den '+(i+1)]:null).filter(Boolean));
   document.getElementById('routeChips').innerHTML = chips.map(c=>
     '<button class="chip" data-route="'+c[0]+'" aria-pressed="'+String(routeMode===c[0])+'"'+(c[0]!=='none'&&c[0]!=='all'?' style="--cc:'+DAYC[+c[0]%5]+'"':'')+'>'+c[1]+'</button>').join('');
+  renderRouteInfo();
+}
+function renderRouteInfo(){
+  const el = document.getElementById('routeInfo');
+  if(routeMode==='none'){ el.innerHTML=''; return; }
+  const P = calcPlan();
+  if(routeMode==='all'){
+    const km = P.days.reduce((s,d)=>s+d.km,0), dr = P.days.reduce((s,d)=>s+d.drive,0);
+    el.innerHTML = km ? '<span>🚐 celá cesta ~'+fmtMin(dr)+' · '+km+' km</span><span class="ri-mut">vyber den a pošli ho tlačítkem 🧭 do navigace</span>' : '';
+    return;
+  }
+  const di = +routeMode;
+  if(!S.days[di] || !S.days[di].length){ el.innerHTML=''; return; }
+  const d = P.days[di];
+  el.innerHTML = '<span>Den '+(di+1)+' · 🚐 '+fmtMin(d.drive)+' · '+d.km+' km · ⏱ program ~'+fmtMin(d.dur)+'</span>'+
+    '<a class="gnav" target="_blank" rel="noopener" href="'+gnavUrl(dayStops(di))+'">🧭 Otevřít v Google Maps</a>';
 }
 document.addEventListener('click', e=>{
   const r = e.target.closest('[data-route]');
-  if(r){ routeMode = r.dataset.route; drawRoutes(); }
+  if(r){ routeMode = r.dataset.route; drawRoutes(); return; }
+  const v = e.target.closest('[data-view]');
+  if(v){ setView(v.dataset.view); }
 });
 
 /* ================= FILTRY + KATALOG ================= */
@@ -749,17 +1070,7 @@ function metaFor(it){
   parts.push(it.cat==='kemp' ? '🌙 nocleh' : '⏱ ~'+fmtMin(it.dur));
   return parts.join(' · ');
 }
-function genMini(it){
-  const p = PROJ[it.id];
-  const vb = (p.x-115).toFixed(0)+' '+(p.y-78).toFixed(0)+' 230 156';
-  const lakes = LAKES.map(L=>'<path d="M'+L.pts.map(q=>px(q[0]).toFixed(1)+','+py(q[1]).toFixed(1)).join(' L ')+' Z" fill="#A7CBD6" stroke="#26241F" stroke-width="1"/>').join('');
-  const others = ITEMS.filter(o=>o.id!==it.id && Math.hypot(PROJ[o.id].x-p.x,PROJ[o.id].y-p.y)<130)
-    .map(o=>'<circle cx="'+PROJ[o.id].x+'" cy="'+PROJ[o.id].y+'" r="3.5" fill="'+CATS[o.cat].color+'" opacity=".75"/>').join('');
-  const pin = '<circle cx="'+p.x+'" cy="'+p.y+'" r="8" fill="'+CATS[it.cat].color+'" stroke="#FFFDF6" stroke-width="2.5"/>';
-  const bx = p.x-105, by = p.y+64;
-  const scale = '<line class="scalebar" x1="'+bx+'" y1="'+by+'" x2="'+(bx+19.1)+'" y2="'+by+'"/><text class="scaletxt" x="'+bx+'" y="'+(by-4)+'">1 km</text>';
-  return '<svg viewBox="'+vb+'">'+lakes+others+pin+scale+'</svg>';
-}
+/* genMini žije v prvním <script> — lokální projekce funguje pro všechny regiony */
 function linkRow(it){
   return '<div class="linkrow">'+
     '<button class="mapbtn" data-map="'+it.id+'">📍 Náhled</button>'+
@@ -836,12 +1147,16 @@ document.addEventListener('click', e=>{
 });
 
 /* ================= CHYTRÉ ŘAZENÍ ================= */
-function dayAnchor(di){
+function dayAnchorId(di){
   for(let i=di-1;i>=0;i--){
     const d=S.days[i];
-    if(d.length) return byId(d[d.length-1]).ll;
+    if(d.length) return d[d.length-1];
   }
-  return CB_LL;
+  return 'home';
+}
+function dayAnchor(di){
+  const a = dayAnchorId(di);
+  return a==='home' ? CB_LL : byId(a).ll;
 }
 function insertSmart(di, id){
   const it = byId(id), arr = S.days[di];
@@ -878,44 +1193,59 @@ function sortAllDays(){
 /* ================= PLÁN ================= */
 let PLANKM = 0;
 function pairFmt(p){ return fmtMin(p[0])+' · '+p[1]+' km'; }
-function renderPlan(){
-  const totals = S.days.map(()=>({drive:0,km:0,dur:0}));
-  const html = S.days.map(()=>({inner:'',len:0}));
+/* jeden výpočet pro plán, mapu i rozpočet — legy vč. přejezdů mezi dny a návratu domů */
+function calcPlan(){
+  const days = S.days.map(()=>({drive:0,km:0,dur:0,rows:[],home:null}));
   let prev = null, lastIdx = -1;
   S.days.forEach((day,di)=>{ if(day.length) lastIdx = di; });
   S.days.forEach((day,di)=>{
-    html[di].len = day.length;
-    day.forEach((id,ix)=>{
+    day.forEach(id=>{
       const it = byId(id); if(!it) return;
       let leg, lab;
       if(!prev){ leg = FROM_CB[it.reg]; lab = '🚐 z Českých Budějovic'; }
       else if(prev.di !== di){ leg = est(prev.it.ll, it.ll); lab = '🚐 ráno od: '+prev.it.name.split(' ·')[0]; }
       else { leg = est(prev.it.ll, it.ll); lab = '🚐'; }
-      totals[di].drive += leg[0]; totals[di].km += leg[1];
-      if(it.cat!=='kemp') totals[di].dur += (it.dur||0);
-      html[di].inner += '<div class="transfer">'+lab+' ~'+pairFmt(leg)+'</div>';
-      html[di].inner += '<div class="pitem"><span class="dot" style="background:'+CATS[it.cat].color+'"></span>'+
-        '<span class="pn"><b>'+it.name+'</b><small>'+metaFor(it)+(it.price?' · '+it.price:'')+'</small></span>'+
-        '<button class="pbtn" data-mv="-1" data-day="'+di+'" data-ix="'+ix+'" aria-label="Nahoru">↑</button>'+
-        '<button class="pbtn" data-mv="1" data-day="'+di+'" data-ix="'+ix+'" aria-label="Dolů">↓</button>'+
-        '<button class="pbtn" data-rm data-day="'+di+'" data-ix="'+ix+'" aria-label="Odebrat">✕</button></div>';
+      days[di].drive += leg[0]; days[di].km += leg[1];
+      if(it.cat!=='kemp') days[di].dur += (it.dur||0);
+      days[di].rows.push({it, leg, lab});
       prev = {it, di};
     });
   });
   if(prev && lastIdx >= 0){
     const leg = FROM_CB[prev.it.reg];
-    totals[lastIdx].drive += leg[0]; totals[lastIdx].km += leg[1];
-    html[lastIdx].inner += '<div class="transfer">🏠 zpět do Č. Budějovic ~'+pairFmt(leg)+'</div>';
+    days[lastIdx].drive += leg[0]; days[lastIdx].km += leg[1]; days[lastIdx].home = leg;
   }
-  PLANKM = totals.reduce((s,t)=>s+t.km,0);
-  document.getElementById('daysWrap').innerHTML = html.map((d,di)=>{
-    const t = totals[di];
+  return {days, lastIdx};
+}
+/* zastávky dne pro navigaci: kotva (domov / včerejší kemp) → místa dne → případně domů */
+function dayStops(di){
+  const ids = (S.days[di]||[]).filter(id=>byId(id));
+  const stops = [dayAnchor(di)].concat(ids.map(id=>byId(id).ll));
+  let lastIdx = -1; S.days.forEach((d,i)=>{ if(d.length) lastIdx = i; });
+  if(di===lastIdx) stops.push(CB_LL);
+  return stops;
+}
+function renderPlan(){
+  const P = calcPlan();
+  PLANKM = P.days.reduce((s,d)=>s+d.km,0);
+  document.getElementById('daysWrap').innerHTML = S.days.map((day,di)=>{
+    const t = P.days[di];
     const busy = (t.drive + t.dur) > 600;
-    const sum = d.len ? '<small class="dsum'+(busy?' full':'')+'">🚐 '+fmtMin(t.drive)+' · '+t.km+' km &nbsp;·&nbsp; ⏱ program ~'+fmtMin(t.dur)+(busy?' · nabitý den!':'')+'</small>' : '';
-    const inner = d.len ? d.inner : '<div class="empty">Zatím prázdný den — přidej místa v katalogu nebo z mapy, nebo si nahoře načti můj návrh.</div>';
+    const sum = day.length ? '<small class="dsum'+(busy?' full':'')+'">🚐 '+fmtMin(t.drive)+' · '+t.km+' km &nbsp;·&nbsp; ⏱ program ~'+fmtMin(t.dur)+(busy?' · nabitý den!':'')+'</small>' : '';
+    let inner = '';
+    t.rows.forEach((r,ix)=>{
+      inner += '<div class="transfer">'+r.lab+' ~'+pairFmt(r.leg)+'</div>';
+      inner += '<div class="pitem"><span class="dot" style="background:'+CATS[r.it.cat].color+'"></span>'+
+        '<span class="pn"><b>'+r.it.name+'</b><small>'+metaFor(r.it)+(r.it.price?' · '+r.it.price:'')+'</small></span>'+
+        '<button class="pbtn" data-mv="-1" data-day="'+di+'" data-ix="'+ix+'" aria-label="Nahoru">↑</button>'+
+        '<button class="pbtn" data-mv="1" data-day="'+di+'" data-ix="'+ix+'" aria-label="Dolů">↓</button>'+
+        '<button class="pbtn" data-rm data-day="'+di+'" data-ix="'+ix+'" aria-label="Odebrat">✕</button></div>';
+    });
+    if(t.home) inner += '<div class="transfer">🏠 zpět do Č. Budějovic ~'+pairFmt(t.home)+'</div>';
+    if(!day.length) inner = '<div class="empty">Zatím prázdný den — přidej místa v katalogu nebo z mapy, nebo si nahoře načti můj návrh.</div>';
     return '<div class="day"><div class="dayhead"><span class="daynum serif">'+(di+1)+'</span>'+
       '<h3>Den '+(di+1)+sum+'</h3>'+
-      (d.len?'<button class="dayclear" data-clear="'+di+'">vyčistit</button>':'')+
+      (day.length?'<a class="gnav lite daynav" target="_blank" rel="noopener" href="'+gnavUrl(dayStops(di))+'" title="Otevřít den v navigaci Google">🧭 Navigovat</a><button class="dayclear" data-clear="'+di+'">vyčistit</button>':'')+
       '</div>'+inner+'</div>';
   }).join('');
   const total = S.days.reduce((s,d)=>s+d.length,0);
@@ -940,16 +1270,38 @@ document.addEventListener('click', e=>{
   const tp = e.target.closest('[data-tpl]');
   if(tp){
     const n = +tp.dataset.tpl;
-    const hasAny = S.days.some(d=>d.length);
-    if(hasAny && !confirm('Přepsat současný plán mým návrhem na '+n+' dn'+(n>=5?'í':'y')+'?')) return;
-    S.days = TPL[n].map(a=>a.slice());
-    while(S.days.length<5) S.days.push([]);
-    saveState(); renderAll();
+    if(S.days.some(d=>d.length)){
+      /* inline potvrzení místo confirm() — dialogy se v Claude appce někdy neukážou */
+      const ask = document.getElementById('tplAsk');
+      ask.hidden = false;
+      ask.innerHTML = 'Přepsat současný plán návrhem na '+n+' dn'+(n>=5?'í':'y')+'? '+
+        '<button class="yes" data-tplyes="'+n+'">Ano, načíst</button><button data-tplno>Nechat, jak je</button>';
+      return;
+    }
+    applyTpl(n);
+    return;
+  }
+  const ty = e.target.closest('[data-tplyes]');
+  if(ty){ applyTpl(+ty.dataset.tplyes); return; }
+  if(e.target.closest('[data-tplno]')){
+    const ask = document.getElementById('tplAsk');
+    ask.hidden = true; ask.innerHTML = '';
+    return;
   }
 });
+function applyTpl(n){
+  S.days = TPL[n].map(a=>a.slice());
+  while(S.days.length<5) S.days.push([]);
+  S.alp = n>=4; /* návrhy se 4–5 dny jedou přes alpské mýto do Itálie */
+  const ask = document.getElementById('tplAsk');
+  ask.hidden = true; ask.innerHTML = '';
+  document.getElementById('alp').checked = S.alp;
+  saveState(); renderAll(); usePlanKm();
+}
 document.getElementById('wandBtn').addEventListener('click', sortAllDays);
 
 /* ================= ROZPOČET ================= */
+const ALP_TOLL = 28.5; /* tam Felbertauernem 13,50 € + zpět A10 Tauern/Katschberg 15 € (oficiální ceníky 2026) */
 function eur(n){ return (Math.round(n*10)/10).toLocaleString('cs-CZ')+' €'; }
 function usePlanKm(){
   if(!PLANKM) return;
@@ -975,12 +1327,13 @@ function renderBudget(){
   const I = S.inputs;
   const fuelCost = I.km/100*I.cons*I.fuel;
   const food = I.foodDay*daysUsed;
-  const vign = S.vign ? 12.5 : 0;
-  const total = nights.reduce((s,n)=>s+n.night,0) + acts.reduce((s,a)=>s+a.pp*2,0) + fuelCost + food + vign + (+I.buffer||0);
+  const vign = S.vign ? 12.8 : 0;
+  const alp = S.alp ? ALP_TOLL : 0;
+  const total = nights.reduce((s,n)=>s+n.night,0) + acts.reduce((s,a)=>s+a.pp*2,0) + fuelCost + food + vign + alp + (+I.buffer||0);
   document.getElementById('bRows').innerHTML =
     '<div class="brow"><span class="bl"><b>Nafta</b><small>'+I.km+' km × '+I.cons+' l/100 × '+I.fuel+' €/l</small></span><span class="bv">'+eur(fuelCost)+'</span></div>'+
     '<div class="brow"><span class="bl"><b>Jídlo</b><small>'+I.foodDay+' €/den × '+daysUsed+' d. (vč. obědů)</small></span><span class="bv">'+eur(food)+'</span></div>'+
-    '<div class="brow"><span class="bl"><b>Známka + rezerva</b></span><span class="bv">'+eur(vign+(+I.buffer||0))+'</span></div>';
+    '<div class="brow"><span class="bl"><b>Známka'+(S.alp?', alpské mýto':'')+' + rezerva</b></span><span class="bv">'+eur(vign+alp+(+I.buffer||0))+'</span></div>';
   document.getElementById('totalEur').textContent = eur(total);
   document.getElementById('totalCzk').textContent = '≈ '+Math.round(total*I.rate).toLocaleString('cs-CZ')+' Kč (kurz '+I.rate+')';
 }
@@ -990,11 +1343,13 @@ function renderBudget(){
   });
 });
 document.getElementById('vign').addEventListener('change', e=>{ S.vign=e.target.checked; saveState(); renderBudget(); });
+document.getElementById('alp').addEventListener('change', e=>{ S.alp=e.target.checked; saveState(); renderBudget(); });
 
 /* ================= CHECKLIST ================= */
 const CK = [
  ['Auto a papíry',[
   'Digitální dálniční známka koupená a aktivní',
+  'Mýto na jih: Felbertauern / Tauern tunel — jde kartou i hotově',
   'Malý techničák + zelená karta',
   'Parkovací kotouč za sklo (modré zóny!)',
   'Hotovost v € — kempy, parkomaty i hofladeny často bez karet',
@@ -1077,7 +1432,8 @@ function renderAll(){ renderPlan(); renderCatalog(); renderBudget(); drawDots();
   const I = S.inputs;
   ['km','cons','fuel','foodDay','buffer','rate'].forEach(k=>{ document.getElementById(k).value = I[k]; });
   document.getElementById('vign').checked = !!S.vign;
-  initFilters(); buildMap(); renderAll(); renderChecklist();
+  document.getElementById('alp').checked = !!S.alp;
+  initFilters(); initMap(); buildMap(); renderAll(); renderChecklist();
 })();
 </script>
 </body>
