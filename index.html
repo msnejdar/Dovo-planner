@@ -343,6 +343,33 @@ svg text{font-family:'Fraunces',Georgia,serif}
 .leglbl{font-family:'Karla',sans-serif;font-weight:700;fill:#4A4436;paint-order:stroke;stroke:#F1EADA;stroke-width:3.6;stroke-linejoin:round}
 .stoplbl{font-family:'Karla',sans-serif;font-weight:700;fill:#201D17;paint-order:stroke;stroke:#F1EADA;stroke-width:3.4;stroke-linejoin:round}
 .roadline{fill:none;stroke:#CFC3A4;stroke-linecap:round;stroke-linejoin:round}
+/* ---------- v7: časy, varování, souhrn ---------- */
+.startrow{
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--panel);
+  border:1.5px solid var(--line);border-radius:var(--r);padding:11px 13px;margin-top:12px;
+}
+.startrow label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);font-weight:700;display:flex;flex-direction:column;gap:4px}
+.startrow input{border:1.5px solid var(--line);border-radius:11px;background:#fff;padding:7px 9px;font:inherit;font-size:15px;color:var(--ink);letter-spacing:normal;text-transform:none}
+.startrow .hint{font-size:12.5px;color:var(--mut);font-style:italic;flex:1;min-width:150px;letter-spacing:normal;text-transform:none;font-weight:400}
+.daydate{font-family:'Karla',sans-serif;font-size:11.5px;font-weight:700;color:var(--mut);letter-spacing:.06em}
+.mood{display:inline-block;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-left:2px}
+.mood.m0{background:#E7F0E3;color:#2F7D4F}
+.mood.m1{background:#E4EFF3;color:#1D7A99}
+.mood.m2{background:#F7EDD2;color:#8a6410}
+.mood.m3{background:#F9E4D8;color:#D95A34}
+.pitem .clock{font-family:'Karla',sans-serif;font-size:12.5px;font-weight:700;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:8px;padding:2px 7px;flex:none;min-width:52px;text-align:center}
+.warnrow{display:flex;gap:7px;align-items:flex-start;font-size:12.5px;color:#B03A12;font-weight:700;padding:1px 0 5px 3px}
+.warnrow.soft{color:var(--mut);font-weight:400;font-style:italic}
+.suninfo{font-size:12px;color:var(--mut);padding:2px 0 6px 3px;font-weight:700}
+#tripbar{
+  display:flex;gap:8px;flex-wrap:wrap;max-width:760px;margin:0 auto;padding:0 18px 12px;
+}
+#tripbar:empty{display:none}
+#tripbar span{
+  display:inline-flex;align-items:center;gap:6px;background:var(--panel);border:1.5px solid var(--line);
+  border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:700;color:var(--ink);
+}
+#tripbar span b{font-family:'Fraunces',Georgia,serif;font-size:14.5px;font-weight:650}
 .mapbub{
   position:absolute;z-index:6;width:min(255px,72vw);background:var(--panel);
   border:1.5px solid var(--ink);border-radius:14px;padding:11px 12px 12px;
@@ -377,6 +404,7 @@ svg text{font-family:'Fraunces',Georgia,serif}
   <p class="sub">Vyber si, co tě láká — srdíčkem do výběru, plusem rovnou do dne. Nebo si načti můj hotový návrh a přeskládej ho po svém. Od čtyř dnů se jede i na jih: Braies, Misurina, pekárny v Pustertalu.</p>
   <div class="metaline"><span>start: České Budějovice</span><span>1–5 dní</span><span>od 4 dnů i severní Itálie</span><span>ceny = hlavní sezóna 2026, pro dva</span></div>
 </header>
+<div id="tripbar"></div>
 
 <div id="printhead">
   <div class="eyebrow">Salzkammergut & Dolomity · srpen 2026 · VW California</div>
@@ -439,6 +467,11 @@ svg text{font-family:'Fraunces',Georgia,serif}
     <button data-tpl="5">5 dní + Dolomity</button>
     <small>Klid, farmy a menší kempy místo davů. Hallstatt jen jako ranní zastávka. Od čtyř dnů se jede přes Korutany do Pustertalu — Braies brzy ráno, pekárny a sýrárny po cestě. Načte se do dnů níž — pak přeskládej po svém.</small>
     <small id="tplAsk" hidden></small>
+  </div>
+  <div class="startrow">
+    <label for="startDate">Vyjíždíte<input type="date" id="startDate"></label>
+    <label for="startTime">V kolik<input type="time" id="startTime" value="08:00"></label>
+    <span class="hint">Doplň datum a appka ti u každé zastávky napíše, v kolik tam budeš — a křikne, když má zrovna zavřeno.</span>
   </div>
   <div class="wandrow">
     <button class="wand" id="wandBtn">🪄 Srovnat dny podle mapy</button>
@@ -890,6 +923,110 @@ function genMini(it){
   const scale = '<line class="scalebar" x1="10" y1="142" x2="29.1" y2="142"/><text class="scaletxt" x="10" y="138">1 km</text>';
   return '<svg viewBox="0 0 230 156">'+lakes+others+pin+scale+'</svg>';
 }
+/* ================= OTVÍRAČKY =================
+   Jen ověřené údaje z rešerše. cd = zavírací dny (0=neděle … 6=sobota),
+   oh = [od, do] v hodinách, warn = tvrdé omezení, na které je fér upozornit.
+   Co tu není, se nehlídá — radši mlčet než strašit vymyšleným. */
+const HOURS = {
+  /* Rakousko */
+  g1:{oh:[6,21]},
+  g2:{cd:[0,6], oh:[9,17]},
+  g10:{cd:[0]},
+  g16:{cd:[0,6], oh:[8,12]},
+  g17:{cd:[0,1,2,3,4,6], oh:[7,12], warn:'Trh je jen v pátek dopoledne.'},
+  g18:{cd:[1], oh:[9,17]},
+  g19:{cd:[0], oh:[9,18], warn:'Polední pauza 12–14 h.'},
+  b1:{cd:[0,1], oh:[6.5,17]},
+  b2:{cd:[5], oh:[8.5,23]},
+  b3:{oh:[6.5,18]},
+  b4:{cd:[0,3], oh:[8.5,18]},
+  b5:{cd:[4,5], oh:[9,18]},
+  b6:{oh:[6,18]},
+  p10:{oh:[11,19]},
+  r7:{cd:[1,2,3], oh:[11.5,14]},
+  r8:{oh:[10,22], warn:'Mimo srpen mají v úterý zavřeno.'},
+  /* Itálie */
+  b7:{cd:[0], oh:[9,18.5]},
+  b8:{oh:[6,18.5]},
+  b10:{oh:[7,19.5]},
+  g11:{cd:[0], oh:[7.5,19.25]},
+  g12:{cd:[0], oh:[9,18], warn:'Polední pauza 12–14 h; zahrada je volně přístupná.'},
+  g13:{oh:[9,19]},
+  g14:{cd:[0,1,2,4,5,6], oh:[8,13.5], warn:'Trh je jen ve středu dopoledne.'},
+  g15:{oh:[17,20], warn:'Krámek otvírá až v pět odpoledne.'},
+  g20:{oh:[9,18]},
+  r9:{cd:[4], warn:'Padesát míst — bez rezervace nejezdi.'},
+  r10:{oh:[9,18], warn:'Rezervaci si spravují sami telefonem.'},
+  r11:{oh:[12,22.5], warn:'Kuchyně 12–14 a 18–22:30.'},
+  /* tvrdá omezení bez otvíračky */
+  v15:{warn:'Od 1. 7. do 15. 9. se mezi 9 a 16 h vjíždí jen s rezervací z prags.bz. S obytňákem přijeď před devátou.'},
+  v19:{warn:'Bez online rezervace na SPZ (auronzo.info) tě na mýtnou silnici nepustí.'},
+  v20:{warn:'Nahoru smí jen sto aut; v červnu a od poloviny září jen do 10 h a po 15 h.'},
+  k13:{warn:'Příjezdová silnice ke kempu je denně 12–15 h zavřená. Check-in od 15 h.'},
+  k15:{warn:'Rezervace neberou a chtějí minimálně tři noci — přijeď dopoledne.'},
+  k16:{warn:'V hlavní sezóně se přijíždí jen pá–ne. Psi nesmí.'},
+  k12:{warn:'V srpnu bez rezervace nespoléhej.'},
+  k14:{warn:'V srpnu bez rezervace nespoléhej.'},
+  k1:{warn:'V srpnu rezervuj předem.'},
+  k10:{warn:'Recepce má pověst hrubé — ber to jako placené parkování.'},
+  k11:{warn:'Jen hotovost. Po deváté večer je ticho.'}
+};
+Object.keys(HOURS).forEach(id=>{
+  const it = ITEMS.find(x=>x.id===id);
+  if(it) Object.assign(it, HOURS[id]);
+});
+
+/* ================= ČAS ================= */
+const DOW = ['neděle','pondělí','úterý','středa','čtvrtek','pátek','sobota'];
+const DOW_SHORT = ['ne','po','út','st','čt','pá','so'];
+function fmtClock(min){
+  min = ((Math.round(min)%1440)+1440)%1440;
+  return Math.floor(min/60)+':'+String(min%60).padStart(2,'0');
+}
+/* středoevropský letní čas podle evropského pravidla (poslední neděle v březnu / v říjnu) */
+function euOffsetMin(d){
+  const y = d.getUTCFullYear();
+  const lastSun = m => { const x = new Date(Date.UTC(y, m+1, 0)); x.setUTCDate(x.getUTCDate()-x.getUTCDay()); return x; };
+  const a = lastSun(2), b = lastSun(9);
+  a.setUTCHours(1,0,0,0); b.setUTCHours(1,0,0,0);
+  return (d>=a && d<b) ? 120 : 60;
+}
+function parseISO(s){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s||''));
+  return m ? new Date(Date.UTC(+m[1], +m[2]-1, +m[3])) : null;
+}
+function addDays(d, n){ const x = new Date(d.getTime()); x.setUTCDate(x.getUTCDate()+n); return x; }
+function fmtDate(d){ return d.getUTCDate()+'. '+(d.getUTCMonth()+1)+'.'; }
+/* východ a západ slunce (NOAA), vrací minuty místního času nebo null za polárního dne */
+function sunTimes(lat, lng, date){
+  const rad = Math.PI/180;
+  const jdBase = date.getTime()/86400000 + 2440587.5;
+  const n = Math.round(jdBase - 2451545.0 + 0.0008);
+  const Js = n - lng/360;
+  const M = (357.5291 + 0.98560028*Js) % 360;
+  const C = 1.9148*Math.sin(M*rad) + 0.02*Math.sin(2*M*rad) + 0.0003*Math.sin(3*M*rad);
+  const lam = (M + C + 282.9372) % 360;
+  const Jtr = 2451545.0 + Js + 0.0053*Math.sin(M*rad) - 0.0069*Math.sin(2*lam*rad);
+  const dec = Math.asin(Math.sin(lam*rad)*Math.sin(23.44*rad));
+  const cosO = (Math.sin(-0.833*rad) - Math.sin(lat*rad)*Math.sin(dec)) / (Math.cos(lat*rad)*Math.cos(dec));
+  if(cosO>1 || cosO<-1) return null;
+  const w = Math.acos(cosO)/rad/360;
+  const off = euOffsetMin(date);
+  const toMin = j => ((j - Math.floor(j-0.5) - 0.5)*1440 + off + 1440) % 1440;
+  return {rise:toMin(Jtr-w), set:toMin(Jtr+w)};
+}
+/* Co je s otvíračkou špatně, když dorazíš v `arrive` minutách dne `dow`.
+   Vrací krátkou českou větu, nebo null když je všechno v pořádku. */
+function openIssue(it, dow, arrive){
+  if(!it) return null;
+  if(it.cd && dow!==null && it.cd.includes(dow)) return 'zavřeno v '+DOW[dow];
+  if(it.oh && arrive!==null){
+    const from = it.oh[0]*60, to = it.oh[1]*60;
+    if(arrive < from-5) return 'otvírají až v '+fmtClock(from);
+    if(arrive > to-10) return 'v '+fmtClock(arrive)+' už bude zavřeno (do '+fmtClock(to)+')';
+  }
+  return null;
+}
 /* Koridory: body na SKUTEČNÉ silniční trase mezi regiony (ověřeno OSRM 8/2026).
    Dlouhé přejezdy se v přehledu kreslí přes ně, ne vzdušnou čarou přes hory. */
 const ZONE = reg => reg==='jih' ? 'jih' : (reg==='dol'||reg==='cor') ? 'dol' : 'szk';
@@ -945,12 +1082,14 @@ function decodePlanData(s){
   }catch(e){ return null; }
 }
 /* export pro test (v prohlížeči neškodí) */
-var APP_PURE = {CATS,TINTS,REGS,FROM_CB,ITEMS,TPL,LAKES,VIEWS,VPOLYS,PROJ,HOMEPT,EXITPT,viewOf,pip,hav,est,gUrl,navUrl,gnavUrl,genMini,lakesFor,CB_LL,encodePlanData,decodePlanData,esc,shortName};
+var APP_PURE = {CATS,TINTS,REGS,FROM_CB,ITEMS,TPL,LAKES,VIEWS,VPOLYS,PROJ,HOMEPT,EXITPT,viewOf,pip,hav,est,gUrl,navUrl,gnavUrl,genMini,lakesFor,CB_LL,encodePlanData,decodePlanData,esc,shortName,
+  HOURS,DOW,DOW_SHORT,fmtClock,euOffsetMin,parseISO,addDays,fmtDate,sunTimes,openIssue,corridorFor,ZONE,smoothPath};
 </script>
 <script>
 /* ================= STAV & ULOŽENÍ ================= */
 const KEY = 'salzkammergut-planner-v1';
 let S = { fav:[], days:[[],[],[],[],[]], checked:[], custom:[], vign:true, alp:false,
+          start:{date:'', dep:480}, done:[],
           inputs:{km:650,cons:10,fuel:1.65,foodDay:60,buffer:50,rate:24.6} };
 let saveT = null;
 async function loadState(){
@@ -1564,10 +1703,17 @@ let PLANKM = 0;
 function pairFmt(p){ return fmtMin(p[0])+' · '+p[1]+' km'; }
 /* jeden výpočet pro plán, mapu i rozpočet — legy vč. přejezdů mezi dny a návratu domů */
 function calcPlan(){
-  const days = S.days.map(()=>({drive:0,km:0,dur:0,rows:[],home:null}));
+  const days = S.days.map(()=>({drive:0,km:0,dur:0,rows:[],home:null,dow:null,date:null,sun:null,clockEnd:null}));
   let prev = null, lastIdx = -1;
+  const d0 = parseISO(S.start && S.start.date);
+  const dep = (S.start && typeof S.start.dep==='number') ? S.start.dep : 480;
   S.days.forEach((day,di)=>{ if(day.length) lastIdx = di; });
   S.days.forEach((day,di)=>{
+    let clock = dep; /* každé ráno se vyjíždí ve stejnou hodinu */
+    if(d0){
+      const dd = addDays(d0, di);
+      days[di].date = dd; days[di].dow = dd.getUTCDay();
+    }
     day.forEach(id=>{
       const it = byId(id); if(!it) return;
       let leg, lab;
@@ -1576,15 +1722,30 @@ function calcPlan(){
       else { leg = est(prev.it.ll, it.ll); lab = '🚐'; }
       days[di].drive += leg[0]; days[di].km += leg[1];
       if(it.cat!=='kemp') days[di].dur += (it.dur||0);
-      days[di].rows.push({it, leg, lab});
+      const arrive = clock + leg[0];
+      clock = arrive + (it.cat==='kemp' ? 0 : (it.dur||0));
+      days[di].rows.push({it, leg, lab, arrive, leave:clock});
       prev = {it, di};
     });
+    days[di].clockEnd = clock;
+    /* slunce počítám v místě, kde ten den končíš — tam se řeší, jestli dorazíš za světla */
+    const last = days[di].rows[days[di].rows.length-1];
+    if(days[di].date && last) days[di].sun = sunTimes(last.it.ll[0], last.it.ll[1], days[di].date);
   });
   if(prev && lastIdx >= 0){
     const leg = FROM_CB[prev.it.reg];
     days[lastIdx].drive += leg[0]; days[lastIdx].km += leg[1]; days[lastIdx].home = leg;
   }
-  return {days, lastIdx};
+  return {days, lastIdx, dep};
+}
+/* nálada dne podle času za volantem a programem dohromady */
+function dayMood(t){
+  const tot = t.drive + t.dur;
+  if(!t.rows.length) return null;
+  if(tot <= 300) return {i:0, txt:'pohodový'};
+  if(tot <= 470) return {i:1, txt:'akorát'};
+  if(tot <= 620) return {i:2, txt:'našlapaný'};
+  return {i:3, txt:'nabitý'};
 }
 /* zastávky dne pro navigaci: kotva (domov / včerejší kemp) → místa dne → případně domů */
 function dayStops(di){
@@ -1599,21 +1760,33 @@ function renderPlan(){
   PLANKM = P.days.reduce((s,d)=>s+d.km,0);
   document.getElementById('daysWrap').innerHTML = S.days.map((day,di)=>{
     const t = P.days[di];
-    const busy = (t.drive + t.dur) > 600;
-    const sum = day.length ? '<small class="dsum'+(busy?' full':'')+'">🚐 '+fmtMin(t.drive)+' · '+t.km+' km &nbsp;·&nbsp; ⏱ program ~'+fmtMin(t.dur)+(busy?' · nabitý den!':'')+'</small>' : '';
+    const busy = (t.drive + t.dur) > 620;
+    const sum = day.length ? '<small class="dsum'+(busy?' full':'')+'">🚐 '+fmtMin(t.drive)+' · '+t.km+' km &nbsp;·&nbsp; ⏱ program ~'+fmtMin(t.dur)+' &nbsp;·&nbsp; hotovo '+fmtClock(t.clockEnd)+'</small>' : '';
     let inner = '';
     t.rows.forEach((r,ix)=>{
       inner += '<div class="transfer">'+r.lab+' ~'+pairFmt(r.leg)+'</div>';
       inner += '<div class="pitem"><span class="dot" style="background:'+CATS[r.it.cat].color+'"></span>'+
-        '<span class="pn"><b>'+r.it.name+'</b><small>'+metaFor(r.it)+(r.it.price?' · '+r.it.price:'')+'</small></span>'+
+        '<span class="clock">'+fmtClock(r.arrive)+'</span>'+
+        '<span class="pn"><b>'+esc(r.it.name)+'</b><small>'+metaFor(r.it)+(r.it.price?' · '+esc(r.it.price):'')+'</small></span>'+
         '<button class="pbtn" data-mv="-1" data-day="'+di+'" data-ix="'+ix+'" aria-label="Nahoru">↑</button>'+
         '<button class="pbtn" data-mv="1" data-day="'+di+'" data-ix="'+ix+'" aria-label="Dolů">↓</button>'+
         '<button class="pbtn" data-rm data-day="'+di+'" data-ix="'+ix+'" aria-label="Odebrat">✕</button></div>';
+      const issue = openIssue(r.it, t.dow, r.arrive);
+      if(issue) inner += '<div class="warnrow">⚠<span>'+esc(issue)+'</span></div>';
+      if(r.it.warn) inner += '<div class="warnrow soft">ℹ<span>'+esc(r.it.warn)+'</span></div>';
     });
     if(t.home) inner += '<div class="transfer">🏠 zpět do Č. Budějovic ~'+pairFmt(t.home)+'</div>';
+    if(t.sun && t.rows.length){
+      const lastRow = t.rows[t.rows.length-1];
+      const late = lastRow.arrive > t.sun.set;
+      inner += '<div class="suninfo">☀ '+fmtClock(t.sun.rise)+' – '+fmtClock(t.sun.set)+
+        (late ? ' · na poslední zastávku dorazíš po setmění' : '')+'</div>';
+    }
     if(!day.length) inner = '<div class="empty">Zatím prázdný den — přidej místa v katalogu nebo z mapy, nebo si nahoře načti můj návrh.</div>';
+    const mood = dayMood(t);
+    const dateLbl = t.date ? '<span class="daydate">'+DOW_SHORT[t.dow]+' '+fmtDate(t.date)+'</span> ' : '';
     return '<div class="day"><div class="dayhead"><span class="daynum serif">'+(di+1)+'</span>'+
-      '<h3>Den '+(di+1)+sum+'</h3>'+
+      '<h3>Den '+(di+1)+' '+dateLbl+(mood?'<span class="mood m'+mood.i+'">'+mood.txt+'</span>':'')+sum+'</h3>'+
       (day.length?'<a class="gnav lite daynav" target="_blank" rel="noopener" href="'+gnavUrl(dayStops(di))+'" title="Otevřít den v navigaci Google">🧭 Navigovat</a><button class="dayclear" data-clear="'+di+'">vyčistit</button>':'')+
       '</div>'+inner+'</div>';
   }).join('');
@@ -1669,11 +1842,39 @@ function applyTpl(n){
 }
 document.getElementById('wandBtn').addEventListener('click', sortAllDays);
 document.getElementById('shareBtn').addEventListener('click', sharePlan);
+function syncStartInputs(){
+  document.getElementById('startDate').value = S.start.date || '';
+  document.getElementById('startTime').value = fmtClock(S.start.dep).padStart(5,'0');
+}
+document.getElementById('startDate').addEventListener('change', e=>{
+  S.start.date = e.target.value || ''; saveState(); renderAll();
+});
+document.getElementById('startTime').addEventListener('change', e=>{
+  const m = /^(\d{1,2}):(\d{2})$/.exec(e.target.value||'');
+  S.start.dep = m ? (+m[1])*60 + (+m[2]) : 480;
+  saveState(); renderAll();
+});
+/* pásek se souhrnem cesty — ať jsou hlavní čísla vidět z každé záložky */
+let TRIPCOST = 0;
+function renderTripbar(){
+  const P = calcPlan();
+  const km = P.days.reduce((s,d)=>s+d.km,0);
+  const drive = P.days.reduce((s,d)=>s+d.drive,0);
+  const daysUsed = S.days.filter(d=>d.length).length;
+  const nights = S.days.flat().map(byId).filter(it=>it && it.night).length;
+  const el = document.getElementById('tripbar');
+  if(!km){ el.innerHTML = ''; return; }
+  el.innerHTML =
+    '<span>🗓 <b>'+daysUsed+'</b> dn'+(daysUsed===1?'ě':(daysUsed<5?'y':'í'))+'</span>'+
+    '<span>🚐 <b>'+km+'</b> km · '+fmtMin(drive)+'</span>'+
+    '<span>🌙 <b>'+nights+'</b> noc'+(nights===1?'':(nights<5?'i':'í'))+'</span>'+
+    (TRIPCOST?'<span>💶 <b>'+Math.round(TRIPCOST)+'</b> € pro dva</span>':'');
+}
 
 /* ================= SDÍLENÍ PLÁNU ================= */
 let INCOMING = null;
 function planShareUrl(){
-  const payload = {d:S.days, f:S.fav, v:S.vign?1:0, a:S.alp?1:0, i:S.inputs};
+  const payload = {d:S.days, f:S.fav, v:S.vign?1:0, a:S.alp?1:0, i:S.inputs, s:S.start};
   return location.origin + location.pathname + '#p=' + encodePlanData(payload);
 }
 function shareNote(html){ const el = document.getElementById('shareOut'); el.hidden = false; el.innerHTML = html; }
@@ -1715,6 +1916,11 @@ document.addEventListener('click', e=>{
       while(S.days.length<5) S.days.push([]);
       if(Array.isArray(o.f)) S.fav = o.f.filter(id=>byId(id));
       S.vign = !!o.v; S.alp = !!o.a;
+      if(o.s && typeof o.s==='object'){
+        if(typeof o.s.date==='string') S.start.date = o.s.date;
+        if(typeof o.s.dep==='number') S.start.dep = o.s.dep;
+        syncStartInputs();
+      }
       if(o.i && typeof o.i==='object'){
         ['km','cons','fuel','foodDay','buffer','rate'].forEach(k=>{
           const v = parseFloat(o.i[k]);
@@ -1766,6 +1972,7 @@ function renderBudget(){
     '<div class="brow"><span class="bl"><b>Nafta</b><small>'+I.km+' km × '+I.cons+' l/100 × '+I.fuel+' €/l</small></span><span class="bv">'+eur(fuelCost)+'</span></div>'+
     '<div class="brow"><span class="bl"><b>Jídlo</b><small>'+I.foodDay+' €/den × '+daysUsed+' d. (vč. obědů)</small></span><span class="bv">'+eur(food)+'</span></div>'+
     '<div class="brow"><span class="bl"><b>Známka'+(S.alp?', alpské mýto':'')+' + rezerva</b></span><span class="bv">'+eur(vign+alp+(+I.buffer||0))+'</span></div>';
+  TRIPCOST = total;
   document.getElementById('totalEur').textContent = eur(total);
   document.getElementById('totalCzk').textContent = '≈ '+Math.round(total*I.rate).toLocaleString('cs-CZ')+' Kč (kurz '+I.rate+')';
 }
@@ -1858,13 +2065,16 @@ document.querySelector('.tabs').addEventListener('click', e=>{
   switchTab(t.dataset.tab);
   window.scrollTo({top:0});
 });
-function renderAll(){ renderPlan(); renderCatalog(); renderBudget(); applyZoom(); }
+function renderAll(){ renderPlan(); renderCatalog(); renderBudget(); renderTripbar(); applyZoom(); }
 (async function(){
   await loadState();
   const I = S.inputs;
   ['km','cons','fuel','foodDay','buffer','rate'].forEach(k=>{ document.getElementById(k).value = I[k]; });
   document.getElementById('vign').checked = !!S.vign;
   document.getElementById('alp').checked = !!S.alp;
+  if(!S.start) S.start = {date:'', dep:480};
+  if(!Array.isArray(S.done)) S.done = [];
+  syncStartInputs();
   initFilters(); initMap(); buildMap(); renderAll(); renderChecklist();
   checkIncoming();
 })();

@@ -118,5 +118,41 @@ if (/[+/=]/.test(A.encodePlanData(payload))) fail('encodePlanData: výstup není
 if (A.decodePlanData('%%%nesmysl') !== null || A.decodePlanData(A.encodePlanData({ x: 1 })) !== null) fail('decodePlanData: nevrací null pro nevalidní vstup');
 if (!fails) console.log('OK  sdílení: encode/decode roundtrip, base64url, odmítá nevalidní vstup');
 
+/* --- čas: hodiny, letní čas, slunce, otvíračky --- */
+const { fmtClock, euOffsetMin, parseISO, sunTimes, openIssue, DOW } = A;
+if (fmtClock(0) !== '0:00' || fmtClock(495) !== '8:15' || fmtClock(1439) !== '23:59') fail('fmtClock: špatný formát');
+if (fmtClock(1440 + 90) !== '1:30') fail('fmtClock: nepřetáčí přes půlnoc');
+if (euOffsetMin(new Date(Date.UTC(2026, 7, 15))) !== 120) fail('euOffsetMin: v srpnu má být letní čas (+120)');
+if (euOffsetMin(new Date(Date.UTC(2026, 0, 15))) !== 60) fail('euOffsetMin: v lednu má být zimní čas (+60)');
+if (parseISO('2026-08-15').getUTCDate() !== 15 || parseISO('nesmysl') !== null) fail('parseISO: špatný převod');
+/* Toblach 15. 8. 2026: východ kolem 6:10, západ kolem 20:25 SELČ */
+const sun = sunTimes(46.7345, 12.2225, parseISO('2026-08-15'));
+if (!sun) fail('sunTimes: nic nevrátilo');
+else {
+  if (Math.abs(sun.rise - 370) > 25) fail('sunTimes: východ mimo očekávání (' + fmtClock(sun.rise) + ')');
+  if (Math.abs(sun.set - 1225) > 25) fail('sunTimes: západ mimo očekávání (' + fmtClock(sun.set) + ')');
+}
+/* v létě musí být den v Alpách delší než v prosinci */
+const dec = sunTimes(46.7345, 12.2225, parseISO('2026-12-15'));
+if (dec && (sun.set - sun.rise) <= (dec.set - dec.rise)) fail('sunTimes: srpnový den má být delší než prosincový');
+const trh = ITEMS.find(i => i.id === 'g14'); /* trh v Brunecku — jen středa */
+if (!trh.cd || !trh.oh) fail('otvíračky se nepropsaly do ITEMS');
+if (openIssue(trh, 3, 9 * 60) !== null) fail('openIssue: ve středu dopoledne má být trh v pořádku');
+if (!/zavřeno v čtvrtek/.test(openIssue(trh, 4, 9 * 60) || '')) fail('openIssue: ve čtvrtek má hlásit zavřeno');
+if (!/otvírají/.test(openIssue(trh, 3, 6 * 60) || '')) fail('openIssue: v šest ráno má hlásit, že ještě nemají otevřeno');
+if (!/zavřeno/.test(openIssue(trh, 3, 15 * 60) || '')) fail('openIssue: v tři odpoledne má hlásit, že už je zavřeno');
+if (openIssue({ id: 'x' }, 3, 600) !== null) fail('openIssue: bez dat nesmí nic hlásit');
+if (!fails) console.log('OK  čas: hodiny, letní čas, slunce nad Toblachem, otvíračky');
+
+/* --- koridory tras --- */
+const { corridorFor, ZONE, smoothPath } = A;
+if (ZONE('dol') !== 'dol' || ZONE('cor') !== 'dol' || ZONE('mon') !== 'szk' || ZONE('jih') !== 'jih') fail('ZONE: špatné zařazení regionu');
+if (corridorFor('szk', 'szk') !== null) fail('corridorFor: uvnitř regionu nemá koridor vracet');
+const cor = corridorFor('dol', 'cb');
+if (!cor || cor.length < 5) fail('corridorFor: chybí obrácený koridor Dolomity → domů');
+if (cor && Math.abs(cor[0][0] - 46.75) > 0.2) fail('corridorFor: obrácený koridor nezačíná na jihu');
+if (!/^M[\d.]+,[\d.]+ Q/.test(smoothPath([{ x: 0, y: 0 }, { x: 5, y: 5 }, { x: 9, y: 1 }]))) fail('smoothPath: nečekaný tvar');
+if (!fails) console.log('OK  koridory: zóny, oba směry, plynulá čára');
+
 if (fails) { console.error('\n' + fails + ' chyb.'); process.exit(1); }
 console.log('\nVŠE OK');
