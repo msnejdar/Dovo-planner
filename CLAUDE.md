@@ -139,6 +139,13 @@ ho zajímají.
   vyplnění data; lišta pod mapou hlásí, kolik zastávek se nevejde do
   devítimístného limitu Google navigace.
 
+- **Nápověda (v11)**: tabulka `HELP` (klíč → [nadpis, HTML text]) a
+  `q('klic')` vloží kolečko `?`. Jeden sdílený popover se drží u tlačítka
+  (`position:fixed`, ořezaný do okna), zavírá ho křížek, klik vedle,
+  Esc nebo scroll. Texty vysvětlují hlavně to, co jinak není vidět —
+  odkud se čísla berou a co je ověřené a co odhad. **Když přidáš prvek,
+  který počítá nebo hádá číslo, přidej k němu i otazník.**
+
 ## Tvrdé zásady
 
 1. **Žádná vymyšlená místa ani čísla.** Každé nové místo ověř web searchem:

@@ -461,6 +461,30 @@ svg text{font-family:'Fraunces',Georgia,serif}
 }
 .movepick button.cur{border-style:solid;background:var(--ink);color:var(--paper)}
 @media print{ .daybar,.sortrow,.movepick,.addbtn,.moreday{display:none!important} }
+/* ---------- v11: otazníky s nápovědou ---------- */
+.q{
+  border:1.5px solid var(--line);background:#fff;color:var(--mut);
+  width:19px;height:19px;min-width:19px;border-radius:50%;padding:0;margin-left:6px;
+  font:inherit;font-size:11.5px;font-weight:700;line-height:1;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;
+  letter-spacing:0;text-transform:none;flex:none;
+}
+.q:hover{border-color:var(--ink);color:var(--ink)}
+.q[aria-expanded="true"]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.helppop{
+  position:fixed;z-index:200;width:min(330px,calc(100vw - 24px));
+  background:var(--panel);border:1.5px solid var(--ink);border-radius:14px;
+  padding:13px 14px 14px;box-shadow:0 12px 34px rgba(32,29,23,.24);
+}
+.helppop[hidden]{display:none}
+.helppop h4{font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:600;margin:0 20px 5px 0;line-height:1.2}
+.helppop p{font-size:13.5px;color:#453f30;margin-top:6px}
+.helppop b{font-weight:700;color:var(--ink)}
+.helppop .x{position:absolute;right:6px;top:5px;border:none;background:none;font-size:17px;line-height:1;cursor:pointer;color:var(--mut);padding:2px 6px}
+.helpback{position:fixed;inset:0;z-index:199;background:transparent}
+.helpback[hidden]{display:none}
+@media print{ .q,.helppop,.helpback{display:none!important} }
+
 /* na telefonu ukrajovala čtyři tlačítka jméno na tři řádky — šipky nahrazuje úchyt a „den" */
 @media (max-width:560px){
   .pitem [data-mv]{display:none}
@@ -525,11 +549,11 @@ svg text{font-family:'Fraunces',Georgia,serif}
 <!-- ============ OBJEVUJ ============ -->
 <section id="tab-objevuj">
   <div class="daybar" id="dayBar"></div>
-  <div class="filterlabel">Co hledáš</div>
+  <div class="filterlabel">Co hledáš<button class="q" data-help="cat" aria-label="Co to znamená" aria-expanded="false">?</button></div>
   <div class="chips" id="catChips"></div>
-  <div class="filterlabel">Kde</div>
+  <div class="filterlabel">Kde<button class="q" data-help="reg" aria-label="Co to znamená" aria-expanded="false">?</button></div>
   <div class="chips" id="regChips"></div>
-  <div class="filterlabel">Seřadit</div>
+  <div class="filterlabel">Seřadit<button class="q" data-help="sort" aria-label="Co to znamená" aria-expanded="false">?</button></div>
   <div class="sortrow" id="sortChips"></div>
   <div class="count" id="countLine"></div>
   <div class="cards" id="cardList"></div>
@@ -537,11 +561,11 @@ svg text{font-family:'Fraunces',Georgia,serif}
 
 <!-- ============ MAPA ============ -->
 <section id="tab-mapa" hidden>
-  <div class="filterlabel">Pohled</div>
+  <div class="filterlabel">Pohled<button class="q" data-help="view" aria-label="Co to znamená" aria-expanded="false">?</button><button class="q" data-help="zoom" aria-label="Přibližování" aria-expanded="false">?</button></div>
   <div class="chips" id="viewChips"></div>
-  <div class="filterlabel">Trasa na mapě</div>
+  <div class="filterlabel">Trasa na mapě<button class="q" data-help="route" aria-label="Co to znamená" aria-expanded="false">?</button></div>
   <div class="chips" id="routeChips"></div>
-  <div class="filterlabel">Co ukázat</div>
+  <div class="filterlabel">Co ukázat<button class="q" data-help="mapcat" aria-label="Co to znamená" aria-expanded="false">?</button></div>
   <div class="chips" id="mapCatChips"></div>
   <div class="mapwrap mapstage" style="padding:8px">
     <svg id="bigsvg" viewBox="0 0 1000 1045" role="img" aria-label="Mapa Salzkammergutu a Dolomit podle skutečných souřadnic"></svg>
@@ -563,7 +587,7 @@ svg text{font-family:'Fraunces',Georgia,serif}
 <section id="tab-plan" hidden>
   <div id="incoming" hidden></div>
   <div class="tpl">
-    <b>Můj návrh (laděno pro Nikolu):</b>
+    <b>Můj návrh (laděno pro Nikolu):</b><button class="q" data-help="tpl" aria-label="Co to znamená" aria-expanded="false">?</button>
     <button data-tpl="3">3 dny · jezera</button>
     <button data-tpl="4">4 dny + Dolomity</button>
     <button data-tpl="5">5 dní + Dolomity</button>
@@ -571,19 +595,19 @@ svg text{font-family:'Fraunces',Georgia,serif}
     <small id="tplAsk" hidden></small>
   </div>
   <div class="startrow">
-    <label for="startDate">Vyjíždíte<input type="date" id="startDate"></label>
+    <label for="startDate">Vyjíždíte<button class="q" data-help="start" aria-label="Co to znamená" aria-expanded="false">?</button><input type="date" id="startDate"></label>
     <label for="startTime">V kolik<input type="time" id="startTime" value="08:00"></label>
     <span class="hint">Doplň datum a appka ti u každé zastávky napíše, v kolik tam budeš — a křikne, když má zrovna zavřeno.</span>
   </div>
   <div class="wandrow">
-    <button class="wand" id="wandBtn">🪄 Srovnat dny podle mapy</button>
-    <button class="wand" id="shareBtn">📤 Poslat plán</button>
+    <button class="wand" id="wandBtn">🪄 Srovnat dny podle mapy</button><button class="q" data-help="wand" aria-label="Co to znamená" aria-expanded="false">?</button>
+    <button class="wand" id="shareBtn">📤 Poslat plán</button><button class="q" data-help="share" aria-label="Co to znamená" aria-expanded="false">?</button>
     <small style="color:var(--mut)">🪄 seřadí zastávky, ať se jede co nejmíň · 📤 pošle celý plán jedním odkazem</small>
     <small id="shareOut" hidden></small>
   </div>
   <p class="planintro">U každého dne vidíš čas za volantem, kilometry a čas na místech — včetně přejezdů mezi dny a návratu domů. Nové místo se do dne zařadí samo tam, kam patří. Tlačítkem 🧭 pustíš celý den i se zastávkami rovnou do navigace Google.</p>
   <div class="surprise">
-    <b>Nevíš, co dál?</b>
+    <b>Nevíš, co dál?</b><button class="q" data-help="surprise" aria-label="Co to znamená" aria-expanded="false">?</button>
     <button data-mood="voda">🏊 líný den u vody</button>
     <button data-mood="jidlo">🧀 jídlo a farmy</button>
     <button data-mood="hory">⛰ hory bez námahy</button>
@@ -594,7 +618,7 @@ svg text{font-family:'Fraunces',Georgia,serif}
   <div id="tripStats"></div>
   <div class="wandrow">
     <button class="wand" id="icsBtn">📅 Do kalendáře</button>
-    <button class="wand" id="gpxBtn">🗺 Stáhnout GPX</button>
+    <button class="wand" id="gpxBtn">🗺 Stáhnout GPX</button><button class="q" data-help="exports" aria-label="Co to znamená" aria-expanded="false">?</button>
     <button class="bigbtn" style="margin-top:0" onclick="window.print()">Vytisknout / uložit PDF</button>
     <small id="expNote" style="color:var(--mut);flex-basis:100%"></small>
   </div>
@@ -602,6 +626,7 @@ svg text{font-family:'Fraunces',Georgia,serif}
 
 <!-- ============ DNES ============ -->
 <section id="tab-dnes" hidden>
+  <div class="filterlabel">Dnes<button class="q" data-help="dnes" aria-label="Co to znamená" aria-expanded="false">?</button></div>
   <div class="chips" id="dnesChips"></div>
   <div id="dnesWrap"></div>
 </section>
@@ -612,15 +637,15 @@ svg text{font-family:'Fraunces',Georgia,serif}
     <div id="bNights"></div>
     <div id="bActs"></div>
     <div id="bKm"></div>
-    <div class="togglerow"><input type="checkbox" id="vign" checked><label for="vign">Digitální dálniční známka 10 dní (12,80 €)</label></div>
-    <div class="togglerow"><input type="checkbox" id="alp"><label for="alp" id="alpLabel">Alpské mýto na jih, tam i zpět (Felbertauern 13,50 € + Tauern 15 €)</label></div>
+    <div class="togglerow"><input type="checkbox" id="vign" checked><label for="vign">Digitální dálniční známka 10 dní (12,80 €)</label><button class="q" data-help="vign" aria-label="Co to znamená" aria-expanded="false">?</button></div>
+    <div class="togglerow"><input type="checkbox" id="alp"><label for="alp" id="alpLabel">Alpské mýto na jih, tam i zpět (Felbertauern 13,50 € + Tauern 15 €)</label><button class="q" data-help="alp" aria-label="Co to znamená" aria-expanded="false">?</button></div>
     <div class="binputs">
-      <div class="binput"><label for="km">Km celkem</label><input id="km" type="number" inputmode="numeric" value="650"></div>
+      <div class="binput"><label for="km">Km celkem<button class="q" data-help="fuel" aria-label="Co to znamená" aria-expanded="false">?</button></label><input id="km" type="number" inputmode="numeric" value="650"></div>
       <div class="binput"><label for="cons">Spotřeba l/100</label><input id="cons" type="number" inputmode="decimal" step="0.5" value="10"></div>
       <div class="binput"><label for="fuel">Nafta €/l</label><input id="fuel" type="number" inputmode="decimal" step="0.01" value="1.65"></div>
       <div class="binput"><label for="foodDay">Jídlo €/den</label><input id="foodDay" type="number" inputmode="numeric" value="60"></div>
       <div class="binput"><label for="buffer">Rezerva €</label><input id="buffer" type="number" inputmode="numeric" value="50"></div>
-      <div class="binput"><label for="rate">Kurz Kč/€</label><input id="rate" type="number" inputmode="decimal" step="0.1" value="24.6"></div>
+      <div class="binput"><label for="rate">Kurz Kč/€<button class="q" data-help="rate" aria-label="Co to znamená" aria-expanded="false">?</button></label><input id="rate" type="number" inputmode="decimal" step="0.1" value="24.6"></div>
     </div>
     <div id="bRows"></div>
     <div class="totalbox"><div class="t1" id="totalEur">0 €</div><div class="t2" id="totalCzk"></div></div>
@@ -630,6 +655,7 @@ svg text{font-family:'Fraunces',Georgia,serif}
 
 <!-- ============ SBALIT ============ -->
 <section id="tab-sbalit" hidden>
+  <div class="filterlabel">Sbalit<button class="q" data-help="checklist" aria-label="Co to znamená" aria-expanded="false">?</button></div>
   <div id="ckWrap"></div>
   <div class="addrow">
     <input id="ckNew" type="text" placeholder="Přidat vlastní položku…" aria-label="Nová položka">
@@ -637,7 +663,7 @@ svg text{font-family:'Fraunces',Georgia,serif}
   </div>
 </section>
 
-<p class="savednote">Výběr, plán i odškrtnuté položky se samy ukládají v tomhle prohlížeči — příště pokračuješ, kde jsi skončila. Tlačítkem 📤 v Plánu pošleš celý plán jedním odkazem.</p>
+<p class="savednote"><button class="q" data-help="save" aria-label="Kam se to ukládá" aria-expanded="false">?</button> Výběr, plán i odškrtnuté položky se samy ukládají v tomhle prohlížeči — příště pokračuješ, kde jsi skončila. Tlačítkem 📤 v Plánu pošleš celý plán jedním odkazem.</p>
 </main>
 <script>
 /* ================= DATA ================= */
@@ -1641,11 +1667,11 @@ function drawDots(){
   }).join('');
 }
 function grHtml(it){
-  return it.gr ? '<span class="gr">★ '+String(it.gr[0]).replace('.',',')+' <a href="'+gUrl(it)+'" target="_blank" rel="noopener">('+it.gr[1].toLocaleString('cs-CZ')+' · fotky Google)</a></span>'
+  return it.gr ? '<span class="gr">'+q('gr')+' ★ '+String(it.gr[0]).replace('.',',')+' <a href="'+gUrl(it)+'" target="_blank" rel="noopener">('+it.gr[1].toLocaleString('cs-CZ')+' · fotky Google)</a></span>'
                : '<span class="gr"><a href="'+gUrl(it)+'" target="_blank" rel="noopener">fotky a hodnocení · Google</a></span>';
 }
 function nikHtml(it){
-  return '<div class="nikrow"><span class="nik">🌿 Pro Nikolu: '+'●'.repeat(it.nik)+'○'.repeat(5-it.nik)+'</span> <span class="niknote">'+it.nn+'</span></div>';
+  return '<div class="nikrow">'+q('nik')+'<span class="nik">🌿 Pro Nikolu: '+'●'.repeat(it.nik)+'○'.repeat(5-it.nik)+'</span> <span class="niknote">'+it.nn+'</span></div>';
 }
 function dayBtns(it){
   return S.days.map((d,i)=>'<button data-add="'+it.id+'" data-day="'+i+'" class="'+(d.includes(it.id)?'added':'')+'">Den '+(i+1)+'</button>').join('');
@@ -1878,7 +1904,7 @@ function renderDayBar(){
   const bar = document.getElementById('dayBar');
   if(!bar) return;
   const ad = activeDay();
-  bar.innerHTML = '<span class="lbl">Přidávám do</span>' +
+  bar.innerHTML = '<span class="lbl">Přidávám do'+q('addday')+'</span>' +
     S.days.map((d,i)=>'<button data-adday="'+i+'" aria-pressed="'+String(i===ad)+'" style="--dc:'+DAYC[i%5]+'">Den '+(i+1)+
       (d.length?'<span class="cnt">'+d.length+'</span>':'')+'</button>').join('');
 }
@@ -2145,10 +2171,10 @@ function renderPlan(){
   document.getElementById('daysWrap').innerHTML = S.days.map((day,di)=>{
     const t = P.days[di];
     const busy = (t.drive + t.dur) > 620;
-    const sum = day.length ? '<small class="dsum'+(busy?' full':'')+'">🚐 '+fmtMin(t.drive)+' · '+t.km+' km &nbsp;·&nbsp; ⏱ program ~'+fmtMin(t.dur)+' &nbsp;·&nbsp; hotovo '+fmtClock(t.clockEnd)+'</small>' : '';
+    const sum = day.length ? '<small class="dsum'+(busy?' full':'')+'">🚐 '+fmtMin(t.drive)+' · '+t.km+' km &nbsp;·&nbsp; ⏱ program ~'+fmtMin(t.dur)+' &nbsp;·&nbsp; hotovo '+fmtClock(t.clockEnd)+q('daysum')+'</small>' : '';
     let inner = '';
     t.rows.forEach((r,ix)=>{
-      inner += '<div class="transfer">'+r.lab+' ~'+pairFmt(r.leg)+'</div>';
+      inner += '<div class="transfer">'+r.lab+' ~'+pairFmt(r.leg)+(ix===0?q('estimates'):'')+'</div>';
       inner += '<div class="pitem" data-day="'+di+'" data-ix="'+ix+'">'+
         '<button class="grip" aria-label="Přetáhnout">⠿</button>'+
         '<span class="dot" style="background:'+CATS[r.it.cat].color+'"></span>'+
@@ -2162,22 +2188,22 @@ function renderPlan(){
         S.days.map((d,j)=>'<button data-moveto="'+di+'-'+ix+'-'+j+'"'+(j===di?' class="cur"':'')+'>Den '+(j+1)+'</button>').join('')+
       '</div>';
       const issue = openIssue(r.it, t.dow, r.arrive);
-      if(issue) inner += '<div class="warnrow">⚠<span>'+esc(issue)+'</span></div>';
+      if(issue) inner += '<div class="warnrow">⚠<span>'+esc(issue)+'</span>'+q('warn')+'</div>';
       if(r.it.warn) inner += '<div class="warnrow soft">ℹ<span>'+esc(r.it.warn)+'</span></div>';
     });
     if(t.home) inner += '<div class="transfer">🏠 zpět do Č. Budějovic ~'+pairFmt(t.home)+'</div>';
     if(t.sun && t.rows.length){
       const lastRow = t.rows[t.rows.length-1];
       const late = lastRow.arrive > t.sun.set;
-      inner += '<div class="suninfo">☀ '+fmtClock(t.sun.rise)+' – '+fmtClock(t.sun.set)+
+      inner += '<div class="suninfo">'+q('sun')+' ☀ '+fmtClock(t.sun.rise)+' – '+fmtClock(t.sun.set)+
         (late ? ' · na poslední zastávku dorazíš po setmění' : '')+'</div>';
     }
     if(!day.length) inner = '<div class="empty">Zatím prázdný den — přidej místa v katalogu nebo z mapy, nebo si nahoře načti můj návrh.</div>';
     const mood = dayMood(t);
     const dateLbl = t.date ? '<span class="daydate">'+DOW_SHORT[t.dow]+' '+fmtDate(t.date)+wxHtml(di)+'</span> ' : '';
     return '<div class="day"><div class="dayhead"><span class="daynum serif">'+(di+1)+'</span>'+
-      '<h3>Den '+(di+1)+' '+dateLbl+(mood?'<span class="mood m'+mood.i+'">'+mood.txt+'</span>':'')+sum+'</h3>'+
-      (day.length?'<a class="gnav lite daynav" target="_blank" rel="noopener" href="'+gnavUrl(dayStops(di))+'" title="Otevřít den v navigaci Google">🧭 Navigovat</a><button class="dayclear" data-clear="'+di+'">vyčistit</button>':'')+
+      '<h3>Den '+(di+1)+' '+dateLbl+(mood?'<span class="mood m'+mood.i+'">'+mood.txt+'</span>'+q('mood'):'')+sum+'</h3>'+
+      (day.length?'<a class="gnav lite daynav" target="_blank" rel="noopener" href="'+gnavUrl(dayStops(di))+'" title="Otevřít den v navigaci Google">🧭 Navigovat</a>'+q('nav')+'<button class="dayclear" data-clear="'+di+'">vyčistit</button>':'')+
       '</div>'+inner+'</div>';
   }).join('');
   const total = S.days.reduce((s,d)=>s+d.length,0);
@@ -2279,7 +2305,7 @@ function renderTripbar(){
   el.innerHTML =
     (cdTxt?'<span class="cd">⏳ '+cdTxt+'</span>':'')+
     '<span>🗓 <b>'+daysUsed+'</b> dn'+(daysUsed===1?'ě':(daysUsed<5?'y':'í'))+'</span>'+
-    '<span>🚐 <b>'+km+'</b> km · '+fmtMin(drive)+'</span>'+
+    '<span>🚐 <b>'+km+'</b> km · '+fmtMin(drive)+q('trip')+'</span>'+
     '<span>🌙 <b>'+nights+'</b> noc'+(nights===1?'':(nights<5?'i':'í'))+'</span>'+
     (TRIPCOST?'<span>💶 <b>'+Math.round(TRIPCOST)+'</b> € pro dva</span>':'');
 }
@@ -2306,11 +2332,11 @@ function renderTripStats(){
   ];
   const badges = tripBadges(P, ids);
   el.innerHTML =
-    '<div class="sechead">Jak to zatím vypadá</div>'+
+    '<div class="sechead">Jak to zatím vypadá'+q('stats')+'</div>'+
     '<div class="statgrid">'+stats.map(s=>'<div class="stat"><div class="n">'+s[0]+'</div><div class="l">'+s[1]+'</div></div>').join('')+'</div>'+
-    (badges.length ? '<div class="sechead">Co se povedlo</div><div class="badges">'+
+    (badges.length ? '<div class="sechead">Co se povedlo'+q('badges')+'</div><div class="badges">'+
       badges.map(b=>'<div class="badge"><span class="e">'+b.e+'</span><span>'+esc(b.t)+'</span></div>').join('')+'</div>' : '')+
-    '<div class="wandrow"><button class="wand" id="cardBtn">🖼 Vyrobit kartu cesty</button>'+
+    '<div class="wandrow"><button class="wand" id="cardBtn">🖼 Vyrobit kartu cesty</button>'+q('card')+
       '<small style="color:var(--mut)">hezký obrázek se souhrnem — na poslání do rodiny</small></div>'+
     '<div id="cardWrap" hidden></div>';
 }
@@ -2546,10 +2572,10 @@ function renderBudget(){
   const acts   = planIds.map(byId).filter(it=>it && it.pp);
   const daysUsed = Math.max(1, S.days.filter(d=>d.length).length);
   document.getElementById('bNights').innerHTML =
-    '<div class="brow"><span class="bl"><b>Noclehy</b><small>'+(nights.length? nights.map(n=>n.name.split(' ·')[0]).join(', ') : 'zatím žádný kemp v plánu')+'</small></span>'+
+    '<div class="brow"><span class="bl"><b>Noclehy</b>'+q('nights')+'<small>'+(nights.length? nights.map(n=>n.name.split(' ·')[0]).join(', ') : 'zatím žádný kemp v plánu')+'</small></span>'+
     '<span class="bv">'+eur(nights.reduce((s,n)=>s+n.night,0))+'</span></div>';
   document.getElementById('bActs').innerHTML =
-    '<div class="brow"><span class="bl"><b>Vstupy a lanovky</b> <small>pro dva, z položek v plánu</small></span>'+
+    '<div class="brow"><span class="bl"><b>Vstupy a lanovky</b>'+q('acts')+' <small>pro dva, z položek v plánu</small></span>'+
     '<span class="bv">'+eur(acts.reduce((s,a)=>s+a.pp*2,0))+'</span></div>';
   document.getElementById('bKm').innerHTML = PLANKM
     ? '<div class="brow"><span class="bl"><b>Km podle plánu</b><small>vč. přejezdů mezi dny a návratu</small></span>'+
@@ -2645,6 +2671,85 @@ function addCustom(){
   const v = inp.value.trim(); if(!v) return;
   S.custom.push(v); inp.value=''; saveState(); renderChecklist();
 }
+
+/* ================= NÁPOVĚDA =================
+   Otazník u každé věci. Texty říkají hlavně to, co jinak není vidět:
+   odkud se čísla berou a co je ověřené a co odhad. */
+const HELP = {
+trip:['Souhrn cesty','Kilometry i čas za volantem jsou součet <b>všech</b> přejezdů — včetně ranních mezi dny a návratu domů. Cena je z Rozpočtu a platí pro dva. Odpočet naskočí, jakmile v Plánu vyplníš datum odjezdu.'],
+addday:['Přidávám do','Vyber den a všechna tlačítka <b>+ do dne</b> v katalogu budou přidávat právě do něj. Číslo u dne říká, kolik zastávek už tam máš. Druhý klik na tlačítko místo zase vyndá, <b>⋯</b> nabídne jiný den.'],
+cat:['Co hledáš','Filtr podle typu místa. <b>🌿 Pro Nikolu</b> nechá jen ta s hodnocením 4 a víc, tedy klid a poctivé řemeslo. <b>Vybrané ♥</b> jsou ta, co sis označil srdíčkem.'],
+reg:['Kde','Filtr podle oblasti. Regiony jdou zhruba v pořadí, jak se jimi projíždí: nejdřív Rakousko od severu, pak cesta na jih přes Korutany a nakonec Itálie.'],
+sort:['Seřadit','<b>🌿 můj tip</b> řadí podle toho, jak moc místo sedne Nikole. <b>★ hodnocení</b> podle Googlu. <b>📍 nejblíž dni</b> měří vzdušnou čáru od poslední zastávky dne, do kterého zrovna přidáváš — nahoře je to, co máš cestou.'],
+nik:['🌿 Pro Nikolu','Moje hodnocení, ne Googlu. <b>5</b> = bio farma nebo tichá příroda, zdarma nebo skoro. <b>4</b> = klidné a lokální, snese víkendový provoz. <b>3</b> = fajn, ale komerční nebo rodinné rušno. <b>2</b> = davy, fronty, drahé atrakce.'],
+gr:['Hodnocení Google','Hvězdičky a počet recenzí z Map Google, ověřené v srpnu 2026. Kde číslo chybí, nepodařilo se ho spolehlivě dohledat — radši nic než vymyšlené.'],
+view:['Pohled na mapu','<b>Celá cesta</b> ukáže všechno od Budějovic po Dolomity; dlouhé přejezdy vedou přes skutečná města na trase, ne vzdušnou čarou. <b>Salzkammergut</b> a <b>Dolomity</b> jsou přiblížené výřezy. V přehledu se dá klepnout na přerušovaný rámeček a mapa do toho regionu skočí.'],
+route:['Trasa na mapě','Vyber den a mapa se sama přepne do správného regionu, přiblíží se na něj a očísluje zastávky. U každého úseku uvidíš kilometry a čas jízdy.'],
+mapcat:['Co ukázat','Nechá na mapě jen jeden typ míst. <b>Jen můj plán</b> ukáže zastávky z plánu a srdíčka. Zastávky vybraného dne jsou vidět vždycky, i když do filtru nepatří.'],
+zoom:['Přibližování','Štípnutím dvěma prsty, kolečkem myši, dvojklikem nebo tlačítky vpravo dole. Body a písmo si drží velikost, takže přiblížení opravdu rozplete místa, která leží na sobě. <b>⤢</b> vrátí celek.'],
+tpl:['Hotové návrhy','Tři a pět dní jsou moje sestavy laděné pro Nikolu — klid, farmy a menší kempy místo davů. <b>Od čtyř dnů</b> se jede přes Millstätter See do Dolomit. Načtením se přepíše to, co máš teď, ale pak si to můžeš přeskládat.'],
+start:['Datum a čas odjezdu','Z těchhle dvou údajů se dopočítá, v kolik dorazíš na každou zastávku. Podle dne v týdnu appka pozná, jestli má podnik zavřeno. Datum se používá i pro východ a západ slunce, předpověď počasí a export do kalendáře.'],
+wand:['Srovnat dny podle mapy','Přerovná zastávky v každém dni tak, aby se najezdilo co nejmíň — vždycky od místa, kde jsi skončil předchozí den. Kemp zůstává na konci dne.'],
+share:['Poslat plán','Zabalí celý plán (dny, srdíčka, datum, čísla z rozpočtu) do jednoho odkazu a nabídne sdílení. Komu odkaz pošleš, tomu se plán po otevření nabídne k načtení. Nic se nikam neukládá, všechno je v tom odkazu.'],
+surprise:['Překvap mě','Poskládá první volný den podle nálady. Vybírá jen z míst s <b>🌿 4 a víc</b> a drží je do 60 km od sebe, ať se den neprojezdí. Kemp dá na konec. Nelíbí se? Klikni znovu, pokaždé to vyjde jinak.'],
+daysum:['Souhrn dne','<b>🚐</b> je čas za volantem a kilometry včetně ranního přejezdu od včerejšího kempu (a u posledního dne i cesty domů). <b>⏱ program</b> je součet času stráveného na místech. <b>Hotovo</b> je hodina, kdy dorazíš na poslední zastávku.'],
+mood:['Nálada dne','Čas za volantem a program dohromady. <b>Pohodový</b> do 5 hodin, <b>akorát</b> do 8, <b>našlapaný</b> do 10, <b>nabitý</b> nad 10. Nikola je těhotná, takže dva nabité dny za sebou nejsou dobrý nápad.'],
+sun:['Východ a západ slunce','Spočítaný pro místo, kde ten den končíš, včetně letního času. Když na poslední zastávku dorazíš až po západu, appka to připíše — dobré vědět, než budeš potmě hledat místo v kempu.'],
+warn:['Varování u zastávky','<b>⚠</b> hlásí zavírací den nebo že dorazíš dřív, než otevřou, případně těsně před zavíračkou. <b>ℹ</b> je tvrdé omezení, na které je fér upozornit (rezervace, uzavírky, jen hotovost). Otvíračky máme ověřené u 28 z 93 míst — u zbytku radši mlčíme, než abychom hádali.'],
+nav:['Navigovat','Otevře celý den v Google Maps: start je místo, odkud ráno vyjíždíš, pak zastávky v pořadí a nakonec kemp nebo cesta domů. Google bere nejvýš devět mezizastávek; když jich máš víc, appka to napíše.'],
+exports:['Kalendář a GPX','<b>.ics</b> udělá z každé zastávky událost s časem příjezdu — dá se otevřít v telefonu i v Googlu. <b>.gpx</b> je pro navigaci nebo Mapy.cz, obsahuje body i trasu rozdělenou po dnech. Obojí potřebuje vyplněné datum odjezdu.'],
+card:['Karta cesty','Vyrobí obrázek se souhrnem a náčrtem trasy. Na telefonu ho rovnou nabídne ke sdílení, jinak se stáhne jako PNG.'],
+stats:['Statistiky','Počítá se z plánu. <b>Čas mimo auto</b> je podíl programu na celkovém čase — čím výš, tím míň se jen přejíždí.'],
+badges:['Odznaky','Malá odměna za dobře postavený plán. Berou v potaz, jak dlouho se jede, kolik je zastávek jednotlivých typů a jestli se stihne Braies před devátou, kdy se tam ještě dá bez rezervace.'],
+dnes:['Režim Dnes','Na cestu. Podle data vybere den, ukáže velké karty s časy a popisem a spodní lišta naviguje na nejbližší neodškrtnutou zastávku. Odškrtnutí se pamatuje.'],
+nights:['Noclehy','Součet cen za noc u kempů, které máš v plánu. Ceny jsou pro dva lidi s obytným autem a elektřinou v hlavní sezóně 2026. Kde je u ceny „ověř", nepodařilo se ji potvrdit z ceníku.'],
+acts:['Vstupy a lanovky','Vstupné a jízdenky z míst v plánu, počítané pro dvě osoby. U poplatků za auto (mýto k Tre Cime, parkování v Braies) je v datech půlka, aby po vynásobení dvěma vyšla správná částka za vozidlo.'],
+fuel:['Nafta','Kilometry si můžeš přetáhnout z plánu tlačítkem <b>použít</b>, jinak si je nastav ručně. Zbytek je spotřeba krát cena za litr.'],
+vign:['Dálniční známka','Rakouská digitální desetidenní známka stojí 12,80 € (ceník 2026). Na Felbertauern ani na Drautal ji nepotřebuješ, ty jsou mimo dálniční síť.'],
+alp:['Alpské mýto','Cesta do Itálie: <b>Felbertauern 13,50 €</b> tam a <b>A10 přes Tauern a Katschberg 15 €</b> zpátky (ceníky 2026). Zapne se samo, jakmile máš v plánu italskou zastávku. V Itálii se na silnici do Pustertalu nic neplatí.'],
+rate:['Kurz a rezerva','Kurz si přepiš podle toho, za kolik měníš. Rezerva je polštář na parkovné, kafe a věci, co se do rozpočtu nevejdou.'],
+estimates:['Odkud se berou časy','Přejezdy jsou <b>odhad</b>: vzdušná čára krát 1,6 (u úseků nad 100 km krát 1,8, protože alpské silnice zajíždějí) a rychlost podle délky úseku. Na dálnici to sedí, v serpentinách je odhad optimistický — u Passo Tre Croci počítej s víc. Trasy z Budějovic jsou ověřené proti skutečnému routování.'],
+checklist:['Sbalit','Odškrtnuté položky se pamatují. Dole si můžeš přidat vlastní. Seznam je stavěný na kempování v Californii, ne na hotel.'],
+save:['Kam se to ukládá','Všechno zůstává <b>jen v tomhle prohlížeči</b> — žádný účet, žádný server. Když vymažeš data prohlížeče, plán je pryč. Chceš-li ho mít i jinde, pošli si ho odkazem přes <b>📤 Poslat plán</b>.']
+};
+function q(k){ return '<button class="q" data-help="'+k+'" aria-label="Co to znamená" aria-expanded="false">?</button>'; }
+(function(){
+  const pop = document.createElement('div');
+  pop.className = 'helppop'; pop.hidden = true; pop.setAttribute('role','dialog');
+  const back = document.createElement('div');
+  back.className = 'helpback'; back.hidden = true;
+  document.body.appendChild(back); document.body.appendChild(pop);
+  let openBtn = null;
+  function close(){
+    pop.hidden = true; back.hidden = true;
+    if(openBtn) openBtn.setAttribute('aria-expanded','false');
+    openBtn = null;
+  }
+  function open(btn){
+    const h = HELP[btn.dataset.help];
+    if(!h){ return; }
+    if(openBtn === btn){ close(); return; }
+    close();
+    openBtn = btn;
+    btn.setAttribute('aria-expanded','true');
+    pop.innerHTML = '<button class="x" data-helpx aria-label="Zavřít">×</button><h4>'+h[0]+'</h4><p>'+h[1]+'</p>';
+    pop.hidden = false; back.hidden = false;
+    const r = btn.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight, m = 10;
+    let left = r.left + r.width/2 - pw/2;
+    left = Math.max(m, Math.min(window.innerWidth - pw - m, left));
+    let top = r.bottom + 9;
+    if(top + ph > window.innerHeight - m) top = Math.max(m, r.top - ph - 9);
+    pop.style.left = left.toFixed(0)+'px';
+    pop.style.top = top.toFixed(0)+'px';
+  }
+  document.addEventListener('click', e=>{
+    const b = e.target.closest('[data-help]');
+    if(b){ e.preventDefault(); open(b); return; }
+    if(e.target.closest('[data-helpx]') || e.target === back) close();
+  });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape') close(); });
+  window.addEventListener('scroll', ()=>{ if(!pop.hidden) close(); }, {passive:true});
+})();
 
 /* ================= REŽIM DNES ================= */
 let dnesDay = null;
