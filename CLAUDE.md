@@ -158,8 +158,14 @@ ho zajímají.
   celočíselný `tz = round(z)` a doškálování), body a trasy v `#tilesvg`.
   Gesta vlastní, `rmFit()` přizpůsobí výřez plánu nebo vybranému dni.
   Když se dlaždice nenačtou (`tileErr`), objeví se hláška a kreslená mapa
-  zůstává plnohodnotná náhrada. **Atribuce OpenStreetMap je povinná,
-  neodstraňovat.**
+  zůstává plnohodnotná náhrada. Přepínač je **přímo na mapě**
+  (`drawMapMode`), ne jen v chipsech nad ní.
+  **POZOR na poskytovatele dlaždic:** `tile.openstreetmap.org` přímo
+  NEPOUŽÍVAT — na cizí doméně vrací všem dlaždicím tentýž zamítací
+  obrázek (ověřeno: dvě různé dlaždice měly stejný md5). Používáme
+  CARTO Voyager, Esri World Imagery a OpenTopoMap (`TILESETS`), které
+  hotlinking povolují. **Atribuce u každého podkladu je povinná
+  a mění se s ním — neodstraňovat.**
 - **Animace (v13)**: jen decentní — nadjetí sekce při přepnutí záložky,
   vyskočení bubliny a nápovědy, stisk tlačítek, naskočení statistik
   a odznaků. Vše uvnitř `prefers-reduced-motion: no-preference`.

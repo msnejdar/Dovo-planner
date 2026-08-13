@@ -342,7 +342,7 @@ svg text{font-family:'Fraunces',Georgia,serif}
 .zoomctl button:disabled{opacity:.35;cursor:default}
 .zoomctl .rst{font-size:13px}
 .maptip{
-  position:absolute;left:10px;top:10px;background:rgba(255,253,246,.93);border:1.5px solid var(--line);
+  position:absolute;left:10px;bottom:10px;background:rgba(255,253,246,.93);border:1.5px solid var(--line);
   border-radius:10px;padding:5px 10px;font-size:12px;font-weight:700;color:var(--mut);pointer-events:none;
 }
 .maptip[hidden]{display:none}
@@ -494,6 +494,16 @@ svg text{font-family:'Fraunces',Georgia,serif}
 }
 
 /* ---------- v13: skutečná mapa s dlaždicemi ---------- */
+.mapmode{
+  position:absolute;left:10px;top:10px;z-index:7;display:flex;gap:5px;flex-wrap:wrap;max-width:calc(100% - 92px);
+}
+.mapmode button{
+  border:1.5px solid var(--ink);background:rgba(255,253,246,.94);color:var(--ink);
+  border-radius:999px;padding:6px 11px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;
+  box-shadow:0 2px 8px rgba(32,29,23,.12);white-space:nowrap;
+}
+.mapmode button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.mapmode .big{background:var(--gastro);border-color:var(--gastro);color:#fff}
 #tilemap{
   position:absolute;inset:0;overflow:hidden;border-radius:12px;background:#DDE7E9;
   touch-action:none;-webkit-user-select:none;user-select:none;cursor:grab;
@@ -627,9 +637,10 @@ svg text{font-family:'Fraunces',Georgia,serif}
     <div id="tilemap" hidden>
       <div id="tiles"></div>
       <svg id="tilesvg"></svg>
-      <div class="tfail" id="tileFail" hidden>Mapové dlaždice se nenačetly. Přepni zpátky na kreslenou mapu — ta funguje i bez sítě.</div>
+      <div class="tfail" id="tileFail" hidden>Podklad se nenačetl — buď není signál, nebo poskytovatel nedává. Zkus jiný styl nahoře, nebo se vrať na kreslenou mapu, ta jede vždycky.</div>
       <a class="tattr" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap</a>
     </div>
+    <div class="mapmode" id="mapMode"></div>
     <div class="maptip" id="mapTip" hidden></div>
     <div class="mapbub" id="mapBub" hidden></div>
     <div class="zoomctl">
@@ -1639,7 +1650,7 @@ function initMap(){
   document.getElementById('zOut').addEventListener('click', ()=>zoomAt(VIEWS[MAPVIEW].W/2, VIEWS[MAPVIEW].H/2, 1/1.6));
   document.getElementById('zRst').addEventListener('click', ()=>{ const z=zs(); z.k=1; z.x=0; z.y=0; applyZoom(); });
   initTileMap();
-  drawViewChips(); drawMapCatChips();
+  drawViewChips(); drawMapCatChips(); drawMapMode();
 }
 let DRAGGED = false;
 function drawViewChips(){
@@ -1676,7 +1687,7 @@ function setView(v){
     tm.hidden = true; svg.style.visibility = '';
     buildMap(); applyZoom();
   }
-  drawViewChips();
+  drawViewChips(); drawMapMode();
 }
 /* přibliž na vybraný den, ať zastávky nejsou shluk v rohu */
 function fitToDay(di){
@@ -2798,7 +2809,17 @@ function addCustom(){
    Vlastní slippy mapa, žádná knihovna: Web Mercator, dlaždice OpenStreetMap
    jako <img>, body a trasy dnů v SVG nad nimi. Když dlaždice nedorazí,
    appka to napíše a kreslená mapa zůstává plnohodnotná náhrada. */
-const TILEURL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+/* Poskytovatelé dlaždic. OpenStreetMap přímo NEPOUŽÍVAT — na cizí doméně
+   vrací všem dlaždicím stejný zamítací obrázek. Tyhle tři hotlinking povolují. */
+const TILESETS = {
+  mapa:      {lbl:'🗺 Mapa',       url:'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+              sub:['a','b','c','d'], max:19, attr:'© OpenStreetMap · © CARTO', href:'https://carto.com/attributions'},
+  satelit:   {lbl:'🛰 Satelit',    url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+              sub:[], max:18, attr:'Esri · Maxar · Earthstar Geographics', href:'https://www.esri.com/en-us/legal/copyright-trademarks'},
+  turisticka:{lbl:'⛰ Turistická', url:'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+              sub:['a','b','c'], max:17, attr:'© OpenStreetMap, SRTM · © OpenTopoMap (CC-BY-SA)', href:'https://opentopomap.org/about'}
+};
+let tileSet = 'mapa';
 const RM = {lat:47.55, lng:13.35, z:7.6};
 let tileFails = 0, tilesTried = 0;
 const mercY = lat => {
@@ -2832,7 +2853,7 @@ function rmToLatLng(px, py){
 }
 function drawTiles(){
   const b = rmBox();
-  const tz = Math.max(2, Math.min(17, Math.round(RM.z)));
+  const tz = Math.max(2, Math.min(TILESETS[tileSet].max, Math.round(RM.z)));
   const scale = Math.pow(2, RM.z - tz);
   const c = wpx(RM.lat, RM.lng, tz);
   /* levý horní roh výřezu ve světových pixelech na úrovni tz */
@@ -2847,7 +2868,9 @@ function drawTiles(){
     for(let y=t0y; y<=t1y; y++){
       if(y<0 || y>=max) continue;
       const wx = ((x % max) + max) % max;
-      const url = TILEURL.replace('{z}',tz).replace('{x}',wx).replace('{y}',y);
+      const T = TILESETS[tileSet];
+      const sub = T.sub.length ? T.sub[(wx + y) % T.sub.length] : '';
+      const url = T.url.replace('{s}',sub).replace('{z}',tz).replace('{x}',wx).replace('{y}',y);
       html += '<img src="'+url+'" style="left:'+(x*256)+'px;top:'+(y*256)+'px" loading="lazy" alt="" onerror="tileErr()" onload="tileOk()">';
     }
   }
@@ -2897,6 +2920,32 @@ function drawTileOverlay(){
   svg.innerHTML = out;
 }
 function drawReal(){ drawTiles(); drawTileOverlay(); positionBubble(); }
+/* Přepínač přímo na mapě — v kreslené nabídne skutečnou, ve skutečné styly a cestu zpět. */
+function drawMapMode(){
+  const el = document.getElementById('mapMode');
+  if(!el) return;
+  if(MAPVIEW!=='real'){
+    el.innerHTML = '<button class="big" data-goreal>🛰 Přepnout na skutečnou mapu</button>';
+    return;
+  }
+  el.innerHTML = Object.entries(TILESETS).map(([k,t])=>
+    '<button data-tileset="'+k+'" aria-pressed="'+String(tileSet===k)+'">'+t.lbl+'</button>').join('')+
+    '<button data-godrawn>✏️ Kreslená</button>';
+  const T = TILESETS[tileSet], a = document.querySelector('.tattr');
+  if(a){ a.textContent = T.attr; a.href = T.href; }
+}
+document.addEventListener('click', e=>{
+  if(e.target.closest('[data-goreal]')){ setView('real'); return; }
+  if(e.target.closest('[data-godrawn]')){ setView('all'); return; }
+  const t = e.target.closest('[data-tileset]');
+  if(t){
+    tileSet = t.dataset.tileset;
+    tileFails = 0; tilesTried = 0;
+    document.getElementById('tileFail').hidden = true;
+    RM.z = Math.min(RM.z, TILESETS[tileSet].max);
+    drawMapMode(); drawReal();
+  }
+});
 /* přizpůsob výřez tomu, co je v plánu (nebo vybranému dni) */
 function rmFit(lls){
   if(!lls.length) return;
@@ -2971,7 +3020,7 @@ reg:['Kde','Filtr podle oblasti. Regiony jdou zhruba v pořadí, jak se jimi pro
 sort:['Seřadit','<b>🌿 můj tip</b> řadí podle toho, jak moc místo sedne Nikole. <b>★ hodnocení</b> podle Googlu. <b>📍 nejblíž dni</b> měří vzdušnou čáru od poslední zastávky dne, do kterého zrovna přidáváš — nahoře je to, co máš cestou.'],
 nik:['🌿 Pro Nikolu','Moje hodnocení, ne Googlu. <b>5</b> = bio farma nebo tichá příroda, zdarma nebo skoro. <b>4</b> = klidné a lokální, snese víkendový provoz. <b>3</b> = fajn, ale komerční nebo rodinné rušno. <b>2</b> = davy, fronty, drahé atrakce.'],
 gr:['Hodnocení Google','Hvězdičky a počet recenzí z Map Google, ověřené v srpnu 2026. Kde číslo chybí, nepodařilo se ho spolehlivě dohledat — radši nic než vymyšlené.'],
-real:['Skutečná mapa','Podklad z OpenStreetMap se silnicemi a městy. Body, trasy dnů i bublina fungují stejně jako v kreslené mapě. Dlaždice se stahují ze sítě — bez signálu se nenačtou a appka to napíše; kreslená mapa jede vždycky.'],
+real:['Skutečná mapa','Tři podklady: <b>Mapa</b> (silnice a města), <b>Satelit</b> (letecké snímky — na jezera a hory nejhezčí) a <b>Turistická</b> (vrstevnice a stezky). Body, trasy dnů i bublina fungují stejně jako v kreslené mapě. Body, trasy dnů i bublina fungují stejně jako v kreslené mapě. Dlaždice se stahují ze sítě — bez signálu se nenačtou a appka to napíše; kreslená mapa jede vždycky.'],
 view:['Pohled na mapu','<b>Celá cesta</b> ukáže všechno od Budějovic po Dolomity; dlouhé přejezdy vedou přes skutečná města na trase, ne vzdušnou čarou. <b>Salzkammergut</b> a <b>Dolomity</b> jsou přiblížené výřezy. V přehledu se dá klepnout na přerušovaný rámeček a mapa do toho regionu skočí.'],
 route:['Trasa na mapě','Vyber den a mapa se sama přepne do správného regionu, přiblíží se na něj a očísluje zastávky. U každého úseku uvidíš kilometry a čas jízdy.'],
 mapcat:['Co ukázat','Nechá na mapě jen jeden typ míst. <b>Jen můj plán</b> ukáže zastávky z plánu a srdíčka. Zastávky vybraného dne jsou vidět vždycky, i když do filtru nepatří.'],
