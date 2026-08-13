@@ -298,6 +298,9 @@ svg text{font-family:'Fraunces',Georgia,serif}
   text-decoration:none;display:inline-flex;align-items:center;gap:5px;cursor:pointer;white-space:nowrap;
 }
 .gnav.lite{background:#fff;color:var(--ink)!important}
+/* .linkrow a má vyšší specificitu než .gnav — bez tohohle by tlačítko bylo krémové na bílé */
+.linkrow .gnav{background:var(--ink);border-color:var(--ink);color:var(--paper)!important}
+.linkrow .gnav.lite{background:#fff;color:var(--ink)!important}
 .daynav{margin-left:auto;padding:4px 10px;font-size:12px}
 .regframe{fill:rgba(255,253,246,.0);stroke:#26241F;stroke-width:1.6;stroke-dasharray:5 5;cursor:pointer}
 .regframe:hover{fill:rgba(255,253,246,.45)}
@@ -339,6 +342,29 @@ svg text{font-family:'Fraunces',Georgia,serif}
 .maptip[hidden]{display:none}
 .leglbl{font-family:'Karla',sans-serif;font-weight:700;fill:#4A4436;paint-order:stroke;stroke:#F1EADA;stroke-width:3.6;stroke-linejoin:round}
 .stoplbl{font-family:'Karla',sans-serif;font-weight:700;fill:#201D17;paint-order:stroke;stroke:#F1EADA;stroke-width:3.4;stroke-linejoin:round}
+.roadline{fill:none;stroke:#CFC3A4;stroke-linecap:round;stroke-linejoin:round}
+.mapbub{
+  position:absolute;z-index:6;width:min(255px,72vw);background:var(--panel);
+  border:1.5px solid var(--ink);border-radius:14px;padding:11px 12px 12px;
+  box-shadow:0 8px 22px rgba(32,29,23,.18);
+}
+.mapbub[hidden]{display:none}
+.mapbub::after{
+  content:"";position:absolute;left:var(--ax,50%);width:11px;height:11px;background:var(--panel);
+  border-right:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);
+  transform:translateX(-50%) rotate(45deg);
+}
+.mapbub.above::after{bottom:-7px}
+.mapbub.below::after{top:-7px;transform:translateX(-50%) rotate(225deg)}
+.mapbub .bubname{font-family:'Fraunces',Georgia,serif;font-size:16.5px;font-weight:600;line-height:1.15;padding-right:18px}
+.mapbub .bubmeta{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;margin:4px 0 5px}
+.mapbub .bubdesc{font-size:12.5px;color:#453f30;margin:5px 0 2px}
+.mapbub .x{position:absolute;right:6px;top:5px;border:none;background:none;font-size:17px;line-height:1;cursor:pointer;color:var(--mut);padding:2px 5px}
+.mapbub .linkrow{margin-top:8px}
+.mapbub .linkrow a,.mapbub .linkrow button{font-size:11.5px;padding:4px 9px}
+.mapbub .daypick{margin-top:8px}
+.mapbub .daypick button{padding:5px 9px;font-size:12px}
+.mapbub .abtn{font-size:12px;padding:5px 10px}
 @media print{ #routeInfo,.gnav,#viewChips,.wandrow,#incoming{display:none!important} }
 </style>
 </head>
@@ -390,6 +416,7 @@ svg text{font-family:'Fraunces',Georgia,serif}
   <div class="mapwrap mapstage" style="padding:8px">
     <svg id="bigsvg" viewBox="0 0 1000 1045" role="img" aria-label="Mapa Salzkammergutu a Dolomit podle skutečných souřadnic"></svg>
     <div class="maptip" id="mapTip" hidden></div>
+    <div class="mapbub" id="mapBub" hidden></div>
     <div class="zoomctl">
       <button id="zIn" aria-label="Přiblížit">＋</button>
       <button id="zOut" aria-label="Oddálit">−</button>
@@ -397,7 +424,7 @@ svg text{font-family:'Fraunces',Georgia,serif}
     </div>
   </div>
   <div id="routeInfo"></div>
-  <div id="mapSel"><div class="empty">Klepni na bod v mapě — srdíčka z výběru tu svítí jako ♥ v barvě kategorie. V přehledu celé cesty tě rámečky prokliknou do regionů.</div></div>
+  <div id="mapSel" hidden></div>
   <div class="legend" id="mapLegend"></div>
   <p class="maphint">Mapa je kreslená podle skutečných souřadnic. Vyber den a pusť ho tlačítkem 🧭 rovnou do navigace Google. Detail místa vždy otevřeš přes Google Maps / Mapy.cz.</p>
 </section>
@@ -863,6 +890,42 @@ function genMini(it){
   const scale = '<line class="scalebar" x1="10" y1="142" x2="29.1" y2="142"/><text class="scaletxt" x="10" y="138">1 km</text>';
   return '<svg viewBox="0 0 230 156">'+lakes+others+pin+scale+'</svg>';
 }
+/* Koridory: body na SKUTEČNÉ silniční trase mezi regiony (ověřeno OSRM 8/2026).
+   Dlouhé přejezdy se v přehledu kreslí přes ně, ne vzdušnou čarou přes hory. */
+const ZONE = reg => reg==='jih' ? 'jih' : (reg==='dol'||reg==='cor') ? 'dol' : 'szk';
+const CORRIDORS = {
+  /* Dolní Dvořiště → Linec → A1 na západ */
+  'cb-szk': [[48.5099,14.5012],[48.3064,14.2858],[48.0500,13.6000]],
+  /* A1 → Salzburg → A10 → Bischofshofen → Zell am See → Felbertauern → Lienz → Sillian */
+  'cb-dol': [[48.3064,14.2858],[47.8095,13.0550],[47.4200,13.1100],[47.3230,12.7940],[47.1000,12.5100],[46.8290,12.7690],[46.7500,12.4200]],
+  /* A10 přes Tauerntunel a Katschberg do Korutan */
+  'cb-jih': [[48.3064,14.2858],[47.8095,13.0550],[47.3870,13.4560],[47.0500,13.4700],[46.8000,13.4970]],
+  /* Salzkammergut → Golling → A10 → Katschberg → Spittal */
+  'szk-jih': [[47.6000,13.1600],[47.3870,13.4560],[47.0500,13.4700],[46.8000,13.4970]],
+  /* Salzkammergut → Salzburg → Zell am See → Felbertauern → Lienz → Sillian */
+  'szk-dol': [[47.8095,13.0550],[47.4200,13.1100],[47.3230,12.7940],[47.1000,12.5100],[46.8290,12.7690],[46.7500,12.4200]],
+  /* Drautal: Spittal → Oberdrauburg → Lienz → Sillian */
+  'jih-dol': [[46.8000,13.4970],[46.7480,12.9700],[46.8290,12.7690],[46.7500,12.4200]]
+};
+function corridorFor(zoneA, zoneB){
+  if(zoneA===zoneB) return null;
+  const fwd = CORRIDORS[zoneA+'-'+zoneB];
+  if(fwd) return fwd;
+  const rev = CORRIDORS[zoneB+'-'+zoneA];
+  return rev ? rev.slice().reverse() : null;
+}
+/* plynulá čára přes body: Catmull-Rom → kvadratické oblouky */
+function smoothPath(pts){
+  if(pts.length<2) return '';
+  let d = 'M'+pts[0].x.toFixed(1)+','+pts[0].y.toFixed(1);
+  for(let i=1;i<pts.length-1;i++){
+    const m = {x:(pts[i].x+pts[i+1].x)/2, y:(pts[i].y+pts[i+1].y)/2};
+    d += ' Q'+pts[i].x.toFixed(1)+','+pts[i].y.toFixed(1)+' '+m.x.toFixed(1)+','+m.y.toFixed(1);
+  }
+  const last = pts[pts.length-1];
+  d += ' L'+last.x.toFixed(1)+','+last.y.toFixed(1);
+  return d;
+}
 /* text do SVG/HTML */
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 /* jméno na mapu: bez upřesnění za tečkou a zkrácené, ať popisky nepřerostou body */
@@ -950,6 +1013,7 @@ function applyZoom(redraw){
   tip.hidden = z.k<=1;
   if(z.k>1) tip.textContent = Math.round(z.k*10)/10 + '× · táhni prstem';
   if(redraw!==false){ drawDots(); drawRoutes(); }
+  positionBubble();
 }
 function zoomAt(mx, my, factor){
   const z = zs(), k0 = z.k;
@@ -974,9 +1038,14 @@ function initMap(){
     if(DRAGGED) return; /* táhnutí mapou není klik na bod */
     const g = e.target.closest('[data-goview]');
     if(g){ setView(g.dataset.goview); return; }
-    const m = e.target.closest('[data-id]'); if(!m) return;
+    const m = e.target.closest('[data-id]');
+    if(!m){ closeBubble(); return; } /* klik do prázdna bublinu zavře */
     selectPlace(m.dataset.id);
   });
+  document.getElementById('mapBub').addEventListener('click', e=>{
+    if(e.target.closest('[data-bubx]')) closeBubble();
+  });
+  window.addEventListener('resize', ()=>{ if(document.getElementById('tab-mapa').hidden) return; applyZoom(); });
   /* gesta: tažení jedním prstem, štípnutí dvěma, kolečko myši, dvojklik */
   const pts = new Map();
   let last = null, pinch = 0;
@@ -1147,16 +1216,52 @@ function nikHtml(it){
 function dayBtns(it){
   return S.days.map((d,i)=>'<button data-add="'+it.id+'" data-day="'+i+'" class="'+(d.includes(it.id)?'added':'')+'">Den '+(i+1)+'</button>').join('');
 }
+/* svět → pixely na obrazovce (vůči obalu mapy) */
+function worldToStage(p){
+  const svg = document.getElementById('bigsvg'), stage = svg.parentElement;
+  const sr = svg.getBoundingClientRect(), gr = stage.getBoundingClientRect(), V = VIEWS[MAPVIEW], z = zs();
+  const s = sr.width/V.W;
+  return {x:(p.x*z.k + z.x)*s + (sr.left-gr.left), y:(p.y*z.k + z.y)*s + (sr.top-gr.top), sh:sr.height, sw:sr.width, ox:sr.left-gr.left, oy:sr.top-gr.top};
+}
+function closeBubble(){
+  selId = null;
+  document.getElementById('mapBub').hidden = true;
+  drawDots();
+}
 function selectPlace(id){
+  const it = byId(id); if(!it) return;
+  if(MAPVIEW!=='all' && viewOf(it.reg)!==MAPVIEW) return; /* bod tenhle pohled nezobrazuje */
   selId = id; drawDots();
-  const it = byId(id);
-  document.getElementById('mapSel').innerHTML =
-    '<div class="cardtop"><div class="cardname">'+it.name+'</div>'+(it.price?'<div class="price">'+it.price+'</div>':'')+'</div>'+
-    '<div class="cardmeta" style="color:'+CATS[it.cat].color+'">'+[it.t,CATS[it.cat].label,(it.cat==='kemp'?'🌙 nocleh':'⏱ ~'+fmtMin(it.dur))].join(' · ')+'</div>'+
+  const b = document.getElementById('mapBub');
+  b.innerHTML =
+    '<button class="x" data-bubx aria-label="Zavřít">×</button>'+
+    '<div class="bubname">'+esc(it.name)+'</div>'+
+    '<div class="bubmeta" style="color:'+CATS[it.cat].color+'">'+[esc(it.t),CATS[it.cat].label,(it.cat==='kemp'?'🌙 nocleh':'⏱ ~'+fmtMin(it.dur))].join(' · ')+'</div>'+
     grHtml(it) + nikHtml(it) +
-    '<div class="linkrow"><a class="gnav" href="'+navUrl(it)+'" target="_blank" rel="noopener">🧭 Navigovat</a><a href="'+gUrl(it)+'" target="_blank" rel="noopener">Google Maps</a><a href="'+mUrl(it)+'" target="_blank" rel="noopener">Mapy.cz</a>'+(it.web?'<a href="'+it.web+'" target="_blank" rel="noopener">web ↗</a>':'')+'</div>'+
-    '<div class="cardacts"><button class="abtn'+(S.fav.includes(id)?' on':'')+'" data-fav="'+id+'">'+(S.fav.includes(id)?'♥ Vybráno':'♡ Vybrat')+'</button></div>'+
+    (it.price?'<div class="bubdesc"><b>'+esc(it.price)+'</b></div>':'')+
+    '<div class="linkrow"><a class="gnav" href="'+navUrl(it)+'" target="_blank" rel="noopener">🧭 Navigovat</a>'+
+      '<a href="'+gUrl(it)+'" target="_blank" rel="noopener">Google</a>'+
+      (it.web?'<a href="'+it.web+'" target="_blank" rel="noopener">web ↗</a>':'')+
+      '<button class="abtn'+(S.fav.includes(id)?' on':'')+'" data-fav="'+id+'">'+(S.fav.includes(id)?'♥':'♡')+'</button></div>'+
     '<div class="daypick open">'+dayBtns(it)+'</div>';
+  b.hidden = false;
+  positionBubble();
+}
+function positionBubble(){
+  const b = document.getElementById('mapBub');
+  if(b.hidden || !selId) return;
+  const it = byId(selId);
+  if(!it || (MAPVIEW!=='all' && viewOf(it.reg)!==MAPVIEW)){ b.hidden = true; return; }
+  const p = worldToStage(PROJ[MAPVIEW][selId]);
+  const w = b.offsetWidth, h = b.offsetHeight, gap = 16;
+  const above = p.y - h - gap > p.oy + 2;
+  b.classList.toggle('above', above);
+  b.classList.toggle('below', !above);
+  let left = p.x - w/2;
+  left = Math.max(p.ox+4, Math.min(p.ox + p.sw - w - 4, left));
+  b.style.left = left.toFixed(0)+'px';
+  b.style.top = (above ? p.y - h - gap : p.y + gap).toFixed(0)+'px';
+  b.style.setProperty('--ax', Math.max(14, Math.min(w-14, p.x-left)).toFixed(0)+'px');
 }
 function buildLegs(){
   const legs=[]; let prev=null;
@@ -1194,6 +1299,24 @@ function legInfo(l){
   if(l.a==='home' || l.b==='home') return FROM_CB[byId(l.a==='home' ? l.b : l.a).reg];
   return est(byId(l.a).ll, byId(l.b).ll);
 }
+/* Tvar úseku. V přehledu celé cesty vedou meziregionální přejezdy přes
+   koridor skutečných měst na trase; kratší úseky zůstávají jemným obloukem. */
+function legGeom(l, p1, p2){
+  if(MAPVIEW==='all'){
+    const zA = l.a==='home' ? 'cb' : ZONE(byId(l.a).reg);
+    const zB = l.b==='home' ? 'cb' : ZONE(byId(l.b).reg);
+    const via = corridorFor(zA, zB);
+    if(via){
+      const V = VIEWS.all;
+      const pts = [p1].concat(via.map(w=>({x:V.px(w[1]), y:V.py(w[0])})), [p2]);
+      const mid = pts[Math.floor(pts.length/2)];
+      let len = 0;
+      for(let i=1;i<pts.length;i++) len += Math.hypot(pts[i].x-pts[i-1].x, pts[i].y-pts[i-1].y);
+      return {d:smoothPath(pts), mx:mid.x, my:mid.y, len};
+    }
+  }
+  return legPath(p1, p2);
+}
 function drawRoutes(){
   const legs = buildLegs();
   const oneDay = routeMode!=='all' && routeMode!=='none';
@@ -1205,7 +1328,7 @@ function drawRoutes(){
   let svg = '';
   show.forEach(l=>{
     const p1=ptFor(l.a), p2=ptFor(l.b);
-    const g=legPath(p1,p2); if(!g) return;
+    const g=legGeom(l, p1, p2); if(!g) return;
     svg += '<path class="'+(l.dash?'legdash':'legsolid')+'" d="'+g.d+'" stroke="'+DAYC[l.di%5]+'" stroke-width="'+(3*f).toFixed(2)+'" opacity=".82"/>';
     /* km a čas na každý úsek — v přehledu celé cesty jen na delší, ať se popisky nelepí na sebe */
     const leg = legInfo(l);
@@ -1318,6 +1441,7 @@ function metaFor(it){
 /* genMini žije v prvním <script> — lokální projekce funguje pro všechny regiony */
 function linkRow(it){
   return '<div class="linkrow">'+
+    '<a class="gnav lite" href="'+navUrl(it)+'" target="_blank" rel="noopener">🧭 Navigovat</a>'+
     '<button class="mapbtn" data-map="'+it.id+'">📍 Náhled</button>'+
     '<a href="'+gUrl(it)+'" target="_blank" rel="noopener">Google Maps</a>'+
     '<a href="'+mUrl(it)+'" target="_blank" rel="noopener">Mapy.cz</a>'+
