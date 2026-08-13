@@ -427,6 +427,47 @@ svg text{font-family:'Fraunces',Georgia,serif}
 .pitem.dragging{opacity:.45}
 .pitem.dropmark{box-shadow:0 -3px 0 var(--gastro)}
 @media print{ .nextbar,#tab-dnes,.grip{display:none!important} }
+/* ---------- v10: přidávání na jeden klik, řazení, přesun mezi dny ---------- */
+.daybar{
+  position:sticky;top:56px;z-index:40;display:flex;gap:7px;align-items:center;flex-wrap:wrap;
+  background:var(--panel);border:1.5px solid var(--ink);border-radius:var(--r);
+  padding:9px 11px;margin:14px 0 4px;box-shadow:0 4px 14px rgba(32,29,23,.07);
+}
+.daybar .lbl{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);font-weight:700}
+.daybar button{
+  border:1.5px solid var(--line);background:#fff;color:var(--ink);border-radius:999px;
+  padding:6px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;
+}
+.daybar button[aria-pressed="true"]{background:var(--dc);border-color:var(--dc);color:#fff}
+.daybar .cnt{font-weight:400;opacity:.7;margin-left:3px}
+.addbtn{
+  border:1.5px solid var(--dc,var(--ink));background:var(--dc,var(--ink));color:#fff;
+  border-radius:999px;padding:7px 14px;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.addbtn.inday{background:#fff;color:var(--dc,var(--ink))}
+.moreday{
+  border:1.5px solid var(--line);background:#fff;color:var(--mut);border-radius:999px;
+  width:34px;height:34px;font:inherit;font-size:15px;font-weight:700;cursor:pointer;padding:0;
+}
+.pbtn.mv{font-size:11.5px;width:auto;padding:0 8px}
+.sortrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.sortrow .chip{font-size:12.5px;padding:5px 11px}
+.movepick{display:none;gap:6px;flex-wrap:wrap;padding:2px 0 8px 34px}
+.movepick.open{display:flex}
+.movepick button{
+  border:1.5px dashed var(--ink);background:#fff;border-radius:10px;padding:5px 10px;
+  font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;color:var(--ink);
+}
+.movepick button.cur{border-style:solid;background:var(--ink);color:var(--paper)}
+@media print{ .daybar,.sortrow,.movepick,.addbtn,.moreday{display:none!important} }
+/* na telefonu ukrajovala čtyři tlačítka jméno na tři řádky — šipky nahrazuje úchyt a „den" */
+@media (max-width:560px){
+  .pitem [data-mv]{display:none}
+  .pitem .clock{min-width:46px;padding:2px 5px;font-size:12px}
+  .pitem .pn b{font-size:14.5px}
+  .movepick{padding-left:22px}
+}
 .mapbub{
   position:absolute;z-index:6;width:min(255px,72vw);background:var(--panel);
   border:1.5px solid var(--ink);border-radius:14px;padding:11px 12px 12px;
@@ -483,10 +524,13 @@ svg text{font-family:'Fraunces',Georgia,serif}
 
 <!-- ============ OBJEVUJ ============ -->
 <section id="tab-objevuj">
+  <div class="daybar" id="dayBar"></div>
   <div class="filterlabel">Co hledáš</div>
   <div class="chips" id="catChips"></div>
   <div class="filterlabel">Kde</div>
   <div class="chips" id="regChips"></div>
+  <div class="filterlabel">Seřadit</div>
+  <div class="sortrow" id="sortChips"></div>
   <div class="count" id="countLine"></div>
   <div class="cards" id="cardList"></div>
 </section>
@@ -618,7 +662,6 @@ const CB_LL = [48.9747,14.4744];
 const enc = encodeURIComponent;
 const CNTRY = it => (it.reg==='dol'||it.reg==='cor') ? 'Italien' : 'Österreich';
 const gUrl = it => 'https://www.google.com/maps/search/?api=1&query=' + enc((it.q || (it.name+', '+it.t)) + ', ' + CNTRY(it));
-const mUrl = it => 'https://mapy.cz/fnc/v1/showmap?mapset=outdoor&center=' + it.ll[1] + ',' + it.ll[0] + '&zoom=16&marker=true';
 /* navigace Google: na jedno místo (z aktuální polohy)… */
 const navUrl = it => 'https://www.google.com/maps/dir/?api=1&destination=' + it.ll[0].toFixed(5) + ',' + it.ll[1].toFixed(5) + '&travelmode=driving';
 /* …a na celý den: origin → waypoints → destination (Google URL bere max 9 zastávek mezi krajními body) */
@@ -1053,6 +1096,54 @@ Object.keys(HOURS).forEach(id=>{
   if(it) Object.assign(it, HOURS[id]);
 });
 
+/* Odkazy ke čtení tam, kde podnik nemá vlastní web — oficiální stránka obce,
+   provozovatele nebo článek regionálního turistického portálu. Ověřeno 8/2026. */
+const WEBS = {
+  /* koupání */
+  p1:'https://mondsee.salzkammergut.at/oesterreich-poi/detail/201613/badeplatz-tiefgraben.html',
+  p2:'https://mondsee.salzkammergut.at/erleben/sommer/baden/artikel/detail/8968/badeplaetze-mondsee-irrsee.html',
+  p3:'https://www.gemeinde-mondsee.at/Alpenseebad_Mondsee',
+  p4:'https://www.attersee-baeder.at/solar-strandbad-steinbach/',
+  p5:'https://attersee-attergau.salzkammergut.at/erleben/sport-und-gesundheit/baden/oeffentliche-badeplaetze.html',
+  p6:'https://wolfgangsee.salzkammergut.at/blog/bezaubernde-badeplaetze-am-wolfgangsee.html',
+  p8:'https://www.obertraun.ooe.gv.at/Strandbad_Obertraun',
+  p9:'https://traunsee-almtal.salzkammergut.at/oesterreich-poi/detail/430014924/freizeitanlage-rindbach-am-suedufer-des-traunsees.html',
+  p12:'https://www.kaernten.at/seen/weissensee/pois/strandbaeder/',
+  /* kempy */
+  k2:'https://www.nussbaumer-mondsee.com/camping/',
+  k4:'https://mondsee.salzkammergut.at/oesterreich-unterkunft/detail/430000173/camping-maier.html',
+  k5:'https://mondsee.salzkammergut.at/oesterreich-unterkunft/detail/430011915/camping-moosmuehle.html',
+  k6:'https://attersee-attergau.salzkammergut.at/oesterreich-unterkunft/detail/430031678/camper-stellplatz-nussdorf-am-attersee.html',
+  k8:'https://seeterrassencamping.at/',
+  k11:'https://www.camping-park-am-see.at/',
+  /* výlety */
+  v4:'https://www.salzkammergut.at/oesterreich-tour/detail/430000685/rund-um-den-gosausee.html',
+  v6:'https://wolfgangsee.salzkammergut.at/oesterreich-poi/detail/400929/schafbergbahn.html',
+  v7:'https://traunsee-almtal.salzkammergut.at/oesterreich-tour/detail/430006902/gruenberg-laudachsee.html',
+  v8:'https://www.salzwelten.at/de/hallstatt',
+  v9:'https://www.bbds.at/de/standorte/dachstein-krippenstein',
+  v10:'https://www.kaiservilla.at/',
+  v13:'https://www.5schaetze.at/de/wolfgangseeschifffahrt.html',
+  /* jídlo a nákup */
+  r1:'https://www.weissesroessl.at/',
+  g7:'https://zauner.at/',
+  g10:'https://www.freistaedter-bier.at/biererlebnis/brauereifuehrung/'
+};
+Object.keys(WEBS).forEach(id=>{
+  const it = ITEMS.find(x=>x.id===id);
+  if(it && !it.web) it.web = WEBS[id];
+});
+/* Salzbergbahn i solný důl byly celý rok v přestavbě a otevírají až 1. 9. 2026 —
+   v srpnu se na Skywalk nedostanete, město a kostnice ano. */
+(function(){
+  const it = ITEMS.find(x=>x.id==='v8');
+  if(it){
+    it.warn = 'Salzwelten i Skywalk otevírají po přestavbě lanovky až 1. 9. 2026 — v srpnu nahoru nevyjedete.';
+    delete it.pp;
+    it.price = 'lanovka do 31. 8. mimo provoz';
+  }
+})();
+
 /* ================= ČAS ================= */
 const DOW = ['neděle','pondělí','úterý','středa','čtvrtek','pátek','sobota'];
 const DOW_SHORT = ['ne','po','út','st','čt','pá','so'];
@@ -1293,7 +1384,7 @@ var APP_PURE = {CATS,TINTS,REGS,FROM_CB,ITEMS,TPL,LAKES,VIEWS,VPOLYS,PROJ,HOMEPT
 /* ================= STAV & ULOŽENÍ ================= */
 const KEY = 'salzkammergut-planner-v1';
 let S = { fav:[], days:[[],[],[],[],[]], checked:[], custom:[], vign:true, alp:false,
-          start:{date:'', dep:480}, done:[],
+          start:{date:'', dep:480}, done:[], addDay:0,
           inputs:{km:650,cons:10,fuel:1.65,foodDay:60,buffer:50,rate:24.6} };
 let saveT = null;
 async function loadState(){
@@ -1582,10 +1673,15 @@ function selectPlace(id){
     '<div class="bubmeta" style="color:'+CATS[it.cat].color+'">'+[esc(it.t),CATS[it.cat].label,(it.cat==='kemp'?'🌙 nocleh':'⏱ ~'+fmtMin(it.dur))].join(' · ')+'</div>'+
     grHtml(it) + nikHtml(it) +
     (it.price?'<div class="bubdesc"><b>'+esc(it.price)+'</b></div>':'')+
+    (it.warn?'<div class="warnrow" style="margin-top:6px">⚠<span>'+esc(it.warn)+'</span></div>':'')+
     '<div class="linkrow"><a class="gnav" href="'+navUrl(it)+'" target="_blank" rel="noopener">🧭 Navigovat</a>'+
+      (it.web?'<a href="'+it.web+'" target="_blank" rel="noopener">📖 Číst ↗</a>':'')+
       '<a href="'+gUrl(it)+'" target="_blank" rel="noopener">Google</a>'+
-      (it.web?'<a href="'+it.web+'" target="_blank" rel="noopener">web ↗</a>':'')+
       '<button class="abtn'+(S.fav.includes(id)?' on':'')+'" data-fav="'+id+'">'+(S.fav.includes(id)?'♥':'♡')+'</button></div>'+
+    '<div class="cardacts" style="margin-top:9px">'+
+      '<button class="addbtn'+(S.days[activeDay()].includes(id)?' inday':'')+'" data-quick="'+id+'" style="--dc:'+DAYC[activeDay()%5]+'">'+
+        (S.days[activeDay()].includes(id)?'✓ v dni '+(activeDay()+1):'+ do dne '+(activeDay()+1))+'</button>'+
+    '</div>'+
     '<div class="daypick open">'+dayBtns(it)+'</div>';
   b.hidden = false;
   positionBubble();
@@ -1727,8 +1823,10 @@ function renderRouteInfo(){
   const di = +routeMode;
   if(!S.days[di] || !S.days[di].length){ el.innerHTML=''; return; }
   const d = P.days[di];
+  const stops = dayStops(di), cut = Math.max(0, stops.length-2-9);
   el.innerHTML = '<span>Den '+(di+1)+' · 🚐 '+fmtMin(d.drive)+' · '+d.km+' km · ⏱ program ~'+fmtMin(d.dur)+'</span>'+
-    '<a class="gnav" target="_blank" rel="noopener" href="'+gnavUrl(dayStops(di))+'">🧭 Otevřít v Google Maps</a>';
+    '<a class="gnav" target="_blank" rel="noopener" href="'+gnavUrl(stops)+'">🧭 Otevřít v Google Maps</a>'+
+    (cut ? '<span class="ri-mut">⚠ Google bere jen 9 mezizastávek — '+cut+' posledních se do trasy nevejde</span>' : '');
 }
 document.addEventListener('click', e=>{
   const r = e.target.closest('[data-route]');
@@ -1747,7 +1845,72 @@ document.addEventListener('click', e=>{
 });
 
 /* ================= FILTRY + KATALOG ================= */
-let fCat = 'all', fReg = 'all', fFav = false, fNik = false;
+let fCat = 'all', fReg = 'all', fFav = false, fNik = false, fSort = 'nik';
+/* Do kterého dne se přidává jedním klikem. Drží se v uloženém stavu,
+   takže po návratu pokračuješ tam, kde jsi plánoval. */
+function activeDay(){
+  const d = S.addDay;
+  return (typeof d==='number' && d>=0 && d<5) ? d : 0;
+}
+const SORTS = {
+  nik:  {lbl:'🌿 můj tip',      fn:(a,b)=> b.nik-a.nik || (b.gr?b.gr[0]:0)-(a.gr?a.gr[0]:0)},
+  gr:   {lbl:'★ hodnocení',     fn:(a,b)=> (b.gr?b.gr[0]:0)-(a.gr?a.gr[0]:0) || (b.gr?b.gr[1]:0)-(a.gr?a.gr[1]:0)},
+  near: {lbl:'📍 nejblíž dni',  fn:null},
+  az:   {lbl:'A→Z',             fn:(a,b)=> a.name.localeCompare(b.name,'cs')},
+  cas:  {lbl:'⏱ nejkratší',     fn:(a,b)=> (a.dur||0)-(b.dur||0)}
+};
+function sortList(list){
+  const s = SORTS[fSort];
+  if(fSort==='near'){
+    /* od poslední zastávky vybraného dne, jinak od domova */
+    const anchor = dayAnchorTail(activeDay());
+    return list.slice().sort((a,b)=>hav(anchor,a.ll)-hav(anchor,b.ll));
+  }
+  return s && s.fn ? list.slice().sort(s.fn) : list;
+}
+/* poslední místo vybraného dne (nebo kotva dne, když je prázdný) */
+function dayAnchorTail(di){
+  const d = S.days[di]||[];
+  for(let i=d.length-1;i>=0;i--){ const it=byId(d[i]); if(it) return it.ll; }
+  return dayAnchor(di);
+}
+function renderDayBar(){
+  const bar = document.getElementById('dayBar');
+  if(!bar) return;
+  const ad = activeDay();
+  bar.innerHTML = '<span class="lbl">Přidávám do</span>' +
+    S.days.map((d,i)=>'<button data-adday="'+i+'" aria-pressed="'+String(i===ad)+'" style="--dc:'+DAYC[i%5]+'">Den '+(i+1)+
+      (d.length?'<span class="cnt">'+d.length+'</span>':'')+'</button>').join('');
+}
+function renderSortChips(){
+  const el = document.getElementById('sortChips');
+  if(!el) return;
+  el.innerHTML = Object.entries(SORTS).map(([k,s])=>
+    '<button class="chip" data-sort="'+k+'" aria-pressed="'+String(fSort===k)+'">'+s.lbl+'</button>').join('');
+}
+document.addEventListener('click', e=>{
+  const a = e.target.closest('[data-adday]');
+  if(a){
+    S.addDay = +a.dataset.adday; saveState();
+    renderDayBar(); renderCatalog();
+    if(selId) selectPlace(selId);
+    return;
+  }
+  const s = e.target.closest('[data-sort]');
+  if(s){ fSort = s.dataset.sort; renderSortChips(); renderCatalog(); return; }
+  /* jeden klik = místo je ve vybraném dni (a druhý klik ho zase vyndá) */
+  const q = e.target.closest('[data-quick]');
+  if(q){
+    const id = q.dataset.quick, di = activeDay(), arr = S.days[di];
+    if(arr.includes(id)){ S.days[di] = arr.filter(x=>x!==id); pruneDone(); }
+    else insertSmart(di, id);
+    saveState(); renderAll();
+    if(selId===id) selectPlace(id);
+    return;
+  }
+  const m = e.target.closest('[data-more]');
+  if(m){ const el = document.getElementById('dp-'+m.dataset.more); if(el) el.classList.toggle('open'); }
+});
 function chipHtml(id,label,color){
   return '<button class="chip" data-v="'+id+'" aria-pressed="false"'+(color?' style="--cc:'+color+'"':'')+'>'+
     (color?'<span class="dot" style="background:'+color+'"></span>':'')+label+'</button>';
@@ -1785,10 +1948,9 @@ function metaFor(it){
 function linkRow(it){
   return '<div class="linkrow">'+
     '<a class="gnav lite" href="'+navUrl(it)+'" target="_blank" rel="noopener">🧭 Navigovat</a>'+
+    (it.web?'<a href="'+it.web+'" target="_blank" rel="noopener">📖 Přečíst si o tom ↗</a>':'')+
     '<button class="mapbtn" data-map="'+it.id+'">📍 Náhled</button>'+
     '<a href="'+gUrl(it)+'" target="_blank" rel="noopener">Google Maps</a>'+
-    '<a href="'+mUrl(it)+'" target="_blank" rel="noopener">Mapy.cz</a>'+
-    (it.web?'<a href="'+it.web+'" target="_blank" rel="noopener">web ↗</a>':'')+
   '</div>';
 }
 function renderCatalog(){
@@ -1799,13 +1961,14 @@ function renderCatalog(){
   document.querySelectorAll('#regChips .chip').forEach(b=>{
     b.setAttribute('aria-pressed', String(fReg===b.dataset.v));
   });
-  const list = ITEMS.filter(it=>
+  const list = sortList(ITEMS.filter(it=>
     (fFav ? S.fav.includes(it.id) : (fCat==='all' || it.cat===fCat)) &&
     (!fNik || it.nik>=4) &&
     (fReg==='all' || it.reg===fReg)
-  );
+  ));
   document.getElementById('countLine').textContent =
     list.length + ' míst' + (fNik?' · 🌿 4+':'') + (fFav?' ve výběru':'') + (fReg!=='all' ? ' · '+REGS[fReg] : '');
+  const ad = activeDay(), adc = DAYC[ad%5];
   const wrap = document.getElementById('cardList');
   if(!list.length){
     wrap.innerHTML = '<div class="empty">Nic tu není — zkus jiný filtr.</div>';
@@ -1813,17 +1976,22 @@ function renderCatalog(){
   }
   wrap.innerHTML = list.map(it=>{
     const fav = S.fav.includes(it.id);
+    const inDay = S.days[ad].includes(it.id);
+    const otherDay = S.days.findIndex((d,i)=>i!==ad && d.includes(it.id));
     return '<article class="card'+(fav?' faved':'')+'" style="--cc:'+CATS[it.cat].color+';--ct:'+TINTS[it.cat]+'">'+
-      '<div class="cardtop"><div class="cardname">'+it.name+'</div>'+
-      (it.price?'<div class="price">'+it.price+'</div>':'')+'</div>'+
-      '<div class="cardmeta">'+metaFor(it)+'</div>'+
+      '<div class="cardtop"><div class="cardname">'+esc(it.name)+'</div>'+
+      (it.price?'<div class="price">'+esc(it.price)+'</div>':'')+'</div>'+
+      '<div class="cardmeta">'+metaFor(it)+(otherDay>=0?' · <b style="color:'+DAYC[otherDay%5]+'">už v dni '+(otherDay+1)+'</b>':'')+'</div>'+
       grHtml(it) + nikHtml(it) +
-      '<p class="carddesc">'+it.desc+'</p>'+
+      '<p class="carddesc">'+esc(it.desc)+'</p>'+
+      (it.warn?'<div class="warnrow">⚠<span>'+esc(it.warn)+'</span></div>':'')+
       linkRow(it)+
       '<div class="mini" id="mm-'+it.id+'" hidden></div>'+
       '<div class="cardacts">'+
-        '<button class="abtn'+(fav?' on':'')+'" data-fav="'+it.id+'">'+(fav?'♥ Vybráno':'♡ Vybrat')+'</button>'+
-        '<button class="abtn" data-pick="'+it.id+'">+ Přidat do dne</button>'+
+        '<button class="addbtn'+(inDay?' inday':'')+'" data-quick="'+it.id+'" style="--dc:'+adc+'">'+
+          (inDay?'✓ v dni '+(ad+1):'+ do dne '+(ad+1))+'</button>'+
+        '<button class="moreday" data-more="'+it.id+'" aria-label="Jiný den">⋯</button>'+
+        '<button class="abtn'+(fav?' on':'')+'" data-fav="'+it.id+'">'+(fav?'♥':'♡')+'</button>'+
       '</div>'+
       '<div class="daypick" id="dp-'+it.id+'">'+dayBtns(it)+'</div>'+
     '</article>';
@@ -1838,8 +2006,6 @@ document.addEventListener('click', e=>{
     if(selId===id) selectPlace(id);
     return;
   }
-  const p = e.target.closest('[data-pick]');
-  if(p){ document.getElementById('dp-'+p.dataset.pick).classList.toggle('open'); return; }
   const mb = e.target.closest('[data-map]');
   if(mb){
     const el = document.getElementById('mm-'+mb.dataset.map);
@@ -1869,6 +2035,20 @@ function dayAnchorId(di){
 function dayAnchor(di){
   const a = dayAnchorId(di);
   return a==='home' ? CB_LL : byId(a).ll;
+}
+/* odškrtnutí platí jen pro místa, která v plánu opravdu jsou */
+function pruneDone(){
+  const inPlan = new Set(S.days.flat());
+  S.done = S.done.filter(id=>inPlan.has(id));
+}
+/* mýto na jih se týká každého plánu s italskou zastávkou, ne jen mých šablon */
+function syncAlp(){
+  const south = S.days.flat().map(byId).some(it=>it && (it.reg==='dol' || it.reg==='cor'));
+  if(south && !S.alp){
+    S.alp = true;
+    const el = document.getElementById('alp');
+    if(el) el.checked = true;
+  }
 }
 function insertSmart(di, id){
   const it = byId(id), arr = S.days[di];
@@ -1976,7 +2156,11 @@ function renderPlan(){
         '<span class="pn"><b>'+esc(r.it.name)+'</b><small>'+metaFor(r.it)+(r.it.price?' · '+esc(r.it.price):'')+'</small></span>'+
         '<button class="pbtn" data-mv="-1" data-day="'+di+'" data-ix="'+ix+'" aria-label="Nahoru">↑</button>'+
         '<button class="pbtn" data-mv="1" data-day="'+di+'" data-ix="'+ix+'" aria-label="Dolů">↓</button>'+
+        '<button class="pbtn mv" data-moveopen="'+di+'-'+ix+'" aria-label="Přesunout do jiného dne">den</button>'+
         '<button class="pbtn" data-rm data-day="'+di+'" data-ix="'+ix+'" aria-label="Odebrat">✕</button></div>';
+      inner += '<div class="movepick" id="mp-'+di+'-'+ix+'">'+
+        S.days.map((d,j)=>'<button data-moveto="'+di+'-'+ix+'-'+j+'"'+(j===di?' class="cur"':'')+'>Den '+(j+1)+'</button>').join('')+
+      '</div>';
       const issue = openIssue(r.it, t.dow, r.arrive);
       if(issue) inner += '<div class="warnrow">⚠<span>'+esc(issue)+'</span></div>';
       if(r.it.warn) inner += '<div class="warnrow soft">ℹ<span>'+esc(r.it.warn)+'</span></div>';
@@ -2012,9 +2196,21 @@ document.addEventListener('click', e=>{
     saveState(); renderAll(); return;
   }
   const rm = e.target.closest('[data-rm]');
-  if(rm){ S.days[+rm.dataset.day].splice(+rm.dataset.ix,1); saveState(); renderAll(); return; }
+  if(rm){ S.days[+rm.dataset.day].splice(+rm.dataset.ix,1); pruneDone(); saveState(); renderAll(); return; }
   const cl = e.target.closest('[data-clear]');
-  if(cl){ S.days[+cl.dataset.clear]=[]; saveState(); renderAll(); return; }
+  if(cl){ S.days[+cl.dataset.clear]=[]; pruneDone(); saveState(); renderAll(); return; }
+  const mo = e.target.closest('[data-moveopen]');
+  if(mo){ const el = document.getElementById('mp-'+mo.dataset.moveopen); if(el) el.classList.toggle('open'); return; }
+  const mt = e.target.closest('[data-moveto]');
+  if(mt){
+    const [di,ix,to] = mt.dataset.moveto.split('-').map(Number);
+    if(di!==to){
+      const id = S.days[di].splice(ix,1)[0];
+      if(id) insertSmart(to, id);
+      saveState(); renderAll();
+    }
+    return;
+  }
   const tp = e.target.closest('[data-tpl]');
   if(tp){
     const n = +tp.dataset.tpl;
@@ -2054,6 +2250,7 @@ function syncStartInputs(){
 }
 document.getElementById('startDate').addEventListener('change', e=>{
   S.start.date = e.target.value || ''; saveState(); renderAll();
+  loadWeather(); /* datum se často vyplní až potom — předpověď se musí došáhnout znovu */
 });
 document.getElementById('startTime').addEventListener('change', e=>{
   const m = /^(\d{1,2}):(\d{2})$/.exec(e.target.value||'');
@@ -2664,7 +2861,11 @@ document.querySelector('.tabs').addEventListener('click', e=>{
   switchTab(t.dataset.tab);
   window.scrollTo({top:0});
 });
-function renderAll(){ renderPlan(); renderCatalog(); renderBudget(); renderTripbar(); renderTripStats(); applyZoom(); }
+function renderAll(){
+  syncAlp();
+  renderDayBar(); renderSortChips();
+  renderPlan(); renderCatalog(); renderBudget(); renderTripbar(); renderTripStats(); applyZoom();
+}
 (async function(){
   await loadState();
   const I = S.inputs;
@@ -2673,6 +2874,8 @@ function renderAll(){ renderPlan(); renderCatalog(); renderBudget(); renderTripb
   document.getElementById('alp').checked = !!S.alp;
   if(!S.start) S.start = {date:'', dep:480};
   if(!Array.isArray(S.done)) S.done = [];
+  if(typeof S.addDay !== 'number') S.addDay = 0;
+  pruneDone();
   syncStartInputs();
   initFilters(); initMap(); buildMap(); renderAll(); renderChecklist();
   checkIncoming();

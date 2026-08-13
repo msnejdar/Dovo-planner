@@ -117,6 +117,28 @@ ho zajímají.
 - Struktura souboru: **první `<script>` je čistý** (data + geometrie, bez
   DOM, exportuje `APP_PURE`) — testovatelný v Node; druhý `<script>` = UI.
 
+## Co v10 přidalo
+
+- **Přidávání na jeden klik**: v Objevuj je lepivý pásek „Přidávám do"
+  s dny 1–5 (`S.addDay`, `activeDay()`); každá karta má jedno velké
+  tlačítko `data-quick`, které místo do toho dne přidá nebo zase vyndá.
+  `⋯` otevře výběr jiného dne. Stejné tlačítko je i v bublině na mapě.
+- **Řazení katalogu** (`SORTS`, `fSort`): 🌿 můj tip · ★ hodnocení ·
+  📍 nejblíž vybranému dni (od poslední zastávky, `dayAnchorTail`) ·
+  A→Z · ⏱ nejkratší. Výchozí je 🌿.
+- **Přesun mezi dny**: v plánu tlačítko „den" u zastávky (`data-moveopen`
+  / `data-moveto`), vloží se přes `insertSmart`, tedy zase na rozumné
+  místo. Na telefonu (≤560 px) se skryjí šipky ↑↓ — nahrazuje je úchyt
+  na přetažení a tohle tlačítko.
+- **Odkazy ke čtení**: tabulka `WEBS` doplňuje `web` u míst bez vlastní
+  stránky (oficiální stránka obce, provozovatele nebo článek
+  turistického portálu). Odkazy na Mapy.cz jsou pryč, zůstal Google.
+- Opravy z auditu: `pruneDone()` čistí odškrtnutí u míst, která už
+  v plánu nejsou; `syncAlp()` zapne alpské mýto podle italských zastávek
+  v plánu, ne jen podle šablony; počasí se dotáhne i po dodatečném
+  vyplnění data; lišta pod mapou hlásí, kolik zastávek se nevejde do
+  devítimístného limitu Google navigace.
+
 ## Tvrdé zásady
 
 1. **Žádná vymyšlená místa ani čísla.** Každé nové místo ověř web searchem:
@@ -142,6 +164,9 @@ ho zajímají.
   rezervace parkoviště P4 u jezera jen pro vozidla do 2 m — California se
   zvednutou střechou tam neprojde (fyzická závora), obytňák = P1 ~49 €
   nebo přijet před 9:00. Koupání zakázáno. Loďky 20 €/os./45 min.
+- **Hallstatt Skywalk a Salzwelten**: po roční přestavbě Salzbergbahn
+  otevírají až **1. 9. 2026** — v srpnu se nahoru nedostanete (v datech
+  jako `warn` u `v8`, vstupné odebráno).
 - **Tre Cime**: od 2026 povinná online rezervace na SPZ (auronzo.info);
   auto 40 €, kemper 60 €; Auronzo→Lavaredo ~2 km rovina ve 2 320 m.
 - **Camping Residence Corones (Rasen) UŽ NEEXISTUJE** — dnes jen apartmány
