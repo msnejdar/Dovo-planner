@@ -866,9 +866,10 @@ function genMini(it){
 /* text do SVG/HTML */
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 /* jméno na mapu: bez upřesnění za tečkou a zkrácené, ať popisky nepřerostou body */
-function shortName(it){
+function shortName(it, max){
+  max = max || 21;
   let n = String(it.name).split(' · ')[0].split(': ')[0].replace(/\s*\(.*?\)\s*/g,' ').trim();
-  return n.length>21 ? n.slice(0,20).trim()+'…' : n;
+  return n.length>max ? n.slice(0,max-1).trim()+'…' : n;
 }
 /* sdílení plánu: objekt → base64url do #p= (bez serveru, přenáší se odkazem) */
 function encodePlanData(o){
@@ -916,8 +917,23 @@ const ZOOM = {all:{k:1,x:0,y:0}, szk:{k:1,x:0,y:0}, dol:{k:1,x:0,y:0}};
 const ZMAX = 6;
 let mapCat = 'all';
 function zs(){ return ZOOM[MAPVIEW]; }
-/* velikosti bodů a písma se se zoomem zmenšují jen zčásti — jinak by při přiblížení překryly mapu */
-function zsc(){ return 1/Math.pow(zs().k, 0.65); }
+/* Kolik jednotek viewBoxu padne na jeden pixel obrazovky. Velikosti bodů a písma
+   pak zadávám v pixelech (×zsc()), takže na mobilu jsou stejně čitelné jako na
+   notebooku a při přiblížení nerostou — chovají se jako značky v normální mapě. */
+function zsc(){
+  const svg = document.getElementById('bigsvg');
+  const w = svg ? svg.getBoundingClientRect().width : 0;
+  return (w>0 ? VIEWS[MAPVIEW].W/w : 1.2) / zs().k;
+}
+/* viditelný výřez ve světových souřadnicích — popisky ořezávám sem, ať nelezou z rámu */
+function visRect(){
+  const V = VIEWS[MAPVIEW], z = zs();
+  return {x1:-z.x/z.k, y1:-z.y/z.k, x2:(V.W-z.x)/z.k, y2:(V.H-z.y)/z.k};
+}
+function isNarrow(){
+  const svg = document.getElementById('bigsvg');
+  return svg ? svg.getBoundingClientRect().width < 520 : false;
+}
 function clampZoom(){
   const V = VIEWS[MAPVIEW], z = zs();
   z.k = Math.max(1, Math.min(ZMAX, z.k));
@@ -1109,16 +1125,16 @@ function drawDots(){
   const f = zsc(), k = zs().k;
   document.getElementById('dotLayer').innerHTML = items.map(it=>{
     const p = PROJ[MAPVIEW][it.id], sel = selId===it.id ? ' sel' : '';
-    const sw = (MAPVIEW==='all' ? 1.6 : 2)*f;
+    const sw = 2*f;
     if(MAPVIEW==='all' && k<2.2){
       const solo = viewOf(it.reg)==='jih' || it.reg==='cesta';
       const hot = sel || S.fav.includes(it.id);
-      return '<circle class="mdot'+sel+'" data-id="'+it.id+'" cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+((solo?6.5:4.4)*f).toFixed(2)+'" fill="'+CATS[it.cat].color+'" style="stroke-width:'+(hot?sw*1.4:sw*.8).toFixed(2)+(hot?';stroke:#201D17':'')+'"><title>'+it.name+'</title></circle>';
+      return '<circle class="mdot'+sel+'" data-id="'+it.id+'" cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+((solo?6:4.2)*f).toFixed(2)+'" fill="'+CATS[it.cat].color+'" style="stroke-width:'+(hot?sw:sw*.7).toFixed(2)+(hot?';stroke:#201D17':'')+'"><title>'+esc(it.name)+'</title></circle>';
     }
     if(S.fav.includes(it.id)){
-      return '<path class="mheart'+sel+'" data-id="'+it.id+'" transform="translate('+p.x.toFixed(1)+','+(p.y-5*f).toFixed(1)+') scale('+(1.25*f).toFixed(3)+')" d="'+HEART+'" fill="'+CATS[it.cat].color+'" style="stroke-width:'+(sw/f).toFixed(2)+'"><title>'+it.name+'</title></path>';
+      return '<path class="mheart'+sel+'" data-id="'+it.id+'" transform="translate('+p.x.toFixed(1)+','+(p.y-5*f).toFixed(1)+') scale('+(1.15*f).toFixed(3)+')" d="'+HEART+'" fill="'+CATS[it.cat].color+'" style="stroke-width:'+(sw/f).toFixed(2)+'"><title>'+esc(it.name)+'</title></path>';
     }
-    return '<circle class="mdot'+sel+'" data-id="'+it.id+'" cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+(7.5*f).toFixed(2)+'" fill="'+CATS[it.cat].color+'" style="stroke-width:'+sw.toFixed(2)+'"><title>'+it.name+'</title></circle>';
+    return '<circle class="mdot'+sel+'" data-id="'+it.id+'" cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+(7*f).toFixed(2)+'" fill="'+CATS[it.cat].color+'" style="stroke-width:'+sw.toFixed(2)+'"><title>'+esc(it.name)+'</title></circle>';
   }).join('');
 }
 function grHtml(it){
@@ -1182,17 +1198,21 @@ function drawRoutes(){
   const legs = buildLegs();
   const oneDay = routeMode!=='all' && routeMode!=='none';
   const show = legs.filter(l=> routeMode==='all' ? true : (routeMode==='none' ? false : l.di===+routeMode));
-  const f = zsc(), k = zs().k;
+  const f = zsc(), k = zs().k, R = visRect(), narrow = isNarrow();
+  const fs = (narrow ? 10 : 11.5)*f; /* na úzkém displeji drobnější písmo, jinak popisky přerostou mapu */
+  const clampX = (x,w) => Math.max(R.x1+w/2+4*f, Math.min(R.x2-w/2-4*f, x));
+  const clampY = y => Math.max(R.y1+10*f, Math.min(R.y2-6*f, y));
   let svg = '';
   show.forEach(l=>{
     const p1=ptFor(l.a), p2=ptFor(l.b);
     const g=legPath(p1,p2); if(!g) return;
-    svg += '<path class="'+(l.dash?'legdash':'legsolid')+'" d="'+g.d+'" stroke="'+DAYC[l.di%5]+'" stroke-width="'+((MAPVIEW==='all'?2.6:3.2)*f).toFixed(2)+'" opacity=".8"/>';
+    svg += '<path class="'+(l.dash?'legdash':'legsolid')+'" d="'+g.d+'" stroke="'+DAYC[l.di%5]+'" stroke-width="'+(3*f).toFixed(2)+'" opacity=".82"/>';
     /* km a čas na každý úsek — v přehledu celé cesty jen na delší, ať se popisky nelepí na sebe */
     const leg = legInfo(l);
     const worth = oneDay || leg[1]>=45 || k>=2;
-    if(worth && g.len*k > 34){
-      svg += '<text class="leglbl" x="'+g.mx.toFixed(1)+'" y="'+(g.my-5*f).toFixed(1)+'" text-anchor="middle" font-size="'+(12.5*f).toFixed(2)+'">'+leg[1]+' km · '+fmtMin(leg[0])+'</text>';
+    const txt = leg[1]+' km · '+fmtMin(leg[0]);
+    if(worth && g.len/f > 46){
+      svg += '<text class="leglbl" x="'+clampX(g.mx, txt.length*5.6*f).toFixed(1)+'" y="'+clampY(g.my-5*f).toFixed(1)+'" text-anchor="middle" font-size="'+fs.toFixed(2)+'">'+txt+'</text>';
     }
   });
   if(oneDay){
@@ -1206,16 +1226,16 @@ function drawRoutes(){
       const p=PROJ[MAPVIEW][id], V=VIEWS[MAPVIEW];
       svg += '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+(10.5*f).toFixed(2)+'" fill="'+DAYC[di%5]+'" opacity=".95"/>'+
         '<text x="'+p.x.toFixed(1)+'" y="'+(p.y+4.5*f).toFixed(1)+'" text-anchor="middle" class="stopnum" font-size="'+(13*f).toFixed(2)+'">'+n+'</text>';
-      const txt = shortName(it), w = txt.length*6.4*f + 10*f, h = 15*f;
-      const right = p.x < V.W/2;
+      const txt = shortName(it, narrow?15:21), w = txt.length*6.1*f + 10*f, h = 15*f;
+      const right = p.x < (R.x1+R.x2)/2;
       const cand = [[right?p.x+15*f+w/2:p.x-15*f-w/2, p.y+4*f, right],
                     [p.x, p.y-16*f, null], [p.x, p.y+22*f, null],
                     [right?p.x-15*f-w/2:p.x+15*f+w/2, p.y+4*f, !right]];
-      for(const [cx,cy,side] of cand){
+      for(const [cx0,cy0,side] of cand){
+        const cx = clampX(cx0, w), cy = clampY(cy0);
         if(!free(cx,cy,w,h)) continue;
         boxes.push({x:cx,y:cy,w,h});
-        const ax = side===null ? p.x : (side ? p.x+15*f : p.x-15*f);
-        svg += '<text class="stoplbl" x="'+ax.toFixed(1)+'" y="'+cy.toFixed(1)+'" font-size="'+(12*f).toFixed(2)+'" text-anchor="'+(side===null?'middle':(side?'start':'end'))+'">'+esc(txt)+'</text>';
+        svg += '<text class="stoplbl" x="'+cx.toFixed(1)+'" y="'+cy.toFixed(1)+'" font-size="'+fs.toFixed(2)+'" text-anchor="middle">'+esc(txt)+'</text>';
         break;
       }
       n++;
