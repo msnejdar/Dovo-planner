@@ -320,6 +320,25 @@ svg text{font-family:'Fraunces',Georgia,serif}
 #incoming .yes{background:var(--gastro);border-color:var(--gastro);color:#fff}
 #shareOut{flex-basis:100%;color:var(--mut)}
 #shareOut input{width:100%;border:1.5px solid var(--line);border-radius:11px;background:#fff;padding:8px 10px;font:inherit;font-size:13px;color:var(--ink);margin-top:6px}
+
+/* ---------- v6: zoom, popisky tras, filtry mapy ---------- */
+.mapstage{position:relative}
+#bigsvg{touch-action:none;-webkit-user-select:none;user-select:none}
+.zoomctl{position:absolute;right:10px;bottom:12px;display:flex;flex-direction:column;gap:5px}
+.zoomctl button{
+  width:36px;height:36px;border:1.5px solid var(--ink);background:rgba(255,253,246,.94);color:var(--ink);
+  border-radius:11px;font:inherit;font-size:17px;font-weight:700;cursor:pointer;line-height:1;
+  display:flex;align-items:center;justify-content:center;padding:0;
+}
+.zoomctl button:disabled{opacity:.35;cursor:default}
+.zoomctl .rst{font-size:13px}
+.maptip{
+  position:absolute;left:10px;top:10px;background:rgba(255,253,246,.93);border:1.5px solid var(--line);
+  border-radius:10px;padding:5px 10px;font-size:12px;font-weight:700;color:var(--mut);pointer-events:none;
+}
+.maptip[hidden]{display:none}
+.leglbl{font-family:'Karla',sans-serif;font-weight:700;fill:#4A4436;paint-order:stroke;stroke:#F1EADA;stroke-width:3.6;stroke-linejoin:round}
+.stoplbl{font-family:'Karla',sans-serif;font-weight:700;fill:#201D17;paint-order:stroke;stroke:#F1EADA;stroke-width:3.4;stroke-linejoin:round}
 @media print{ #routeInfo,.gnav,#viewChips,.wandrow,#incoming{display:none!important} }
 </style>
 </head>
@@ -366,8 +385,16 @@ svg text{font-family:'Fraunces',Georgia,serif}
   <div class="chips" id="viewChips"></div>
   <div class="filterlabel">Trasa na mapě</div>
   <div class="chips" id="routeChips"></div>
-  <div class="mapwrap" style="padding:8px">
+  <div class="filterlabel">Co ukázat</div>
+  <div class="chips" id="mapCatChips"></div>
+  <div class="mapwrap mapstage" style="padding:8px">
     <svg id="bigsvg" viewBox="0 0 1000 1045" role="img" aria-label="Mapa Salzkammergutu a Dolomit podle skutečných souřadnic"></svg>
+    <div class="maptip" id="mapTip" hidden></div>
+    <div class="zoomctl">
+      <button id="zIn" aria-label="Přiblížit">＋</button>
+      <button id="zOut" aria-label="Oddálit">−</button>
+      <button id="zRst" class="rst" aria-label="Zpět na celek">⤢</button>
+    </div>
   </div>
   <div id="routeInfo"></div>
   <div id="mapSel"><div class="empty">Klepni na bod v mapě — srdíčka z výběru tu svítí jako ♥ v barvě kategorie. V přehledu celé cesty tě rámečky prokliknou do regionů.</div></div>
@@ -836,6 +863,13 @@ function genMini(it){
   const scale = '<line class="scalebar" x1="10" y1="142" x2="29.1" y2="142"/><text class="scaletxt" x="10" y="138">1 km</text>';
   return '<svg viewBox="0 0 230 156">'+lakes+others+pin+scale+'</svg>';
 }
+/* text do SVG/HTML */
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+/* jméno na mapu: bez upřesnění za tečkou a zkrácené, ať popisky nepřerostou body */
+function shortName(it){
+  let n = String(it.name).split(' · ')[0].split(': ')[0].replace(/\s*\(.*?\)\s*/g,' ').trim();
+  return n.length>21 ? n.slice(0,20).trim()+'…' : n;
+}
 /* sdílení plánu: objekt → base64url do #p= (bez serveru, přenáší se odkazem) */
 function encodePlanData(o){
   return btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
@@ -847,7 +881,7 @@ function decodePlanData(s){
   }catch(e){ return null; }
 }
 /* export pro test (v prohlížeči neškodí) */
-var APP_PURE = {CATS,TINTS,REGS,FROM_CB,ITEMS,TPL,LAKES,VIEWS,VPOLYS,PROJ,HOMEPT,EXITPT,viewOf,pip,hav,est,gUrl,navUrl,gnavUrl,genMini,lakesFor,CB_LL,encodePlanData,decodePlanData};
+var APP_PURE = {CATS,TINTS,REGS,FROM_CB,ITEMS,TPL,LAKES,VIEWS,VPOLYS,PROJ,HOMEPT,EXITPT,viewOf,pip,hav,est,gUrl,navUrl,gnavUrl,genMini,lakesFor,CB_LL,encodePlanData,decodePlanData,esc,shortName};
 </script>
 <script>
 /* ================= STAV & ULOŽENÍ ================= */
@@ -877,26 +911,156 @@ const DAYC = ['#1D7A99','#2F7D4F','#DFA320','#D95A34','#201D17'];
 const HEART = 'M0,4.6 C-1.4,1.2 -7.2,-1.9 -7.2,2.6 C-7.2,5.7 -2.8,8.6 0,11 C2.8,8.6 7.2,5.7 7.2,2.6 C7.2,-1.9 1.4,1.2 0,4.6 Z';
 
 const VIEW_LBL = {all:'🚐 Celá cesta', szk:'🏔 Salzkammergut', dol:'🇮🇹 Dolomity'};
+/* ---- zoom & posun: transform na obalové <g>, stav zvlášť pro každý pohled ---- */
+const ZOOM = {all:{k:1,x:0,y:0}, szk:{k:1,x:0,y:0}, dol:{k:1,x:0,y:0}};
+const ZMAX = 6;
+let mapCat = 'all';
+function zs(){ return ZOOM[MAPVIEW]; }
+/* velikosti bodů a písma se se zoomem zmenšují jen zčásti — jinak by při přiblížení překryly mapu */
+function zsc(){ return 1/Math.pow(zs().k, 0.65); }
+function clampZoom(){
+  const V = VIEWS[MAPVIEW], z = zs();
+  z.k = Math.max(1, Math.min(ZMAX, z.k));
+  z.x = Math.max(V.W*(1-z.k), Math.min(0, z.x));
+  z.y = Math.max(V.H*(1-z.k), Math.min(0, z.y));
+}
+function applyZoom(redraw){
+  clampZoom();
+  const z = zs(), g = document.getElementById('zoomLayer');
+  if(g) g.setAttribute('transform','translate('+z.x.toFixed(2)+','+z.y.toFixed(2)+') scale('+z.k.toFixed(4)+')');
+  document.getElementById('zIn').disabled = z.k>=ZMAX;
+  document.getElementById('zOut').disabled = z.k<=1;
+  const tip = document.getElementById('mapTip');
+  tip.hidden = z.k<=1;
+  if(z.k>1) tip.textContent = Math.round(z.k*10)/10 + '× · táhni prstem';
+  if(redraw!==false){ drawDots(); drawRoutes(); }
+}
+function zoomAt(mx, my, factor){
+  const z = zs(), k0 = z.k;
+  z.k = Math.max(1, Math.min(ZMAX, k0*factor));
+  const r = z.k/k0;
+  z.x = mx - (mx - z.x)*r;
+  z.y = my - (my - z.y)*r;
+  applyZoom();
+}
+/* klientské souřadnice → jednotky viewBoxu */
+function toMap(clientX, clientY){
+  const svg = document.getElementById('bigsvg'), r = svg.getBoundingClientRect(), V = VIEWS[MAPVIEW];
+  const s = V.W / (r.width||1);
+  return {x:(clientX-r.left)*s, y:(clientY-r.top)*s, s};
+}
 function initMap(){
   document.getElementById('mapLegend').innerHTML =
     Object.values(CATS).map(c=>'<span><i style="background:'+c.color+'"></i>'+c.label+'</span>').join('') +
     '<span><i style="background:#fff;border:2px solid #26241F"></i>♥ = tvůj výběr</span>';
-  document.getElementById('bigsvg').addEventListener('click', e=>{
+  const svg = document.getElementById('bigsvg');
+  svg.addEventListener('click', e=>{
+    if(DRAGGED) return; /* táhnutí mapou není klik na bod */
     const g = e.target.closest('[data-goview]');
     if(g){ setView(g.dataset.goview); return; }
     const m = e.target.closest('[data-id]'); if(!m) return;
     selectPlace(m.dataset.id);
   });
-  drawViewChips();
+  /* gesta: tažení jedním prstem, štípnutí dvěma, kolečko myši, dvojklik */
+  const pts = new Map();
+  let last = null, pinch = 0;
+  svg.addEventListener('pointerdown', e=>{
+    pts.set(e.pointerId, e);
+    DRAGGED = false;
+    if(pts.size===1){ last = toMap(e.clientX, e.clientY); svg.setPointerCapture(e.pointerId); }
+    if(pts.size===2){ const a=[...pts.values()]; pinch = Math.hypot(a[0].clientX-a[1].clientX, a[0].clientY-a[1].clientY); }
+  });
+  svg.addEventListener('pointermove', e=>{
+    if(!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId, e);
+    const a = [...pts.values()];
+    if(a.length>=2){
+      const d = Math.hypot(a[0].clientX-a[1].clientX, a[0].clientY-a[1].clientY);
+      if(pinch>0 && d>0){
+        const c = toMap((a[0].clientX+a[1].clientX)/2, (a[0].clientY+a[1].clientY)/2);
+        DRAGGED = true;
+        zoomAt(c.x, c.y, d/pinch);
+      }
+      pinch = d;
+      return;
+    }
+    if(!last || zs().k<=1) return;
+    const p = toMap(e.clientX, e.clientY), z = zs();
+    if(Math.abs(p.x-last.x)+Math.abs(p.y-last.y) > 3) DRAGGED = true;
+    z.x += p.x-last.x; z.y += p.y-last.y;
+    last = p;
+    applyZoom(false);
+  });
+  const up = e=>{ pts.delete(e.pointerId); if(pts.size<2) pinch = 0; if(!pts.size){ last = null; applyZoom(); } };
+  svg.addEventListener('pointerup', up);
+  svg.addEventListener('pointercancel', up);
+  svg.addEventListener('wheel', e=>{
+    e.preventDefault();
+    const p = toMap(e.clientX, e.clientY);
+    zoomAt(p.x, p.y, e.deltaY<0 ? 1.22 : 1/1.22);
+  }, {passive:false});
+  svg.addEventListener('dblclick', e=>{
+    const p = toMap(e.clientX, e.clientY);
+    zoomAt(p.x, p.y, 1.9);
+  });
+  document.getElementById('zIn').addEventListener('click', ()=>zoomAt(VIEWS[MAPVIEW].W/2, VIEWS[MAPVIEW].H/2, 1.6));
+  document.getElementById('zOut').addEventListener('click', ()=>zoomAt(VIEWS[MAPVIEW].W/2, VIEWS[MAPVIEW].H/2, 1/1.6));
+  document.getElementById('zRst').addEventListener('click', ()=>{ const z=zs(); z.k=1; z.x=0; z.y=0; applyZoom(); });
+  drawViewChips(); drawMapCatChips();
 }
+let DRAGGED = false;
 function drawViewChips(){
   document.getElementById('viewChips').innerHTML = Object.entries(VIEW_LBL).map(([k,l])=>
     '<button class="chip" data-view="'+k+'" aria-pressed="'+String(MAPVIEW===k)+'">'+l+'</button>').join('');
 }
+function drawMapCatChips(){
+  const opts = [['all','Všechno','']].concat(Object.entries(CATS).map(([k,c])=>[k,c.label,c.color]), [['plan','Jen můj plán','#201D17']]);
+  document.getElementById('mapCatChips').innerHTML = opts.map(([k,l,c])=>
+    '<button class="chip" data-mcat="'+k+'" aria-pressed="'+String(mapCat===k)+'"'+(c?' style="--cc:'+c+'"':'')+'>'+
+    (c?'<span class="dot" style="background:'+c+'"></span>':'')+l+'</button>').join('');
+}
+/* které body se v mapě kreslí — zastávky vybraného dne jsou vidět vždy */
+function mapVisible(it){
+  if(mapCat==='all') return true;
+  if(routeMode!=='all' && routeMode!=='none' && (S.days[+routeMode]||[]).includes(it.id)) return true;
+  if(mapCat==='plan') return S.days.flat().includes(it.id) || S.fav.includes(it.id);
+  return it.cat===mapCat;
+}
 function setView(v){
   if(!VIEWS[v] || MAPVIEW===v) return;
   MAPVIEW = v;
-  buildMap(); drawDots(); drawRoutes(); drawViewChips();
+  buildMap(); applyZoom(); drawViewChips();
+}
+/* přibliž na vybraný den, ať zastávky nejsou shluk v rohu */
+function fitToDay(di){
+  const V = VIEWS[MAPVIEW], z = ZOOM[MAPVIEW];
+  const pts = [];
+  (S.days[di]||[]).forEach(id=>{
+    const it = byId(id); if(!it) return;
+    if(MAPVIEW!=='all' && viewOf(it.reg)!==MAPVIEW) return;
+    pts.push(PROJ[MAPVIEW][id]);
+  });
+  if(!pts.length){ z.k=1; z.x=0; z.y=0; applyZoom(); return; }
+  pts.push(ptFor(dayAnchorId(di))); /* i ranní start, ať je vidět, odkud se vyjíždí */
+  let x1=1e9,y1=1e9,x2=-1e9,y2=-1e9;
+  pts.forEach(p=>{ x1=Math.min(x1,p.x); y1=Math.min(y1,p.y); x2=Math.max(x2,p.x); y2=Math.max(y2,p.y); });
+  const pad = 70;
+  const w = Math.max(200, x2-x1+pad*2), h = Math.max(200, y2-y1+pad*2);
+  z.k = Math.max(1, Math.min(ZMAX, Math.min(V.W/w, V.H/h)));
+  z.x = V.W/2 - (x1+x2)/2*z.k;
+  z.y = V.H/2 - (y1+y2)/2*z.k;
+  applyZoom();
+}
+/* pohled, do kterého den patří — ať se mapa přepne sama tam, kde se ten den jede */
+function viewForDay(di){
+  const ids = S.days[di]||[];
+  if(!ids.length) return null;
+  const cnt = {};
+  ids.forEach(id=>{ const it=byId(id); if(it){ const v=viewOf(it.reg); cnt[v]=(cnt[v]||0)+1; } });
+  const seen = Object.keys(cnt);
+  if(!seen.length) return null;
+  if(seen.length>1 || seen[0]==='jih') return 'all'; /* den přejíždí mezi regiony → ukaž celek */
+  return seen[0];
 }
 function townSvg(t,V){
   const x=V.px(t[2]), y=V.py(t[1]), flip = x > V.W-95; /* u pravého okraje piš doleva, ať jméno nepřeteče */
@@ -938,21 +1102,23 @@ function buildMap(){
       '<text x="'+Math.min(HOMEPT.all.x+14, V.W-8).toFixed(1)+'" y="'+(HOMEPT.all.y+26).toFixed(1)+'" text-anchor="end" class="homelbl">České Budějovice</text>'+
       regFrame('szk','Salzkammergut') + regFrame('dol','Dolomity');
   }
-  svg.innerHTML = lakes + deco + '<g id="routeLayer"></g><g id="dotLayer"></g>';
+  svg.innerHTML = '<g id="zoomLayer">' + lakes + deco + '<g id="routeLayer"></g><g id="dotLayer"></g></g>';
 }
 function drawDots(){
-  const items = MAPVIEW==='all' ? ITEMS : ITEMS.filter(i=>viewOf(i.reg)===MAPVIEW);
+  const items = (MAPVIEW==='all' ? ITEMS : ITEMS.filter(i=>viewOf(i.reg)===MAPVIEW)).filter(mapVisible);
+  const f = zsc(), k = zs().k;
   document.getElementById('dotLayer').innerHTML = items.map(it=>{
     const p = PROJ[MAPVIEW][it.id], sel = selId===it.id ? ' sel' : '';
-    if(MAPVIEW==='all'){
+    const sw = (MAPVIEW==='all' ? 1.6 : 2)*f;
+    if(MAPVIEW==='all' && k<2.2){
       const solo = viewOf(it.reg)==='jih' || it.reg==='cesta';
       const hot = sel || S.fav.includes(it.id);
-      return '<circle class="mdot'+sel+'" data-id="'+it.id+'" cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+(solo?6.5:4.4)+'" fill="'+CATS[it.cat].color+'" style="stroke-width:'+(hot?2:1.2)+(hot?';stroke:#201D17':'')+'"><title>'+it.name+'</title></circle>';
+      return '<circle class="mdot'+sel+'" data-id="'+it.id+'" cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+((solo?6.5:4.4)*f).toFixed(2)+'" fill="'+CATS[it.cat].color+'" style="stroke-width:'+(hot?sw*1.4:sw*.8).toFixed(2)+(hot?';stroke:#201D17':'')+'"><title>'+it.name+'</title></circle>';
     }
     if(S.fav.includes(it.id)){
-      return '<path class="mheart'+sel+'" data-id="'+it.id+'" transform="translate('+p.x+','+(p.y-5)+') scale(1.25)" d="'+HEART+'" fill="'+CATS[it.cat].color+'"><title>'+it.name+'</title></path>';
+      return '<path class="mheart'+sel+'" data-id="'+it.id+'" transform="translate('+p.x.toFixed(1)+','+(p.y-5*f).toFixed(1)+') scale('+(1.25*f).toFixed(3)+')" d="'+HEART+'" fill="'+CATS[it.cat].color+'" style="stroke-width:'+(sw/f).toFixed(2)+'"><title>'+it.name+'</title></path>';
     }
-    return '<circle class="mdot'+sel+'" data-id="'+it.id+'" cx="'+p.x+'" cy="'+p.y+'" r="7.5" fill="'+CATS[it.cat].color+'"><title>'+it.name+'</title></circle>';
+    return '<circle class="mdot'+sel+'" data-id="'+it.id+'" cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+(7.5*f).toFixed(2)+'" fill="'+CATS[it.cat].color+'" style="stroke-width:'+sw.toFixed(2)+'"><title>'+it.name+'</title></circle>';
   }).join('');
 }
 function grHtml(it){
@@ -998,33 +1164,64 @@ function legPath(p1,p2){
   const dx=p2.x-p1.x, dy=p2.y-p1.y, d=Math.hypot(dx,dy);
   if(d<1) return null; // oba konce mimo pohled → nekreslit
   const k=Math.min(30, d*0.16); // jemná křivka, ať čáry neřežou jezera
-  const mx=(p1.x+p2.x)/2 - dy/d*k, my=(p1.y+p2.y)/2 + dx/d*k;
-  return 'M'+p1.x.toFixed(1)+','+p1.y.toFixed(1)+' Q'+mx.toFixed(1)+','+my.toFixed(1)+' '+p2.x.toFixed(1)+','+p2.y.toFixed(1);
+  const cx=(p1.x+p2.x)/2 - dy/d*k, cy=(p1.y+p2.y)/2 + dx/d*k;
+  return {
+    d:'M'+p1.x.toFixed(1)+','+p1.y.toFixed(1)+' Q'+cx.toFixed(1)+','+cy.toFixed(1)+' '+p2.x.toFixed(1)+','+p2.y.toFixed(1),
+    /* těžiště kvadratické křivky v t=0,5 — sem sedne popisek, ať leží na čáře */
+    mx:0.25*p1.x + 0.5*cx + 0.25*p2.x,
+    my:0.25*p1.y + 0.5*cy + 0.25*p2.y,
+    len:d
+  };
+}
+/* [min, km] úseku — stejná čísla jako v plánu */
+function legInfo(l){
+  if(l.a==='home' || l.b==='home') return FROM_CB[byId(l.a==='home' ? l.b : l.a).reg];
+  return est(byId(l.a).ll, byId(l.b).ll);
 }
 function drawRoutes(){
   const legs = buildLegs();
+  const oneDay = routeMode!=='all' && routeMode!=='none';
   const show = legs.filter(l=> routeMode==='all' ? true : (routeMode==='none' ? false : l.di===+routeMode));
+  const f = zsc(), k = zs().k;
   let svg = '';
   show.forEach(l=>{
     const p1=ptFor(l.a), p2=ptFor(l.b);
-    const path=legPath(p1,p2); if(!path) return;
-    svg += '<path class="'+(l.dash?'legdash':'legsolid')+'" d="'+path+'" stroke="'+DAYC[l.di%5]+'" stroke-width="'+(MAPVIEW==='all'?2.6:3.2)+'" opacity=".8"/>';
-    if(MAPVIEW==='all'){
-      const kmv = (l.a==='home'||l.b==='home') ? FROM_CB[byId(l.a==='home'?l.b:l.a).reg][1] : est(byId(l.a).ll, byId(l.b).ll)[1];
-      if(kmv>=60) svg += '<text class="kmlbl" x="'+((p1.x+p2.x)/2).toFixed(1)+'" y="'+((p1.y+p2.y)/2-7).toFixed(1)+'" text-anchor="middle">'+kmv+' km</text>';
+    const g=legPath(p1,p2); if(!g) return;
+    svg += '<path class="'+(l.dash?'legdash':'legsolid')+'" d="'+g.d+'" stroke="'+DAYC[l.di%5]+'" stroke-width="'+((MAPVIEW==='all'?2.6:3.2)*f).toFixed(2)+'" opacity=".8"/>';
+    /* km a čas na každý úsek — v přehledu celé cesty jen na delší, ať se popisky nelepí na sebe */
+    const leg = legInfo(l);
+    const worth = oneDay || leg[1]>=45 || k>=2;
+    if(worth && g.len*k > 34){
+      svg += '<text class="leglbl" x="'+g.mx.toFixed(1)+'" y="'+(g.my-5*f).toFixed(1)+'" text-anchor="middle" font-size="'+(12.5*f).toFixed(2)+'">'+leg[1]+' km · '+fmtMin(leg[0])+'</text>';
     }
   });
-  if(routeMode!=='all' && routeMode!=='none'){
+  if(oneDay){
     const di=+routeMode;
     let n=1;
+    const boxes = []; /* rozestrkání popisků — co by se překrylo, jde jinam nebo se vynechá */
+    const free = (x,y,w,h) => !boxes.some(b => Math.abs(b.x-x) < (b.w+w)/2 && Math.abs(b.y-y) < (b.h+h)/2);
     (S.days[di]||[]).forEach(id=>{
       const it=byId(id); if(!it) return;
       if(MAPVIEW!=='all' && viewOf(it.reg)!==MAPVIEW){ n++; return; } // zastávka mimo tenhle pohled
-      const p=PROJ[MAPVIEW][id];
-      svg += '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="10.5" fill="'+DAYC[di%5]+'" opacity=".95"/><text x="'+p.x.toFixed(1)+'" y="'+(p.y+4.5).toFixed(1)+'" text-anchor="middle" class="stopnum">'+(n++)+'</text>';
+      const p=PROJ[MAPVIEW][id], V=VIEWS[MAPVIEW];
+      svg += '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+(10.5*f).toFixed(2)+'" fill="'+DAYC[di%5]+'" opacity=".95"/>'+
+        '<text x="'+p.x.toFixed(1)+'" y="'+(p.y+4.5*f).toFixed(1)+'" text-anchor="middle" class="stopnum" font-size="'+(13*f).toFixed(2)+'">'+n+'</text>';
+      const txt = shortName(it), w = txt.length*6.4*f + 10*f, h = 15*f;
+      const right = p.x < V.W/2;
+      const cand = [[right?p.x+15*f+w/2:p.x-15*f-w/2, p.y+4*f, right],
+                    [p.x, p.y-16*f, null], [p.x, p.y+22*f, null],
+                    [right?p.x-15*f-w/2:p.x+15*f+w/2, p.y+4*f, !right]];
+      for(const [cx,cy,side] of cand){
+        if(!free(cx,cy,w,h)) continue;
+        boxes.push({x:cx,y:cy,w,h});
+        const ax = side===null ? p.x : (side ? p.x+15*f : p.x-15*f);
+        svg += '<text class="stoplbl" x="'+ax.toFixed(1)+'" y="'+cy.toFixed(1)+'" font-size="'+(12*f).toFixed(2)+'" text-anchor="'+(side===null?'middle':(side?'start':'end'))+'">'+esc(txt)+'</text>';
+        break;
+      }
+      n++;
     });
     const first=(S.days[di]||[])[0];
-    if(first){ const pa=ptFor(dayAnchorId(di)); svg += '<text x="'+pa.x.toFixed(1)+'" y="'+(pa.y-10).toFixed(1)+'" text-anchor="middle" style="font-size:17px">🚐</text>'; }
+    if(first){ const pa=ptFor(dayAnchorId(di)); svg += '<text x="'+pa.x.toFixed(1)+'" y="'+(pa.y-10*f).toFixed(1)+'" text-anchor="middle" font-size="'+(17*f).toFixed(1)+'">🚐</text>'; }
   }
   document.getElementById('routeLayer').innerHTML = svg;
   const chips = [['none','Nic'],['all','Celá cesta']].concat(S.days.map((d,i)=>d.length?[String(i),'Den '+(i+1)]:null).filter(Boolean));
@@ -1049,9 +1246,18 @@ function renderRouteInfo(){
 }
 document.addEventListener('click', e=>{
   const r = e.target.closest('[data-route]');
-  if(r){ routeMode = r.dataset.route; drawRoutes(); return; }
+  if(r){
+    routeMode = r.dataset.route;
+    const day = (routeMode!=='all' && routeMode!=='none') ? +routeMode : null;
+    const want = day===null ? null : viewForDay(day);
+    if(want && want!==MAPVIEW){ MAPVIEW = want; buildMap(); drawViewChips(); } /* skoč tam, kde se ten den jede */
+    if(day===null){ const z=zs(); z.k=1; z.x=0; z.y=0; applyZoom(); } else fitToDay(day);
+    return;
+  }
   const v = e.target.closest('[data-view]');
-  if(v){ setView(v.dataset.view); }
+  if(v){ setView(v.dataset.view); return; }
+  const mc = e.target.closest('[data-mcat]');
+  if(mc){ mapCat = mc.dataset.mcat; drawMapCatChips(); drawDots(); }
 });
 
 /* ================= FILTRY + KATALOG ================= */
@@ -1508,7 +1714,7 @@ document.querySelector('.tabs').addEventListener('click', e=>{
   switchTab(t.dataset.tab);
   window.scrollTo({top:0});
 });
-function renderAll(){ renderPlan(); renderCatalog(); renderBudget(); drawDots(); drawRoutes(); }
+function renderAll(){ renderPlan(); renderCatalog(); renderBudget(); applyZoom(); }
 (async function(){
   await loadState();
   const I = S.inputs;
