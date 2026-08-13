@@ -154,5 +154,34 @@ if (cor && Math.abs(cor[0][0] - 46.75) > 0.2) fail('corridorFor: obrácený kori
 if (!/^M[\d.]+,[\d.]+ Q/.test(smoothPath([{ x: 0, y: 0 }, { x: 5, y: 5 }, { x: 9, y: 1 }]))) fail('smoothPath: nečekaný tvar');
 if (!fails) console.log('OK  koridory: zóny, oba směry, plynulá čára');
 
+/* --- překvap mě: deterministicky se seedovanou náhodou --- */
+const { surpriseDay, MOODS, tripBadges } = A;
+let seed = 7;
+const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+Object.keys(MOODS).forEach(mood => {
+  const ids = surpriseDay(mood, [47.85, 13.35], rnd);
+  if (ids.length < 2) { fail('surpriseDay ' + mood + ': vrátil jen ' + ids.length + ' míst'); return; }
+  const its = ids.map(id => ITEMS.find(x => x.id === id));
+  if (its.some(i => !i)) fail('surpriseDay ' + mood + ': neznámé id');
+  if (new Set(ids).size !== ids.length) fail('surpriseDay ' + mood + ': místo se opakuje');
+  if (its.some(i => i.nik < 4)) fail('surpriseDay ' + mood + ': nabídl místo pod 🌿 4');
+  const kempIdx = its.findIndex(i => i.cat === 'kemp');
+  if (kempIdx !== -1 && kempIdx !== its.length - 1) fail('surpriseDay ' + mood + ': kemp není poslední');
+  /* den nesmí být rozházený po celé republice */
+  for (let i = 1; i < its.length; i++) {
+    if (A.hav(its[0].ll, its[i].ll) > 60) fail('surpriseDay ' + mood + ': zastávka je ' + Math.round(A.hav(its[0].ll, its[i].ll)) + ' km od první');
+  }
+});
+if (surpriseDay('neexistuje', null, rnd).length !== 0) fail('surpriseDay: neznámá nálada má vrátit prázdno');
+if (!fails) console.log('OK  překvap mě: tři nálady, 🌿 4+, kemp poslední, drží pohromadě');
+
+/* --- odznaky --- */
+const fakeP = { days: [{ rows: [{ it: ITEMS.find(i => i.id === 'v15'), arrive: 8 * 60 }], drive: 120, dur: 150 }] };
+const badges = tripBadges(fakeP, ['v15', 'b1', 'b3', 'b6']);
+if (!badges.some(b => /Braies před devátou/.test(b.t))) fail('tripBadges: chybí odznak za ranní Braies');
+if (!badges.some(b => /pekáren/.test(b.t))) fail('tripBadges: chybí odznak za pekárny');
+if (tripBadges({ days: [] }, []).length !== 0) fail('tripBadges: prázdný plán nemá dávat odznaky');
+if (!fails) console.log('OK  odznaky: počítají se z plánu, prázdný plán nic nedostane');
+
 if (fails) { console.error('\n' + fails + ' chyb.'); process.exit(1); }
 console.log('\nVŠE OK');

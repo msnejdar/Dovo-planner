@@ -370,6 +370,24 @@ svg text{font-family:'Fraunces',Georgia,serif}
   border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:700;color:var(--ink);
 }
 #tripbar span b{font-family:'Fraunces',Georgia,serif;font-size:14.5px;font-weight:650}
+#tripbar .cd{background:var(--gastro);border-color:var(--gastro);color:#fff}
+#tripbar .cd b{color:#fff}
+/* ---------- v8: překvap mě, odznaky, statistiky, karta cesty ---------- */
+.surprise{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:12px;background:var(--panel);border:1.5px dashed var(--vylet);border-radius:var(--r);padding:12px}
+.surprise b{font-family:'Fraunces',Georgia,serif;font-size:15px;margin-right:2px}
+.surprise button{border:1.5px solid var(--ink);background:#fff;color:var(--ink);border-radius:999px;padding:7px 13px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.surprise small{flex-basis:100%;color:var(--mut)}
+.badges{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+.badge{display:flex;gap:9px;align-items:center;background:var(--panel);border:1.5px solid var(--line);border-left:6px solid var(--kemp);border-radius:12px;padding:8px 12px;font-size:14px}
+.badge .e{font-size:19px;flex:none}
+.statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:9px;margin-top:12px}
+.stat{background:var(--panel);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px}
+.stat .n{font-family:'Fraunces',Georgia,serif;font-size:23px;font-weight:650;line-height:1.1;color:var(--gastro)}
+.stat .l{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--mut);font-weight:700;margin-top:2px}
+.sechead{font-family:'Fraunces',Georgia,serif;font-size:19px;font-weight:600;margin:22px 0 2px}
+#cardWrap{margin-top:12px}
+#cardWrap svg{width:100%;height:auto;display:block;border:1.5px solid var(--ink);border-radius:14px}
+#cardWrap[hidden]{display:none}
 .mapbub{
   position:absolute;z-index:6;width:min(255px,72vw);background:var(--panel);
   border:1.5px solid var(--ink);border-radius:14px;padding:11px 12px 12px;
@@ -480,8 +498,16 @@ svg text{font-family:'Fraunces',Georgia,serif}
     <small id="shareOut" hidden></small>
   </div>
   <p class="planintro">U každého dne vidíš čas za volantem, kilometry a čas na místech — včetně přejezdů mezi dny a návratu domů. Nové místo se do dne zařadí samo tam, kam patří. Tlačítkem 🧭 pustíš celý den i se zastávkami rovnou do navigace Google.</p>
+  <div class="surprise">
+    <b>Nevíš, co dál?</b>
+    <button data-mood="voda">🏊 líný den u vody</button>
+    <button data-mood="jidlo">🧀 jídlo a farmy</button>
+    <button data-mood="hory">⛰ hory bez námahy</button>
+    <small>Poskládám ti první volný den z míst, co drží pohromadě a mají 🌿 4 a víc. Nelíbí se? Klikni znovu.</small>
+  </div>
   <div class="stats" id="planStats"></div>
   <div id="daysWrap"></div>
+  <div id="tripStats"></div>
   <button class="bigbtn" onclick="window.print()">Vytisknout / uložit PDF</button>
 </section>
 
@@ -1027,6 +1053,73 @@ function openIssue(it, dow, arrive){
   }
   return null;
 }
+/* ================= PŘEKVAP MĚ =================
+   Poskládá den podle nálady jen z míst, která Nikola snese (🌿 4+),
+   a drží je pohromadě, ať se den neprojezdí. Náhoda jde zvenčí, aby to šlo testovat. */
+const MOODS = {
+  voda:  {lbl:'🏊 líný den u vody',  main:'plaz',  add:['pek','rest','gastro']},
+  jidlo: {lbl:'🧀 jídlo a farmy',    main:'gastro',add:['pek','rest','plaz']},
+  hory:  {lbl:'⛰ hory bez námahy',  main:'vylet', add:['pek','rest','gastro']}
+};
+function surpriseDay(mood, anchorLL, rnd){
+  const M = MOODS[mood]; if(!M) return [];
+  rnd = rnd || Math.random;
+  const good = ITEMS.filter(i=>i.nik>=4);
+  const pick = (arr, n) => {
+    const out = [];
+    const pool = arr.slice();
+    while(pool.length && out.length<n){
+      /* z pěti nejbližších vybírám náhodně — pokaždé jiný den, pořád ale blízko sebe */
+      const i = Math.floor(rnd()*Math.min(5, pool.length));
+      out.push(pool.splice(i,1)[0]);
+    }
+    return out;
+  };
+  const near = (ll, arr) => arr.slice().sort((a,b)=>hav(ll,a.ll)-hav(ll,b.ll));
+  const seeds = good.filter(i=>i.cat===M.main);
+  if(!seeds.length) return [];
+  const seed = pick(anchorLL ? near(anchorLL, seeds) : seeds.slice().sort(()=>rnd()-0.5), 1)[0];
+  if(!seed) return [];
+  const hub = seed.ll;
+  const chosen = [seed];
+  M.add.forEach(cat=>{
+    const cand = near(hub, good.filter(i=>i.cat===cat && hav(hub,i.ll)<28 && !chosen.includes(i)));
+    const one = pick(cand, 1)[0];
+    if(one) chosen.push(one);
+  });
+  /* druhá zastávka hlavní kategorie, když je poblíž něco dalšího */
+  const more = near(hub, good.filter(i=>i.cat===M.main && !chosen.includes(i) && hav(hub,i.ll)<20));
+  if(more.length && rnd()<0.7) chosen.push(more[0]);
+  const camp = near(hub, good.filter(i=>i.cat==='kemp' && hav(hub,i.ll)<32))[0];
+  /* pořadí: co nejmíň objíždění od kotvy, kemp vždy na konec */
+  const rest = chosen.filter(i=>i.cat!=='kemp');
+  const out = [];
+  let cur = anchorLL || hub;
+  while(rest.length){
+    rest.sort((a,b)=>hav(cur,a.ll)-hav(cur,b.ll));
+    const nx = rest.shift(); out.push(nx.id); cur = nx.ll;
+  }
+  if(camp) out.push(camp.id);
+  return out;
+}
+/* ================= ODZNAKY A STATISTIKY ================= */
+function tripBadges(P, ids){
+  const its = ids.map(id=>ITEMS.find(x=>x.id===id)).filter(Boolean);
+  if(!its.length) return [];
+  const used = P.days.filter(d=>d.rows.length);
+  const out = [];
+  if(used.length && used.every(d=>d.drive<=180)) out.push({e:'🛋', t:'Žádný den nad tři hodiny za volantem'});
+  if(its.filter(i=>i.cat==='pek').length>=3) out.push({e:'🥐', t:'Tři a víc pekáren — dobrá práce'});
+  if(its.filter(i=>i.cat==='plaz').length>=3) out.push({e:'🏊', t:'Tři a víc koupání'});
+  if(its.filter(i=>i.cat==='gastro').length>=4) out.push({e:'🧀', t:'Čtyři a víc farem a krámků'});
+  const avg = its.reduce((s,i)=>s+i.nik,0)/its.length;
+  if(avg>=4.3) out.push({e:'🌿', t:'Skoro samé tiché podniky (🌿 '+(Math.round(avg*10)/10).toString().replace('.',',')+')'});
+  if(used.length && used.every(d=>d.drive+d.dur<=620)) out.push({e:'😌', t:'Ani jeden nabitý den'});
+  if(its.some(i=>i.reg==='dol'||i.reg==='cor')) out.push({e:'🇮🇹', t:'Zajedete si i do Itálie'});
+  const braies = P.days.flatMap(d=>d.rows).find(r=>r.it.id==='v15');
+  if(braies && braies.arrive < 9*60) out.push({e:'🌅', t:'Braies před devátou — bez rezervace a bez davů'});
+  return out;
+}
 /* Koridory: body na SKUTEČNÉ silniční trase mezi regiony (ověřeno OSRM 8/2026).
    Dlouhé přejezdy se v přehledu kreslí přes ně, ne vzdušnou čarou přes hory. */
 const ZONE = reg => reg==='jih' ? 'jih' : (reg==='dol'||reg==='cor') ? 'dol' : 'szk';
@@ -1083,7 +1176,8 @@ function decodePlanData(s){
 }
 /* export pro test (v prohlížeči neškodí) */
 var APP_PURE = {CATS,TINTS,REGS,FROM_CB,ITEMS,TPL,LAKES,VIEWS,VPOLYS,PROJ,HOMEPT,EXITPT,viewOf,pip,hav,est,gUrl,navUrl,gnavUrl,genMini,lakesFor,CB_LL,encodePlanData,decodePlanData,esc,shortName,
-  HOURS,DOW,DOW_SHORT,fmtClock,euOffsetMin,parseISO,addDays,fmtDate,sunTimes,openIssue,corridorFor,ZONE,smoothPath};
+  HOURS,DOW,DOW_SHORT,fmtClock,euOffsetMin,parseISO,addDays,fmtDate,sunTimes,openIssue,corridorFor,ZONE,smoothPath,
+  MOODS,surpriseDay,tripBadges};
 </script>
 <script>
 /* ================= STAV & ULOŽENÍ ================= */
@@ -1856,6 +1950,13 @@ document.getElementById('startTime').addEventListener('change', e=>{
 });
 /* pásek se souhrnem cesty — ať jsou hlavní čísla vidět z každé záložky */
 let TRIPCOST = 0;
+function daysUntilStart(){
+  const d = parseISO(S.start && S.start.date);
+  if(!d) return null;
+  const now = new Date();
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((d.getTime()-today)/86400000);
+}
 function renderTripbar(){
   const P = calcPlan();
   const km = P.days.reduce((s,d)=>s+d.km,0);
@@ -1864,11 +1965,194 @@ function renderTripbar(){
   const nights = S.days.flat().map(byId).filter(it=>it && it.night).length;
   const el = document.getElementById('tripbar');
   if(!km){ el.innerHTML = ''; return; }
+  const cd = daysUntilStart();
+  const cdTxt = cd===null ? '' : cd>1 ? 'zbývá <b>'+cd+'</b> dní' : cd===1 ? '<b>zítra vyjíždíte!</b>' : cd===0 ? '<b>dnes se jede!</b>' : '';
   el.innerHTML =
+    (cdTxt?'<span class="cd">⏳ '+cdTxt+'</span>':'')+
     '<span>🗓 <b>'+daysUsed+'</b> dn'+(daysUsed===1?'ě':(daysUsed<5?'y':'í'))+'</span>'+
     '<span>🚐 <b>'+km+'</b> km · '+fmtMin(drive)+'</span>'+
     '<span>🌙 <b>'+nights+'</b> noc'+(nights===1?'':(nights<5?'i':'í'))+'</span>'+
     (TRIPCOST?'<span>💶 <b>'+Math.round(TRIPCOST)+'</b> € pro dva</span>':'');
+}
+/* statistiky a odznaky pod dny */
+function renderTripStats(){
+  const el = document.getElementById('tripStats');
+  const ids = S.days.flat();
+  if(!ids.length){ el.innerHTML = ''; return; }
+  const P = calcPlan();
+  const its = ids.map(byId).filter(Boolean);
+  const used = P.days.filter(d=>d.rows.length);
+  const km = P.days.reduce((s,d)=>s+d.km,0);
+  const drive = P.days.reduce((s,d)=>s+d.drive,0);
+  const prog = P.days.reduce((s,d)=>s+d.dur,0);
+  const longest = used.reduce((a,d)=>Math.max(a,d.drive),0);
+  const cnt = c => its.filter(i=>i.cat===c).length;
+  const stats = [
+    [km+' km', 'za volantem'],
+    [fmtMin(prog), 'na místech'],
+    [Math.round(prog/(prog+drive)*100)+' %', 'času mimo auto'],
+    [fmtMin(longest), 'nejdelší přejezd dne'],
+    [cnt('plaz')+'×', 'koupání'],
+    [cnt('pek')+'×', 'pekárna nebo kavárna']
+  ];
+  const badges = tripBadges(P, ids);
+  el.innerHTML =
+    '<div class="sechead">Jak to zatím vypadá</div>'+
+    '<div class="statgrid">'+stats.map(s=>'<div class="stat"><div class="n">'+s[0]+'</div><div class="l">'+s[1]+'</div></div>').join('')+'</div>'+
+    (badges.length ? '<div class="sechead">Co se povedlo</div><div class="badges">'+
+      badges.map(b=>'<div class="badge"><span class="e">'+b.e+'</span><span>'+esc(b.t)+'</span></div>').join('')+'</div>' : '')+
+    '<div class="wandrow"><button class="wand" id="cardBtn">🖼 Vyrobit kartu cesty</button>'+
+      '<small style="color:var(--mut)">hezký obrázek se souhrnem — na poslání do rodiny</small></div>'+
+    '<div id="cardWrap" hidden></div>';
+}
+/* náhodný den podle nálady do prvního volného dne */
+function doSurprise(mood){
+  let di = S.days.findIndex(d=>!d.length);
+  if(di<0){
+    const ask = document.getElementById('tplAsk');
+    ask.hidden = false;
+    ask.innerHTML = 'Všech pět dní je plných. Vyčisti si jeden a zkus to znovu.';
+    return;
+  }
+  const ids = surpriseDay(mood, dayAnchor(di));
+  if(!ids.length) return;
+  S.days[di] = ids;
+  saveState(); renderAll();
+  const el = document.getElementById('daysWrap');
+  if(el && el.children[di]) el.children[di].scrollIntoView({block:'center', behavior:'smooth'});
+}
+document.addEventListener('click', e=>{
+  const m = e.target.closest('[data-mood]');
+  if(m){ doSurprise(m.dataset.mood); return; }
+  if(e.target.closest('#cardBtn')) showTripCard();
+  if(e.target.closest('#cardShare')) shareTripCard();
+});
+/* ---- karta cesty: SVG se souhrnem a náčrtem trasy ---- */
+const CARD_W = 760, CARD_H = 1080;
+function tripCardSvg(){
+  const P = calcPlan();
+  const ids = S.days.flat();
+  const km = P.days.reduce((s,d)=>s+d.km,0);
+  const drive = P.days.reduce((s,d)=>s+d.drive,0);
+  const daysUsed = S.days.filter(d=>d.length).length;
+  const nights = ids.map(byId).filter(it=>it && it.night).length;
+  const d0 = parseISO(S.start && S.start.date);
+  const when = d0 ? fmtDate(d0)+' – '+fmtDate(addDays(d0, Math.max(0,daysUsed-1)))+' '+d0.getUTCFullYear() : 'termín zatím otevřený';
+  const SER = "Georgia,'Times New Roman',serif", SAN = "'Helvetica Neue',Arial,sans-serif";
+  let s = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+CARD_W+' '+CARD_H+'" width="'+CARD_W+'" height="'+CARD_H+'">';
+  s += '<rect width="'+CARD_W+'" height="'+CARD_H+'" fill="#F6F0E1"/>';
+  ['#1D7A99','#2F7D4F','#DFA320','#D95A34','#8A5A33','#C2497F'].forEach((c,i)=>{
+    s += '<rect x="'+(i*CARD_W/6)+'" y="0" width="'+(CARD_W/6+1)+'" height="14" fill="'+c+'"/>';
+  });
+  s += '<text x="46" y="86" font-family="'+SER+'" font-size="44" font-weight="bold" fill="#201D17">Jezera pro dva</text>';
+  s += '<text x="46" y="116" font-family="'+SAN+'" font-size="15" letter-spacing="2.4" fill="#6E6754">SALZKAMMERGUT &#38; DOLOMITY · '+esc(when.toUpperCase())+'</text>';
+  const stats = [[daysUsed, daysUsed===1?'den':(daysUsed<5?'dny':'dní')], [km,'kilometrů'], [nights, nights===1?'noc':(nights<5?'noci':'nocí')], [fmtMin(drive).replace(' ',''), 'za volantem']];
+  stats.forEach((st,i)=>{
+    const x = 46 + i*178;
+    s += '<text x="'+x+'" y="182" font-family="'+SER+'" font-size="38" font-weight="bold" fill="#D95A34">'+esc(st[0])+'</text>';
+    s += '<text x="'+x+'" y="204" font-family="'+SAN+'" font-size="13" letter-spacing="1.8" fill="#6E6754">'+esc(String(st[1]).toUpperCase())+'</text>';
+  });
+  let y = 252;
+  P.days.forEach((d,di)=>{
+    if(!d.rows.length) return;
+    s += '<circle cx="60" cy="'+(y-6)+'" r="15" fill="'+DAYC[di%5]+'"/>';
+    s += '<text x="60" y="'+(y-1)+'" text-anchor="middle" font-family="'+SER+'" font-size="15" font-weight="bold" fill="#FFFDF6">'+(di+1)+'</text>';
+    const dd = d.date ? DOW_SHORT[d.dow]+' '+fmtDate(d.date)+' · ' : '';
+    s += '<text x="88" y="'+(y-10)+'" font-family="'+SAN+'" font-size="12" letter-spacing="1.6" fill="#6E6754">'+esc((dd+d.km+' KM · '+fmtMin(d.drive)).toUpperCase())+'</text>';
+    const names = d.rows.map(r=>shortName(r.it, 24)).join(' · ');
+    s += '<text x="88" y="'+(y+10)+'" font-family="'+SER+'" font-size="16" fill="#201D17">'+esc(names.length>62?names.slice(0,61)+'…':names)+'</text>';
+    y += 52;
+  });
+  /* náčrt trasy ze stejné geometrie jako mapa v appce, oříznutý na to, kudy se opravdu jede */
+  const V = VIEWS.all, boxY = y+14, boxH = CARD_H - boxY - 54, boxW = CARD_W-92;
+  let bx1=1e9, by1=1e9, bx2=-1e9, by2=-1e9;
+  ids.concat(['home']).forEach(id=>{
+    const p = id==='home' ? HOMEPT.all : PROJ.all[id];
+    if(!p) return;
+    bx1=Math.min(bx1,p.x); by1=Math.min(by1,p.y); bx2=Math.max(bx2,p.x); by2=Math.max(by2,p.y);
+  });
+  (buildLegs().map(l=>[l.a,l.b]).flat().filter(r=>r!=='home')).forEach(id=>{
+    const it = byId(id); if(!it) return;
+    const zz = ZONE(it.reg);
+    Object.keys(CORRIDORS).forEach(key=>{ if(key.includes(zz)) CORRIDORS[key].forEach(w=>{
+      const x=V.px(w[1]), yy=V.py(w[0]);
+      bx1=Math.min(bx1,x); by1=Math.min(by1,yy); bx2=Math.max(bx2,x); by2=Math.max(by2,yy);
+    }); });
+  });
+  const pad = 26;
+  bx1-=pad; by1-=pad; bx2+=pad; by2+=pad;
+  const sc = Math.min(boxW/(bx2-bx1), boxH/(by2-by1));
+  const ox = 46 + (boxW - (bx2-bx1)*sc)/2 - bx1*sc, oy = boxY + (boxH - (by2-by1)*sc)/2 - by1*sc;
+  const tx = p => (ox + p.x*sc).toFixed(1), ty = p => (oy + p.y*sc).toFixed(1);
+  s += '<g>';
+  LAKES.forEach(L=>{
+    const d = 'M'+L.pts.map(p=>tx({x:V.px(p[0])})+','+ty({y:V.py(p[1])})).join(' L ')+' Z';
+    s += '<path d="'+d+'" fill="#A7CBD6" stroke="#26241F" stroke-width="0.7"/>';
+  });
+  buildLegs().forEach(l=>{
+    const g = legGeomAll(l);
+    if(g) s += '<path d="'+g+'" fill="none" stroke="'+DAYC[l.di%5]+'" stroke-width="2.4" stroke-linecap="round" opacity=".85"/>';
+  });
+  ids.forEach(id=>{
+    const it = byId(id); if(!it) return;
+    const p = PROJ.all[id];
+    s += '<circle cx="'+tx(p)+'" cy="'+ty(p)+'" r="4.5" fill="'+CATS[it.cat].color+'" stroke="#F6F0E1" stroke-width="1.5"/>';
+  });
+  const h = HOMEPT.all;
+  s += '<circle cx="'+tx(h)+'" cy="'+ty(h)+'" r="5.5" fill="#201D17"/>';
+  s += '<text x="'+(+tx(h)+10)+'" y="'+(+ty(h)+4)+'" font-family="'+SAN+'" font-size="12" font-weight="bold" fill="#201D17">České Budějovice</text>';
+  s += '</g>';
+  s += '<text x="46" y="'+(CARD_H-24)+'" font-family="'+SAN+'" font-size="13" fill="#6E6754">dovolena1.vercel.app</text>';
+  s += '</svg>';
+  return s;
+
+  /* pomocná: cesta úseku v souřadnicích karty */
+  function legGeomAll(l){
+    const p1 = PROJ.all[l.a] || HOMEPT.all, p2 = PROJ.all[l.b] || HOMEPT.all;
+    const zA = l.a==='home' ? 'cb' : ZONE(byId(l.a).reg);
+    const zB = l.b==='home' ? 'cb' : ZONE(byId(l.b).reg);
+    const via = corridorFor(zA, zB);
+    const pts = [p1].concat(via ? via.map(w=>({x:V.px(w[1]), y:V.py(w[0])})) : [], [p2])
+      .map(p=>({x:+tx(p), y:+ty(p)}));
+    return smoothPath(pts);
+  }
+}
+function showTripCard(){
+  const w = document.getElementById('cardWrap');
+  if(!S.days.flat().length) return;
+  w.innerHTML = tripCardSvg() +
+    '<div class="wandrow"><button class="wand" id="cardShare">📤 Poslat obrázek</button>'+
+    '<small style="color:var(--mut)">uloží se jako PNG nebo rovnou nabídne sdílení</small></div>';
+  w.hidden = false;
+  w.scrollIntoView({block:'nearest', behavior:'smooth'});
+}
+async function shareTripCard(){
+  const svg = document.querySelector('#cardWrap svg');
+  if(!svg) return;
+  const xml = new XMLSerializer().serializeToString(svg);
+  const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement('canvas');
+    c.width = CARD_W*2; c.height = CARD_H*2; /* 2× kvůli ostrosti na telefonu */
+    const g = c.getContext('2d');
+    g.fillStyle = '#F6F0E1'; g.fillRect(0,0,c.width,c.height);
+    g.drawImage(img, 0, 0, c.width, c.height);
+    c.toBlob(async b=>{
+      if(!b) return;
+      const file = new File([b], 'jezera-pro-dva.png', {type:'image/png'});
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        try{ await navigator.share({files:[file], title:'Jezera pro dva — náš plán'}); return; }
+        catch(e){ if(e && e.name==='AbortError') return; }
+      }
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(b); a.download = 'jezera-pro-dva.png';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+    }, 'image/png');
+  };
+  img.onerror = () => shareNote('Obrázek se nepovedlo vyrobit — zkus to z jiného prohlížeče.');
+  img.src = url;
 }
 
 /* ================= SDÍLENÍ PLÁNU ================= */
@@ -2065,7 +2349,7 @@ document.querySelector('.tabs').addEventListener('click', e=>{
   switchTab(t.dataset.tab);
   window.scrollTo({top:0});
 });
-function renderAll(){ renderPlan(); renderCatalog(); renderBudget(); renderTripbar(); applyZoom(); }
+function renderAll(){ renderPlan(); renderCatalog(); renderBudget(); renderTripbar(); renderTripStats(); applyZoom(); }
 (async function(){
   await loadState();
   const I = S.inputs;
