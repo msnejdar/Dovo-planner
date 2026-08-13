@@ -1,11 +1,14 @@
 # Jezera pro dva
 
+**Živě: https://dovolena1.vercel.app**
+
 Plánovač 1–5denní cesty VW Californií z Českých Budějovic: jezera
 Salzkammergutu a od 4 dnů i severní Itálie — Pustertal, Lago di Braies,
 Misurina, Cortina.
 
-Jednosouborová aplikace bez závislostí: otevři
-**`index.html`** v prohlížeči a je to.
+Jednosouborová aplikace bez závislostí — `index.html` a nic víc. Vercel
+ji nasazuje z větve `main` při každé změně; lokálně stačí ten soubor
+otevřít v prohlížeči.
 
 ## Co umí
 

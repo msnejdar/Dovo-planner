@@ -4,6 +4,11 @@ Jednosouborový plánovač `index.html` (aktuálně **v5.1**).
 NIKDY nepřepisuj bez zachování všech funkcí níže. Po každé změně pusť
 `node test/geo.test.js`.
 
+**Nasazení:** https://dovolena1.vercel.app — Vercel je napojený na
+GitHub a staví z větve `main` při každém pushi. Žádný build krok,
+statický soubor. Uložené plány visí na doméně (localStorage), takže
+adresu neměň — jinak lidem zmizí rozpracované plány.
+
 ## Kontext
 
 Interaktivní plánovač 1–5denní cesty starším VW California z Českých Budějovic
@@ -139,7 +144,6 @@ ho zajímají.
 - Počasí: Open-Meteo (bez klíče); teplotu vody neuvádět z API.
 - PWA: manifest + service worker (offline u jezer).
 - Fotky: NIKDY nehotlinkovat z Google (ToS).
-- Deploy na Vercel (uživatel má účet).
 
 ### P3 — Detaily
 - Rozpočet: pole „ostatní výdaje", přepočet vinětou za den.
