@@ -314,7 +314,13 @@ svg text{font-family:'Fraunces',Georgia,serif}
 #tplAsk{flex-basis:100%;color:var(--ink)}
 #tplAsk button{margin:4px 6px 0 0}
 #tplAsk .yes{background:var(--gastro);border-color:var(--gastro);color:#fff}
-@media print{ #routeInfo,.gnav,#viewChips{display:none!important} }
+#incoming{background:var(--panel);border:1.5px dashed var(--gastro);border-radius:var(--r);padding:12px 14px;margin-top:14px;font-size:14.5px}
+#incoming[hidden]{display:none}
+#incoming button{border:1.5px solid var(--ink);background:#fff;border-radius:999px;padding:7px 14px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;margin:8px 6px 0 0;color:var(--ink)}
+#incoming .yes{background:var(--gastro);border-color:var(--gastro);color:#fff}
+#shareOut{flex-basis:100%;color:var(--mut)}
+#shareOut input{width:100%;border:1.5px solid var(--line);border-radius:11px;background:#fff;padding:8px 10px;font:inherit;font-size:13px;color:var(--ink);margin-top:6px}
+@media print{ #routeInfo,.gnav,#viewChips,.wandrow,#incoming{display:none!important} }
 </style>
 </head>
 <body>
@@ -371,6 +377,7 @@ svg text{font-family:'Fraunces',Georgia,serif}
 
 <!-- ============ PLÁN ============ -->
 <section id="tab-plan" hidden>
+  <div id="incoming" hidden></div>
   <div class="tpl">
     <b>Můj návrh (laděno pro Nikolu):</b>
     <button data-tpl="3">3 dny · jezera</button>
@@ -381,7 +388,9 @@ svg text{font-family:'Fraunces',Georgia,serif}
   </div>
   <div class="wandrow">
     <button class="wand" id="wandBtn">🪄 Srovnat dny podle mapy</button>
-    <small style="color:var(--mut)">seřadí zastávky v každém dni tak, aby se jelo co nejmíň</small>
+    <button class="wand" id="shareBtn">📤 Poslat plán</button>
+    <small style="color:var(--mut)">🪄 seřadí zastávky, ať se jede co nejmíň · 📤 pošle celý plán jedním odkazem</small>
+    <small id="shareOut" hidden></small>
   </div>
   <p class="planintro">U každého dne vidíš čas za volantem, kilometry a čas na místech — včetně přejezdů mezi dny a návratu domů. Nové místo se do dne zařadí samo tam, kam patří. Tlačítkem 🧭 pustíš celý den i se zastávkami rovnou do navigace Google.</p>
   <div class="stats" id="planStats"></div>
@@ -420,7 +429,7 @@ svg text{font-family:'Fraunces',Georgia,serif}
   </div>
 </section>
 
-<p class="savednote">Výběr, plán i odškrtnuté položky zůstávají uložené — příště pokračuješ, kde jsi skončila.</p>
+<p class="savednote">Výběr, plán i odškrtnuté položky se samy ukládají v tomhle prohlížeči — příště pokračuješ, kde jsi skončila. Tlačítkem 📤 v Plánu pošleš celý plán jedním odkazem.</p>
 </main>
 <script>
 /* ================= DATA ================= */
@@ -827,8 +836,18 @@ function genMini(it){
   const scale = '<line class="scalebar" x1="10" y1="142" x2="29.1" y2="142"/><text class="scaletxt" x="10" y="138">1 km</text>';
   return '<svg viewBox="0 0 230 156">'+lakes+others+pin+scale+'</svg>';
 }
+/* sdílení plánu: objekt → base64url do #p= (bez serveru, přenáší se odkazem) */
+function encodePlanData(o){
+  return btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function decodePlanData(s){
+  try{
+    const o = JSON.parse(decodeURIComponent(escape(atob(String(s).replace(/-/g,'+').replace(/_/g,'/')))));
+    return (o && Array.isArray(o.d)) ? o : null;
+  }catch(e){ return null; }
+}
 /* export pro test (v prohlížeči neškodí) */
-var APP_PURE = {CATS,TINTS,REGS,FROM_CB,ITEMS,TPL,LAKES,VIEWS,VPOLYS,PROJ,HOMEPT,EXITPT,viewOf,pip,hav,est,gUrl,navUrl,gnavUrl,genMini,lakesFor,CB_LL};
+var APP_PURE = {CATS,TINTS,REGS,FROM_CB,ITEMS,TPL,LAKES,VIEWS,VPOLYS,PROJ,HOMEPT,EXITPT,viewOf,pip,hav,est,gUrl,navUrl,gnavUrl,genMini,lakesFor,CB_LL,encodePlanData,decodePlanData};
 </script>
 <script>
 /* ================= STAV & ULOŽENÍ ================= */
@@ -1299,6 +1318,69 @@ function applyTpl(n){
   saveState(); renderAll(); usePlanKm();
 }
 document.getElementById('wandBtn').addEventListener('click', sortAllDays);
+document.getElementById('shareBtn').addEventListener('click', sharePlan);
+
+/* ================= SDÍLENÍ PLÁNU ================= */
+let INCOMING = null;
+function planShareUrl(){
+  const payload = {d:S.days, f:S.fav, v:S.vign?1:0, a:S.alp?1:0, i:S.inputs};
+  return location.origin + location.pathname + '#p=' + encodePlanData(payload);
+}
+function shareNote(html){ const el = document.getElementById('shareOut'); el.hidden = false; el.innerHTML = html; }
+async function sharePlan(){
+  const total = S.days.reduce((s,d)=>s+d.length,0);
+  if(!total){ shareNote('Plán je zatím prázdný — přidej místa, nebo si nahoře načti můj návrh.'); return; }
+  const url = planShareUrl();
+  const title = 'Jezera pro dva — plán, '+total+' zastávek';
+  if(navigator.share){
+    try{ await navigator.share({title:title, text:title, url:url}); return; }
+    catch(e){ if(e && e.name==='AbortError') return; } /* zrušila sdílení — nic nevnucuj */
+  }
+  try{ await navigator.clipboard.writeText(url); shareNote('Odkaz s celým plánem je ve schránce — stačí vložit do zprávy.'); }
+  catch(e){ shareNote('Zkopíruj odkaz ručně:<input type="text" readonly value="'+url.replace(/"/g,'&quot;')+'" onclick="this.select()">'); }
+}
+function checkIncoming(){
+  const m = location.hash.match(/[#&]p=([A-Za-z0-9\-_]+)/);
+  if(!m) return;
+  const o = decodePlanData(m[1]); if(!o) return;
+  INCOMING = o;
+  const n = o.d.reduce((s,d)=>s+(Array.isArray(d)?d.length:0),0);
+  const el = document.getElementById('incoming');
+  el.hidden = false;
+  el.innerHTML = '📬 Přišel ti odkaz s plánem ('+n+' zastávek). Chceš ho načíst místo toho svého?'+
+    '<div><button class="yes" data-inc-yes>Načíst poslaný plán</button><button data-inc-no>Nechat můj</button></div>';
+  switchTab('plan');
+}
+function dismissIncoming(){
+  INCOMING = null;
+  const el = document.getElementById('incoming');
+  el.hidden = true; el.innerHTML = '';
+  try{ history.replaceState(null, '', location.pathname + location.search); }catch(e){}
+}
+document.addEventListener('click', e=>{
+  if(e.target.closest('[data-inc-yes]')){
+    const o = INCOMING;
+    if(o){
+      S.days = o.d.slice(0,5).map(d=>Array.isArray(d) ? d.filter(id=>byId(id)) : []);
+      while(S.days.length<5) S.days.push([]);
+      if(Array.isArray(o.f)) S.fav = o.f.filter(id=>byId(id));
+      S.vign = !!o.v; S.alp = !!o.a;
+      if(o.i && typeof o.i==='object'){
+        ['km','cons','fuel','foodDay','buffer','rate'].forEach(k=>{
+          const v = parseFloat(o.i[k]);
+          if(isFinite(v)) S.inputs[k] = v;
+        });
+      }
+      ['km','cons','fuel','foodDay','buffer','rate'].forEach(k=>{ document.getElementById(k).value = S.inputs[k]; });
+      document.getElementById('vign').checked = S.vign;
+      document.getElementById('alp').checked = S.alp;
+      saveState(); renderAll();
+    }
+    dismissIncoming();
+    return;
+  }
+  if(e.target.closest('[data-inc-no]')) dismissIncoming();
+});
 
 /* ================= ROZPOČET ================= */
 const ALP_TOLL = 28.5; /* tam Felbertauernem 13,50 € + zpět A10 Tauern/Katschberg 15 € (oficiální ceníky 2026) */
@@ -1434,6 +1516,7 @@ function renderAll(){ renderPlan(); renderCatalog(); renderBudget(); drawDots();
   document.getElementById('vign').checked = !!S.vign;
   document.getElementById('alp').checked = !!S.alp;
   initFilters(); initMap(); buildMap(); renderAll(); renderChecklist();
+  checkIncoming();
 })();
 </script>
 </body>

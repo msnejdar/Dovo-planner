@@ -5,7 +5,7 @@ Salzkammergutu a od 4 dnů i severní Itálie — Pustertal, Lago di Braies,
 Misurina, Cortina.
 
 Jednosouborová aplikace bez závislostí: otevři
-**`salzkammergut-planovac.html`** v prohlížeči a je to.
+**`index.html`** v prohlížeči a je to.
 
 ## Co umí
 
@@ -23,8 +23,10 @@ Jednosouborová aplikace bez závislostí: otevři
   mýta (ceníky 2026).
 - **Sbalit** — checklist pro kempování v Californii.
 
-Výběr, plán i checklist se ukládají lokálně (localStorage / úložiště
-Claude appky) — příště pokračuješ, kde jsi skončila.
+Výběr, plán i checklist se ukládají samy přímo v prohlížeči (localStorage)
+— nic se nezakládá, příště pokračuješ, kde jsi skončila. Tlačítko
+**📤 Poslat plán** zabalí celý plán do odkazu a otevře sdílení na
+telefonu; komu odkaz přijde, tomu se plán po otevření nabídne k načtení.
 
 ## Vývoj
 

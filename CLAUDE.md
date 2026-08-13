@@ -1,6 +1,6 @@
 # Jezera pro dva — plánovač Salzkammergut & Dolomity (brief pro Claude Code)
 
-Jednosouborový plánovač `salzkammergut-planovac.html` (aktuálně **v5**).
+Jednosouborový plánovač `index.html` (aktuálně **v5.1**).
 NIKDY nepřepisuj bez zachování všech funkcí níže. Po každé změně pusť
 `node test/geo.test.js`.
 
@@ -67,6 +67,13 @@ ho zajímají.
 - Persistence: klíč `salzkammergut-planner-v1`, kaskáda window.storage →
   localStorage → paměť. NEROZBIJ uložený stav — při změně schématu migrace.
   (v5 přidal jen `S.alp`; merguje se bez migrace.)
+- **Sdílení plánu (v5.1)**: 📤 Poslat plán v záložce Plán — celý stav
+  (dny, ♥, mýta, vstupy rozpočtu) se zabalí do base64url v `#p=` a pošle
+  nativním share sheetem (`navigator.share`), fallback schránka → ruční
+  kopie. Příjemci se po otevření ukáže inline banner `#incoming`
+  s tlačítky Načíst/Nechat (žádný confirm). Kodek `encodePlanData`/
+  `decodePlanData` je čistý (script #1, kryto testem); příchozí data se
+  filtrují přes `byId`, ať neznámá id nespadnou.
 - Design „barevná Kodaň", vynucený světlý režim, tisk = jen plán + rozpočet.
 - Struktura souboru: **první `<script>` je čistý** (data + geometrie, bez
   DOM, exportuje `APP_PURE`) — testovatelný v Node; druhý `<script>` = UI.
@@ -120,7 +127,6 @@ ho zajímají.
 
 ### P1 — UX
 - Drag & drop řazení v plánu (touch-friendly, ponech i šipky).
-- Sdílení stavu: serializace plánu do URL hashe (načtení s dotazem).
 - Export: GPX trasy dne/celé cesty, .ics událostí dnů, vylepšený tisk
   (trasa dne jako mini-mapa).
 - „Dnes" režim: velké karty zastávek, odškrtávání, Navigovat na další

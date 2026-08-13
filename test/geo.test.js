@@ -13,7 +13,7 @@ const path = require('path');
 const vm = require('vm');
 const { execFileSync } = require('child_process');
 
-const htmlPath = path.join(__dirname, '..', 'salzkammergut-planovac.html');
+const htmlPath = path.join(__dirname, '..', 'index.html');
 const html = fs.readFileSync(htmlPath, 'utf8');
 
 const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]);
@@ -34,8 +34,12 @@ scripts.forEach((src, i) => {
 });
 console.log('OK  syntax: ' + scripts.length + ' <script> bloků prošlo node --check');
 
-/* --- vyhodnoť čistý blok #0 --- */
-const ctx = vm.createContext({ console });
+/* --- vyhodnoť čistý blok #0 (vm kontext nemá host funkce — dodej btoa/atob jako v prohlížeči) --- */
+const ctx = vm.createContext({
+  console,
+  btoa: s => Buffer.from(s, 'binary').toString('base64'),
+  atob: s => Buffer.from(s, 'base64').toString('binary'),
+});
 try {
   vm.runInContext(scripts[0], ctx, { filename: 'script0.js' });
 } catch (e) {
@@ -105,6 +109,14 @@ if (!/^https:\/\/www\.google\.com\/maps\/dir\/\?api=1&origin=48\.97470,14\.47440
 const many = gnavUrl(Array.from({ length: 14 }, (_, i) => [47 + i * 0.01, 13 + i * 0.01]));
 if ((many.match(/%2C/g) || []).length > 9) fail('gnavUrl nesmí poslat víc než 9 waypointů');
 if (!fails) console.log('OK  gnavUrl: origin/waypoints/destination + strop 9 zastávek');
+
+/* --- sdílení plánu: roundtrip + odolnost --- */
+const payload = { d: [['p1', 'k4'], [], ['v15']], f: ['g11'], v: 1, a: 1, i: { km: 1241, rate: 24.6 } };
+const rt = A.decodePlanData(A.encodePlanData(payload));
+if (!rt || rt.d[0][1] !== 'k4' || rt.d[2][0] !== 'v15' || rt.f[0] !== 'g11' || rt.i.km !== 1241) fail('encode/decodePlanData: roundtrip selhal');
+if (/[+/=]/.test(A.encodePlanData(payload))) fail('encodePlanData: výstup není base64url (obsahuje +/=)');
+if (A.decodePlanData('%%%nesmysl') !== null || A.decodePlanData(A.encodePlanData({ x: 1 })) !== null) fail('decodePlanData: nevrací null pro nevalidní vstup');
+if (!fails) console.log('OK  sdílení: encode/decode roundtrip, base64url, odmítá nevalidní vstup');
 
 if (fails) { console.error('\n' + fails + ' chyb.'); process.exit(1); }
 console.log('\nVŠE OK');
