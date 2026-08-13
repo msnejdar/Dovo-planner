@@ -183,5 +183,23 @@ if (!badges.some(b => /pekáren/.test(b.t))) fail('tripBadges: chybí odznak za 
 if (tripBadges({ days: [] }, []).length !== 0) fail('tripBadges: prázdný plán nemá dávat odznaky');
 if (!fails) console.log('OK  odznaky: počítají se z plánu, prázdný plán nic nedostane');
 
+/* --- exporty --- */
+const { buildICS, buildGPX, icsEscape } = A;
+const t0 = Date.UTC(2026, 7, 13, 6, 45);
+const ics = buildICS([{ start: t0, end: t0 + 45 * 60000, title: 'Braucommune; Freistadt', desc: 'pivo\nod 1777', loc: 'Freistadt' }], t0);
+if (!/^BEGIN:VCALENDAR\r\n/.test(ics) || !/END:VCALENDAR\r\n$/.test(ics)) fail('buildICS: chybí obálka kalendáře');
+if (!ics.includes('DTSTART:20260813T064500Z') || !ics.includes('DTEND:20260813T073000Z')) fail('buildICS: špatná časová razítka');
+if (!ics.includes('SUMMARY:Braucommune\\; Freistadt')) fail('buildICS: středník se nezaescapoval');
+if (!ics.includes('DESCRIPTION:pivo\\nod 1777')) fail('buildICS: nový řádek se nezaescapoval');
+if (ics.split('\r\n').some(l => l.length && !/^[A-Z]/.test(l) && !l.startsWith(' '))) fail('buildICS: řádek nezačíná klíčem');
+if (icsEscape('a,b;c\\d') !== 'a\\,b\\;c\\\\d') fail('icsEscape: špatné escapování');
+const gpx = buildGPX([{ name: 'Den 1 & 2', pts: [{ lat: 48.51, lng: 14.5012, name: 'Freistadt <test>' }] }]);
+if (!/^<\?xml/.test(gpx) || !gpx.includes('</gpx>')) fail('buildGPX: chybí obálka');
+if (!gpx.includes('<wpt lat="48.51000" lon="14.50120">')) fail('buildGPX: chybí waypoint');
+if (!gpx.includes('<trk><name>Den 1 &amp; 2</name>')) fail('buildGPX: název trasy se nezaescapoval');
+if (!gpx.includes('Freistadt &lt;test&gt;')) fail('buildGPX: název bodu se nezaescapoval');
+if (buildGPX([]).includes('<trk>')) fail('buildGPX: prázdný vstup nemá dělat trasu');
+if (!fails) console.log('OK  exporty: ICS s CRLF a escapováním, GPX s body i trasou');
+
 if (fails) { console.error('\n' + fails + ' chyb.'); process.exit(1); }
 console.log('\nVŠE OK');

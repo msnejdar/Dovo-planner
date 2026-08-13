@@ -388,6 +388,38 @@ svg text{font-family:'Fraunces',Georgia,serif}
 #cardWrap{margin-top:12px}
 #cardWrap svg{width:100%;height:auto;display:block;border:1.5px solid var(--ink);border-radius:14px}
 #cardWrap[hidden]{display:none}
+/* ---------- v9: režim Dnes, přetahování, exporty ---------- */
+.bigcard{
+  background:var(--panel);border:1.5px solid var(--line);border-left:8px solid var(--cc,var(--ink));
+  border-radius:var(--r);padding:14px;margin-top:12px;position:relative;
+}
+.bigcard.done{opacity:.55}
+.bigcard.done .bcname{text-decoration:line-through}
+.bigcard .bctop{display:flex;gap:11px;align-items:flex-start}
+.bigcard .bcclock{font-family:'Fraunces',Georgia,serif;font-size:22px;font-weight:650;color:var(--cc,var(--ink));flex:none;min-width:62px}
+.bigcard .bcname{font-family:'Fraunces',Georgia,serif;font-size:20px;font-weight:600;line-height:1.15;flex:1}
+.bigcard .bcmeta{font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--mut);font-weight:700;margin:3px 0 6px}
+.bigcard .bcdesc{font-size:14px;color:#453f30}
+.bigcard .bcacts{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap;align-items:center}
+.bigcard .tick{width:26px;height:26px;accent-color:var(--kemp);flex:none;margin-top:3px}
+.nextbar{
+  position:sticky;bottom:10px;z-index:20;display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+  background:var(--ink);color:var(--paper);border-radius:var(--r);padding:12px 14px;margin-top:16px;
+  box-shadow:0 8px 22px rgba(32,29,23,.25);
+}
+.nextbar b{font-family:'Fraunces',Georgia,serif;font-size:17px;font-weight:600}
+.nextbar small{display:block;opacity:.75;font-size:12px}
+.nextbar .go{
+  margin-left:auto;background:var(--gastro);color:#fff!important;border:none;border-radius:999px;
+  padding:11px 17px;font:inherit;font-weight:700;font-size:14.5px;text-decoration:none;white-space:nowrap;
+}
+.grip{
+  cursor:grab;touch-action:none;color:var(--mut);font-size:15px;padding:4px 3px;flex:none;
+  border:none;background:none;line-height:1;
+}
+.pitem.dragging{opacity:.45}
+.pitem.dropmark{box-shadow:0 -3px 0 var(--gastro)}
+@media print{ .nextbar,#tab-dnes,.grip{display:none!important} }
 .mapbub{
   position:absolute;z-index:6;width:min(255px,72vw);background:var(--panel);
   border:1.5px solid var(--ink);border-radius:14px;padding:11px 12px 12px;
@@ -434,6 +466,7 @@ svg text{font-family:'Fraunces',Georgia,serif}
     <button class="tab" role="tab" aria-selected="true" data-tab="objevuj">Objevuj</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="mapa">Mapa</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="plan">Plán <span class="n" id="planCount"></span></button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="dnes">Dnes</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="rozpocet">Rozpočet</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="sbalit">Sbalit</button>
   </div>
@@ -508,7 +541,18 @@ svg text{font-family:'Fraunces',Georgia,serif}
   <div class="stats" id="planStats"></div>
   <div id="daysWrap"></div>
   <div id="tripStats"></div>
-  <button class="bigbtn" onclick="window.print()">Vytisknout / uložit PDF</button>
+  <div class="wandrow">
+    <button class="wand" id="icsBtn">📅 Do kalendáře</button>
+    <button class="wand" id="gpxBtn">🗺 Stáhnout GPX</button>
+    <button class="bigbtn" style="margin-top:0" onclick="window.print()">Vytisknout / uložit PDF</button>
+    <small id="expNote" style="color:var(--mut);flex-basis:100%"></small>
+  </div>
+</section>
+
+<!-- ============ DNES ============ -->
+<section id="tab-dnes" hidden>
+  <div class="chips" id="dnesChips"></div>
+  <div id="dnesWrap"></div>
 </section>
 
 <!-- ============ ROZPOČET ============ -->
@@ -1102,6 +1146,49 @@ function surpriseDay(mood, anchorLL, rnd){
   if(camp) out.push(camp.id);
   return out;
 }
+/* ================= EXPORTY =================
+   Čisté generátory — berou hotová data, ať jdou otestovat bez prohlížeče. */
+function icsEscape(s){ return String(s).replace(/([,;\\])/g,'\\$1').replace(/\r?\n/g,'\\n'); }
+function icsStamp(ms){
+  const d = new Date(ms);
+  const p = n => String(n).padStart(2,'0');
+  return d.getUTCFullYear()+p(d.getUTCMonth()+1)+p(d.getUTCDate())+'T'+p(d.getUTCHours())+p(d.getUTCMinutes())+'00Z';
+}
+/* events: [{start, end (ms UTC), title, desc, loc}] */
+function buildICS(events, stampMs){
+  const L = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Jezera pro dva//CS','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
+  events.forEach((e,i)=>{
+    L.push('BEGIN:VEVENT');
+    L.push('UID:jezera-'+i+'-'+e.start+'@dovolena1');
+    L.push('DTSTAMP:'+icsStamp(stampMs||e.start));
+    L.push('DTSTART:'+icsStamp(e.start));
+    L.push('DTEND:'+icsStamp(e.end));
+    L.push('SUMMARY:'+icsEscape(e.title));
+    if(e.loc) L.push('LOCATION:'+icsEscape(e.loc));
+    if(e.desc) L.push('DESCRIPTION:'+icsEscape(e.desc));
+    L.push('END:VEVENT');
+  });
+  L.push('END:VCALENDAR');
+  /* ICS chce CRLF, jinak si na tom některé kalendáře vylámou zuby */
+  return L.join('\r\n')+'\r\n';
+}
+/* tracks: [{name, pts:[{lat,lng,name}]}] */
+function buildGPX(tracks){
+  const x = s => esc(s);
+  let g = '<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Jezera pro dva" xmlns="http://www.topografix.com/GPX/1/1">\n';
+  g += '<metadata><name>Jezera pro dva</name></metadata>\n';
+  tracks.forEach(t=>{
+    t.pts.forEach(p=>{
+      g += '<wpt lat="'+p.lat.toFixed(5)+'" lon="'+p.lng.toFixed(5)+'"><name>'+x(p.name)+'</name></wpt>\n';
+    });
+  });
+  tracks.forEach(t=>{
+    g += '<trk><name>'+x(t.name)+'</name><trkseg>\n';
+    t.pts.forEach(p=>{ g += '<trkpt lat="'+p.lat.toFixed(5)+'" lon="'+p.lng.toFixed(5)+'"><name>'+x(p.name)+'</name></trkpt>\n'; });
+    g += '</trkseg></trk>\n';
+  });
+  return g + '</gpx>\n';
+}
 /* ================= ODZNAKY A STATISTIKY ================= */
 function tripBadges(P, ids){
   const its = ids.map(id=>ITEMS.find(x=>x.id===id)).filter(Boolean);
@@ -1177,7 +1264,7 @@ function decodePlanData(s){
 /* export pro test (v prohlížeči neškodí) */
 var APP_PURE = {CATS,TINTS,REGS,FROM_CB,ITEMS,TPL,LAKES,VIEWS,VPOLYS,PROJ,HOMEPT,EXITPT,viewOf,pip,hav,est,gUrl,navUrl,gnavUrl,genMini,lakesFor,CB_LL,encodePlanData,decodePlanData,esc,shortName,
   HOURS,DOW,DOW_SHORT,fmtClock,euOffsetMin,parseISO,addDays,fmtDate,sunTimes,openIssue,corridorFor,ZONE,smoothPath,
-  MOODS,surpriseDay,tripBadges};
+  MOODS,surpriseDay,tripBadges,buildICS,buildGPX,icsEscape};
 </script>
 <script>
 /* ================= STAV & ULOŽENÍ ================= */
@@ -1859,7 +1946,9 @@ function renderPlan(){
     let inner = '';
     t.rows.forEach((r,ix)=>{
       inner += '<div class="transfer">'+r.lab+' ~'+pairFmt(r.leg)+'</div>';
-      inner += '<div class="pitem"><span class="dot" style="background:'+CATS[r.it.cat].color+'"></span>'+
+      inner += '<div class="pitem" data-day="'+di+'" data-ix="'+ix+'">'+
+        '<button class="grip" aria-label="Přetáhnout">⠿</button>'+
+        '<span class="dot" style="background:'+CATS[r.it.cat].color+'"></span>'+
         '<span class="clock">'+fmtClock(r.arrive)+'</span>'+
         '<span class="pn"><b>'+esc(r.it.name)+'</b><small>'+metaFor(r.it)+(r.it.price?' · '+esc(r.it.price):'')+'</small></span>'+
         '<button class="pbtn" data-mv="-1" data-day="'+di+'" data-ix="'+ix+'" aria-label="Nahoru">↑</button>'+
@@ -2337,12 +2426,168 @@ function addCustom(){
   S.custom.push(v); inp.value=''; saveState(); renderChecklist();
 }
 
+/* ================= REŽIM DNES ================= */
+let dnesDay = null;
+/* který den je dnes — podle data odjezdu, jinak první neprázdný */
+function todayIndex(){
+  const d0 = parseISO(S.start && S.start.date);
+  if(d0){
+    const now = new Date();
+    const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    const diff = Math.round((today - d0.getTime())/86400000);
+    if(diff>=0 && diff<S.days.length && S.days[diff].length) return diff;
+  }
+  const i = S.days.findIndex(d=>d.length);
+  return i<0 ? null : i;
+}
+function renderDnes(){
+  const wrap = document.getElementById('dnesWrap');
+  const chips = document.getElementById('dnesChips');
+  const avail = S.days.map((d,i)=>d.length?i:null).filter(i=>i!==null);
+  if(!avail.length){
+    chips.innerHTML = '';
+    wrap.innerHTML = '<div class="empty">Zatím není co ukazovat — nejdřív si v Plánu poskládej dny.</div>';
+    return;
+  }
+  if(dnesDay===null || !avail.includes(dnesDay)) dnesDay = todayIndex();
+  if(dnesDay===null || !avail.includes(dnesDay)) dnesDay = avail[0];
+  chips.innerHTML = avail.map(i=>'<button class="chip" data-dnes="'+i+'" aria-pressed="'+String(i===dnesDay)+'" style="--cc:'+DAYC[i%5]+'">Den '+(i+1)+'</button>').join('');
+  const P = calcPlan(), t = P.days[dnesDay];
+  const col = DAYC[dnesDay%5];
+  let html = '';
+  const dateLbl = t.date ? DOW[t.dow]+' '+fmtDate(t.date) : 'Den '+(dnesDay+1);
+  html += '<div class="sechead">'+esc(dateLbl)+' · '+t.km+' km · 🚐 '+fmtMin(t.drive)+
+    (t.sun?' · ☀ '+fmtClock(t.sun.rise)+'–'+fmtClock(t.sun.set):'')+'</div>';
+  let next = null;
+  t.rows.forEach((r,ix)=>{
+    const done = S.done.includes(r.it.id);
+    if(!done && !next) next = r;
+    const issue = openIssue(r.it, t.dow, r.arrive);
+    html += '<article class="bigcard'+(done?' done':'')+'" style="--cc:'+col+'">'+
+      '<div class="bctop">'+
+        '<input class="tick" type="checkbox" data-done="'+r.it.id+'"'+(done?' checked':'')+' aria-label="Hotovo">'+
+        '<div style="flex:1;min-width:0">'+
+          '<div class="bcclock" style="min-width:auto;display:inline-block;margin-right:8px">'+fmtClock(r.arrive)+'</div>'+
+          '<span class="bcname">'+esc(r.it.name)+'</span>'+
+          '<div class="bcmeta">'+esc(r.it.t)+' · '+CATS[r.it.cat].label+' · '+(r.it.cat==='kemp'?'🌙 nocleh':'⏱ ~'+fmtMin(r.it.dur))+'</div>'+
+          '<div class="bcdesc">'+esc(r.it.desc)+'</div>'+
+          (issue?'<div class="warnrow" style="margin-top:6px">⚠<span>'+esc(issue)+'</span></div>':'')+
+          (r.it.warn?'<div class="warnrow soft">ℹ<span>'+esc(r.it.warn)+'</span></div>':'')+
+          '<div class="bcacts">'+
+            '<a class="gnav" href="'+navUrl(r.it)+'" target="_blank" rel="noopener">🧭 Navigovat sem</a>'+
+            (r.it.web?'<a class="abtn link" href="'+r.it.web+'" target="_blank" rel="noopener">web ↗</a>':'')+
+            (r.it.price?'<span class="price">'+esc(r.it.price)+'</span>':'')+
+          '</div>'+
+        '</div>'+
+      '</div></article>';
+  });
+  if(next){
+    html += '<div class="nextbar"><div><b>'+esc(shortName(next.it,28))+'</b>'+
+      '<small>'+fmtClock(next.arrive)+' · '+esc(next.it.t)+'</small></div>'+
+      '<a class="go" href="'+navUrl(next.it)+'" target="_blank" rel="noopener">Jedeme →</a></div>';
+  } else {
+    html += '<div class="nextbar"><div><b>Den je hotový 🎉</b><small>všechny zastávky odškrtnuté</small></div></div>';
+  }
+  wrap.innerHTML = html;
+}
+document.addEventListener('click', e=>{
+  const c = e.target.closest('[data-dnes]');
+  if(c){ dnesDay = +c.dataset.dnes; renderDnes(); }
+});
+document.addEventListener('change', e=>{
+  const t = e.target.closest('[data-done]');
+  if(!t) return;
+  const id = t.dataset.done;
+  if(t.checked){ if(!S.done.includes(id)) S.done.push(id); }
+  else S.done = S.done.filter(x=>x!==id);
+  saveState(); renderDnes();
+});
+
+/* ================= EXPORT DO SOUBORU ================= */
+function download(name, mime, text){
+  const b = new Blob([text], {type:mime});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(b); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+}
+function expNote(t){ document.getElementById('expNote').textContent = t; }
+function exportICS(){
+  const d0 = parseISO(S.start && S.start.date);
+  if(!d0){ expNote('Nejdřív vyplň datum odjezdu — bez něj nemá kalendář co zapsat.'); return; }
+  const P = calcPlan();
+  const evs = [];
+  P.days.forEach((d,di)=>{
+    d.rows.forEach(r=>{
+      /* místní čas → UTC podle letního času, ať sedí i v kalendáři na mobilu */
+      const off = euOffsetMin(d.date)*60000;
+      const start = d.date.getTime() + r.arrive*60000 - off;
+      const end = d.date.getTime() + Math.max(r.leave, r.arrive+30)*60000 - off;
+      evs.push({start, end, title:r.it.name, loc:r.it.t, desc:r.it.desc + (r.it.web?'\n'+r.it.web:'')});
+    });
+  });
+  if(!evs.length){ expNote('Plán je prázdný.'); return; }
+  download('jezera-pro-dva.ics', 'text/calendar;charset=utf-8', buildICS(evs, Date.now()));
+  expNote(evs.length+' zastávek uloženo do souboru pro kalendář.');
+}
+function exportGPX(){
+  const P = calcPlan();
+  const tracks = [];
+  P.days.forEach((d,di)=>{
+    if(!d.rows.length) return;
+    tracks.push({name:'Den '+(di+1), pts:d.rows.map(r=>({lat:r.it.ll[0], lng:r.it.ll[1], name:r.it.name}))});
+  });
+  if(!tracks.length){ expNote('Plán je prázdný.'); return; }
+  download('jezera-pro-dva.gpx', 'application/gpx+xml', buildGPX(tracks));
+  expNote('GPX se stáhlo — nahraj ho do navigace nebo do Mapy.cz.');
+}
+document.getElementById('icsBtn').addEventListener('click', exportICS);
+document.getElementById('gpxBtn').addEventListener('click', exportGPX);
+
+/* ================= PŘETAHOVÁNÍ ZASTÁVEK ================= */
+(function(){
+  let drag = null;
+  document.addEventListener('pointerdown', e=>{
+    const g = e.target.closest('.grip'); if(!g) return;
+    const row = g.closest('.pitem'); if(!row) return;
+    e.preventDefault();
+    drag = {row, day:+row.dataset.day, from:+row.dataset.ix, to:+row.dataset.ix};
+    row.classList.add('dragging');
+    g.setPointerCapture(e.pointerId);
+  });
+  document.addEventListener('pointermove', e=>{
+    if(!drag) return;
+    const rows = [...document.querySelectorAll('.pitem[data-day="'+drag.day+'"]')];
+    let to = drag.from;
+    rows.forEach(r=>{
+      const b = r.getBoundingClientRect();
+      if(e.clientY > b.top + b.height/2) to = +r.dataset.ix;
+    });
+    if(to!==drag.to){
+      drag.to = to;
+      rows.forEach(r=>r.classList.toggle('dropmark', +r.dataset.ix===to && to!==drag.from));
+    }
+  });
+  document.addEventListener('pointerup', ()=>{
+    if(!drag) return;
+    const {day, from, to} = drag;
+    document.querySelectorAll('.pitem').forEach(r=>r.classList.remove('dragging','dropmark'));
+    drag = null;
+    if(from===to) return;
+    const arr = S.days[day];
+    arr.splice(to, 0, arr.splice(from, 1)[0]);
+    saveState(); renderAll();
+  });
+})();
+
 /* ================= TABY + START ================= */
 function switchTab(name){
   document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected', String(t.dataset.tab===name)));
-  ['objevuj','mapa','plan','rozpocet','sbalit'].forEach(n=>{
+  ['objevuj','mapa','plan','dnes','rozpocet','sbalit'].forEach(n=>{
     document.getElementById('tab-'+n).hidden = (n!==name);
   });
+  if(name==='dnes') renderDnes();
+  if(name==='mapa') applyZoom();
 }
 document.querySelector('.tabs').addEventListener('click', e=>{
   const t = e.target.closest('.tab'); if(!t) return;
