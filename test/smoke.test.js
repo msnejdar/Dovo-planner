@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* Běhový smoke test: vyhodnotí OBA <script> bloky z index.html nad prostým
+/* Běhový smoke test: vyhodnotí OBA <script> bloky z planovac/index.html nad prostým
  * stubem DOM. Nechytá vzhled, ale spolehlivě chytí překlepy, chybějící
  * funkce a ReferenceError — tedy přesně to, co v prohlížeči skončí bílou
  * stránkou. Doplňuje test/geo.test.js, který ověřuje data a geometrii.
@@ -8,7 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
-const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+const html = fs.readFileSync(path.join(__dirname, '..', 'planovac', 'index.html'), 'utf8');
 const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]);
 if (scripts.length < 2) { console.error('FAIL: čekám aspoň 2 <script> bloky'); process.exit(1); }
 

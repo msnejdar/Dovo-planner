@@ -7,9 +7,9 @@
 <meta name="theme-color" content="#F6F0E1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Jezera">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon.svg">
 <title>Jezera pro dva · Salzkammergut & Dolomity plánovač</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,650&family=Karla:wght@400;500;700&display=swap');
@@ -2679,7 +2679,7 @@ function renderAll(){ renderPlan(); renderCatalog(); renderBudget(); renderTripb
   loadWeather();
   /* offline u jezer: registrace tiše selže, když appka běží z jednoho souboru */
   if('serviceWorker' in navigator && location.protocol.startsWith('http')){
-    navigator.serviceWorker.register('sw.js').catch(()=>{});
+    navigator.serviceWorker.register("/sw.js").catch(()=>{});
   }
 })();
 </script>

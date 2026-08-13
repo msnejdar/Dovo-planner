@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* Geometrický a datový test plánovače.
- * Vytáhne první <script> (čistá data + geometrie, bez DOM) z salzkammergut-planovac.html,
+ * Vytáhne první <script> (čistá data + geometrie, bez DOM) z planovac/index.html,
  * vyhodnotí ho a ověří:
  *   1. každý bod je v rámu svého pohledu (szk, dol, all)
  *   2. žádný bod neleží ve vodě (jezerní polygony pohledu)
@@ -13,7 +13,7 @@ const path = require('path');
 const vm = require('vm');
 const { execFileSync } = require('child_process');
 
-const htmlPath = path.join(__dirname, '..', 'index.html');
+const htmlPath = path.join(__dirname, '..', 'planovac', 'index.html');
 const html = fs.readFileSync(htmlPath, 'utf8');
 
 const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]);

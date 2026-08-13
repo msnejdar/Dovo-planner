@@ -3,14 +3,14 @@
   "short_name": "Jezera",
   "description": "Plánovač cesty Californií k rakouským jezerům a do Dolomit.",
   "lang": "cs",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "/planovac/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#F6F0E1",
   "theme_color": "#F6F0E1",
   "icons": [
-    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
-    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
   ]
 }
