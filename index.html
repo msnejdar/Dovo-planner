@@ -98,24 +98,25 @@ a:focus-visible,button:focus-visible{outline:2.5px solid var(--gold);outline-off
   opacity:var(--o,0);
   transform:translateY(calc((1 - var(--o,0)) * 16px));
 }
-.necum{
-  font-family:'Fraunces',Georgia,serif;font-weight:650;line-height:.95;
-  font-size:clamp(58px,19vw,190px);letter-spacing:-.01em;
-  display:flex;justify-content:center;flex-wrap:wrap;
+.pitch{
+  font-family:'Fraunces',Georgia,serif;font-weight:650;line-height:1.06;
+  font-size:clamp(32px,9.2vw,72px);letter-spacing:-.015em;
+  display:flex;justify-content:center;flex-wrap:wrap;gap:0 .26em;
 }
-.necum span{
+.pitch span{
   display:inline-block;
   opacity:var(--o,0);
   transform:translateY(calc((1 - var(--o,0)) * 26px)) scale(calc(.86 + var(--o,0) * .14));
   filter:blur(calc((1 - var(--o,0)) * 12px));
   text-shadow:0 6px 40px rgba(0,0,0,.55);
 }
-.necum .hl{color:var(--gold)}
+.pitch .hl{color:var(--gold)}
+.pitch i.br{flex-basis:100%;height:0}   /* zlom po „mnou", dál si to zalomí samo */
 /* nápis a podtitulek jsou jeden blok, ať mezi nimi drží mezera */
 .payoff{display:flex;flex-direction:column;align-items:center;gap:clamp(16px,4.5vw,26px)}
 .sub{
   font-size:clamp(14px,4vw,18px);color:rgba(246,240,225,.85);
-  max-width:24ch;font-style:italic;
+  max-width:30ch;font-style:italic;
   opacity:var(--sub,0);transform:translateY(calc((1 - var(--sub,0)) * 12px));
 }
 /* odměna pro toho, kdo odscrolluje zpátky nahoru */
@@ -210,7 +211,7 @@ a:focus-visible,button:focus-visible{outline:2.5px solid var(--gold);outline-off
   .rstop{opacity:1;transform:none}
   .actwrap{gap:26px}
   .actwrap > *{grid-area:auto}
-  .beat,.necum span{opacity:1;transform:none;filter:none}
+  .beat,.pitch span{opacity:1;transform:none;filter:none}
   .sub{opacity:1;transform:none}
 }
 </style>
@@ -220,7 +221,7 @@ a:focus-visible,button:focus-visible{outline:2.5px solid var(--gold);outline-off
 
 <div class="scroller" id="scroller">
   <div class="stage" id="stage">
-    <img class="hero" src="/kral.jpg" alt="Zakrvácený král s korunou, za ním Kodaň při západu slunce a vlajka s nápisem Král Kodaně" fetchpriority="high" decoding="async">
+    <img class="hero" src="/kral2.jpg" alt="Zakrvácený král s korunou z kodaňských věží, za ním Kodaň při západu slunce a vlajka s nápisem København bygger" fetchpriority="high" decoding="async">
     <div class="scrim"></div>
     <div class="vign"></div>
 
@@ -230,12 +231,12 @@ a:focus-visible,button:focus-visible{outline:2.5px solid var(--gold);outline-off
       <p class="beat" id="beat1">koukáš na něj už docela dlouho.</p>
       <p class="beat" id="beat2">on taky.</p>
       <div class="payoff">
-        <h1 class="necum" id="necum" aria-label="Nečum"></h1>
-        <p class="sub" id="sub">je to jenom fotka. jezera jsou jinde.</p>
+        <h1 class="pitch" id="pitch" aria-label="Pojď si se mnou naplánovat výpravu"></h1>
+        <p class="sub" id="sub">on zůstává v Kodani.<br>my dva jedeme k jezerům.</p>
       </div>
     </div>
 
-    <div class="egg" id="egg" aria-hidden="true"><p>vážně?<b>říkal jsem nečum.</b></p></div>
+    <div class="egg" id="egg" aria-hidden="true"><p>pořád tady?<b>ta výprava se sama nenaplánuje.</b></p></div>
     <div class="arrow"><span>↓</span></div>
   </div>
 </div>
@@ -258,7 +259,7 @@ a:focus-visible,button:focus-visible{outline:2.5px solid var(--gold);outline-off
       <span><b>1</b> král</span>
     </div>
     <div class="routewrap fadein"><svg viewBox="0 0 600 780" role="img" aria-label="Náčrt trasy z Českých Budějovic přes Salzkammergut a Korutany do Dolomit"><path class="rghost" d="M505.1,62 Q510.1,191.9 490.2,220.2 Q470.3,248.5 407.1,283.9 Q343.9,319.4 320.8,346.3 Q297.6,373.1 299.1,385.3 Q300.7,397.5 324.3,405.1 Q347.9,412.6 350.4,433.0 Q352.9,453.4 307.9,448.1 Q262.8,442.9 290.1,471.9 Q317.4,501 318.6,546.8 Q319.9,592.5 322.4,626.3 Q324.9,660 338.9,664.4 Q352.8,668.7 338.9,664.4 Q324.9,660 276.4,667.0 Q227.8,674 209.3,663.1 Q190.7,652.2 158.6,662.9 Q126.4,673.5 108.2,675.5 Q89.9,677.6 92.7,697.8 L95.4,718"/><path class="rline" id="rline" d="M505.1,62 Q510.1,191.9 490.2,220.2 Q470.3,248.5 407.1,283.9 Q343.9,319.4 320.8,346.3 Q297.6,373.1 299.1,385.3 Q300.7,397.5 324.3,405.1 Q347.9,412.6 350.4,433.0 Q352.9,453.4 307.9,448.1 Q262.8,442.9 290.1,471.9 Q317.4,501 318.6,546.8 Q319.9,592.5 322.4,626.3 Q324.9,660 338.9,664.4 Q352.8,668.7 338.9,664.4 Q324.9,660 276.4,667.0 Q227.8,674 209.3,663.1 Q190.7,652.2 158.6,662.9 Q126.4,673.5 108.2,675.5 Q89.9,677.6 92.7,697.8 L95.4,718"/><g class="rstop rhome" data-stop="0"><circle cx="505.1" cy="62" r="7"/><text x="491.1" y="67" text-anchor="end">České Budějovice</text></g><g class="rstop " data-stop="1"><circle cx="297.6" cy="373.1" r="7"/><text x="313.6" y="378.1" text-anchor="start">Salzkammergut</text></g><g class="rstop " data-stop="2"><circle cx="352.9" cy="453.4" r="7"/><text x="368.9" y="458.4" text-anchor="start">Hallstatt</text></g><g class="rstop " data-stop="3"><circle cx="324.9" cy="660" r="7"/><text x="340.9" y="665" text-anchor="start">Korutany</text></g><g class="rstop " data-stop="4"><circle cx="95.4" cy="718" r="7"/><text x="111.4" y="723" text-anchor="start">Dolomity</text></g></svg><p class="routecap">České Budějovice → Salzkammergut → Korutany → Dolomity a zase domů</p></div>
-    <p class="foot">Žádná registrace, běží to na jednom telefonu a jednom notebooku.<br>Král Kodaně na tuhle cestu nejede. — <a href="#top">zpátky nahoru</a>, jestli chceš zase čumět</p>
+    <p class="foot">Žádná registrace, běží to na jednom telefonu a jednom notebooku.<br>Král Kodaně na tuhle cestu nejede. — <a href="#top">zpátky nahoru</a>, jestli si ho chceš ještě prohlédnout</p>
   </div>
 </section>
 
@@ -268,15 +269,17 @@ if(location.hash && /[#&]p=/.test(location.hash)){
   location.replace('/planovac/' + location.hash);
 }
 
-const NECUM = 'NEČUM';
-const necumEl = document.getElementById('necum');
-NECUM.split('').forEach((ch,i)=>{
+/* Věta se skládá po slovech — po písmenech by to u tak dlouhé věty trvalo věčnost. */
+const PITCH = ['pojď','si','se','mnou','\n','naplánovat','výpravu'];
+const pitchEl = document.getElementById('pitch');
+PITCH.forEach(w=>{
+  if(w === '\n'){ const br = document.createElement('i'); br.className = 'br'; pitchEl.appendChild(br); return; }
   const s = document.createElement('span');
-  s.textContent = ch;
-  if(i===0) s.className = 'hl';
-  necumEl.appendChild(s);
+  s.textContent = w;
+  if(w === 'výpravu') s.className = 'hl';
+  pitchEl.appendChild(s);
 });
-const letters = [...necumEl.children];
+const words = [...pitchEl.querySelectorAll('span')];
 const beat1 = document.getElementById('beat1');
 const beat2 = document.getElementById('beat2');
 const subEl = document.getElementById('sub');
@@ -293,7 +296,7 @@ const pulse = (p,inA,inB,outA,outB) => between(p,inA,inB) * (1 - between(p,outA,
 
 /* kdo už tu byl, dostane rovnou výraznou zkratku místo celého vtipu */
 try{
-  if(localStorage.getItem('necum_seen')){
+  if(localStorage.getItem('uvod_seen')){
     skip.classList.add('known');
     skip.textContent = 'tohle už znáš → plánovač';
   }
@@ -309,8 +312,8 @@ function frame(){
 
   beat1.style.setProperty('--o', pulse(p, 0.08, 0.16, 0.26, 0.32).toFixed(3));
   beat2.style.setProperty('--o', pulse(p, 0.32, 0.40, 0.50, 0.56).toFixed(3));
-  letters.forEach((el,i)=>{
-    const start = 0.56 + i*0.04;
+  words.forEach((el,i)=>{
+    const start = 0.56 + i*0.035;
     el.style.setProperty('--o', between(p, start, start+0.12).toFixed(3));
   });
   subEl.style.setProperty('--sub', between(p, 0.86, 0.95).toFixed(3));
@@ -321,7 +324,7 @@ function frame(){
 
   if(p > 0.97 && !seenEnd){
     seenEnd = true;
-    try{ localStorage.setItem('necum_seen','1'); }catch(e){}
+    try{ localStorage.setItem('uvod_seen','1'); }catch(e){}
   }
   /* vrátil ses nahoru? král má připomínku. */
   eggEl.classList.toggle('on', seenEnd && p < 0.1);
@@ -333,7 +336,7 @@ if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
   window.addEventListener('resize', onScroll);
   frame();
 }else{
-  [beat1, beat2, ...letters].forEach(el=>el.style.setProperty('--o','1'));
+  [beat1, beat2, ...words].forEach(el=>el.style.setProperty('--o','1'));
   subEl.style.setProperty('--sub','1');
 }
 

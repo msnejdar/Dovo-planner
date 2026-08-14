@@ -1,7 +1,7 @@
 /* Service worker: appka musí fungovat i u jezer bez signálu.
    Strategie: síť napřed (ať máš vždy aktuální verzi), při výpadku cache. */
-const CACHE = 'jezera-v3';
-const SHELL = ['/', '/index.html', '/planovac/', '/planovac/index.html', '/manifest.webmanifest', '/icon.svg', '/kral.jpg'];
+const CACHE = 'jezera-v4';
+const SHELL = ['/', '/index.html', '/planovac/', '/planovac/index.html', '/manifest.webmanifest', '/icon.svg', '/kral2.jpg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
