@@ -248,3 +248,14 @@ ho zajímají.
 Poznámka `nn` = 3–8 slov, proč. Body dolů: vstupné za podívanou, hluk
 silnice, autobusové zájezdy. Body nahoru: samoobsluha na důvěru, senné
 mléko, ticho.
+
+**U koupání (`plaz`) a kempů (`kemp`) platí zvlášť:**
+- **Koupání** — rozhoduje samota, nic jiného. Být tam sám = 5. Zázemí,
+  skluzavky, mola a rodiny táhnou dolů, i když je voda sebehezčí.
+  Placené koupaliště se přes čtyřku nedostane.
+- **Kempy** — krása a co nejmíň lidí. Malý, tichý, hezky položený = 5.
+  Resort s bazénem, saunami a stovkami parcel = 2, i kdyby měl na
+  Googlu pět hvězd. Počet recenzí na Googlu je dobrý odhad návštěvnosti.
+
+Google hodnocení se do `nik` nepromítá — je vidět zvlášť na kartě, ať si
+uživatel může všimnout, že místo s nízkou známkou dostalo pětku za klid.
