@@ -12,7 +12,7 @@
       ]
     },
     {
-      "source": "/kral2.jpg",
+      "source": "/(kral2.*)",
       "headers": [
         {
           "key": "Cache-Control",
