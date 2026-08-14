@@ -493,19 +493,45 @@ svg text{font-family:'Fraunces',Georgia,serif}
   .badge:nth-child(6){animation-delay:.25s}
 }
 
-/* ---------- v14: Google mapa v barvách appky ---------- */
-#gmap{
-  height:min(68vh,620px);min-height:330px;border-radius:12px;overflow:hidden;
-  background:#F1EADA;display:grid;place-items:center;
+/* ---------- v14: mapa s podkladem, obarvená do palety ---------- */
+/* Podklad leží PŘES kreslenou mapu a odkryje se, až je opravdu hotový.
+   Dokud se stahuje (nebo když nedorazí), koukáš na kreslenou — nikdy na
+   prázdný box a nikdy na obě mapy pod sebou. Výšku drží kreslená mapa. */
+#rmap{
+  position:absolute;inset:8px;border-radius:12px;overflow:hidden;
+  background:var(--paper);opacity:0;pointer-events:none;transition:opacity .25s;
 }
-#gmap.on{display:block}         /* mapa naskočila — grid by jí přebil rozvržení */
-#gmap[hidden]{display:none}
-#bigsvg[hidden]{display:none}
-.gmload{font-size:13px;color:var(--mut)}
-/* Google si do mapy sází vlastní bubliny a fonty — srovnat na naše */
-#gmap .gm-style{font-family:'Karla',-apple-system,'Segoe UI',sans-serif}
-#gmap .gm-style-cc a,#gmap .gm-style-cc span{font-size:10px}
-@media print{ #gmap{display:none!important} }
+#rmap.on{opacity:1;pointer-events:auto}
+@media (prefers-reduced-motion:reduce){ #rmap{transition:none} }
+/* body: barva = kategorie, srdíčko = tvůj výběr, tmavý bod = Budějovice */
+.rdot{
+  width:15px;height:15px;border-radius:50%;padding:0;cursor:pointer;
+  background:var(--c);border:2.2px solid var(--panel);
+  box-shadow:0 1px 4px rgba(32,29,23,.35);
+  display:grid;place-items:center;transition:width .12s,height .12s;
+}
+.rdot.sel{width:20px;height:20px;border-color:var(--ink);border-width:2.6px;z-index:5}
+.rdot.fav::after{content:'♥';color:var(--panel);font-size:8.5px;line-height:1}
+.rdot.sel.fav::after{font-size:11px}
+.rstop{
+  width:26px;height:26px;border-radius:50%;padding:0;cursor:pointer;
+  background:var(--c);border:2px solid var(--panel);color:var(--panel);
+  font:inherit;font-size:12.5px;font-weight:700;line-height:1;
+  box-shadow:0 2px 6px rgba(32,29,23,.3);
+}
+.rhome{
+  width:14px;height:14px;border-radius:50%;
+  background:var(--ink);border:2.2px solid var(--panel);
+  box-shadow:0 1px 4px rgba(32,29,23,.35);
+}
+/* MapLibre si nese vlastní ovládání — srovnat písmo a barvy na naše */
+.maplibregl-ctrl-attrib{
+  background:rgba(255,253,246,.86)!important;font-size:10px;
+  font-family:'Karla',-apple-system,'Segoe UI',sans-serif;
+}
+.maplibregl-ctrl-attrib a{color:var(--mut)}
+.maplibregl-ctrl-bottom-right{z-index:4}
+@media print{ #rmap{display:none!important} }
 
 /* ---------- v11: otazníky s nápovědou ---------- */
 .q{
@@ -612,7 +638,7 @@ svg text{font-family:'Fraunces',Georgia,serif}
   <div class="filterlabel">Co ukázat<button class="q" data-help="mapcat" aria-label="Co to znamená" aria-expanded="false">?</button></div>
   <div class="chips" id="mapCatChips"></div>
   <div class="mapwrap mapstage" style="padding:8px">
-    <div id="gmap" hidden><span class="gmload">Načítám mapu…</span></div>
+    <div id="rmap"></div>
     <svg id="bigsvg" viewBox="0 0 1000 1045" role="img" aria-label="Mapa Salzkammergutu a Dolomit podle skutečných souřadnic"></svg>
     <div class="maptip" id="mapTip" hidden></div>
     <div class="mapbub" id="mapBub" hidden></div>
@@ -1545,12 +1571,12 @@ function clampZoom(){
   z.y = Math.max(V.H*(1-z.k), Math.min(0, z.y));
 }
 function applyZoom(redraw){
-  /* Google mapa se o výřez stará sama — jen překreslíme, co je nad ní */
-  if(MAPVIEW==='gm'){
+  /* mapa s podkladem se o výřez stará sama — jen překreslíme, co je nad ní */
+  if(MAPVIEW==='rm'){
     document.getElementById('zIn').disabled = false;
     document.getElementById('zOut').disabled = false;
     document.getElementById('mapTip').hidden = true;
-    drawRouteChips(); renderRouteInfo(); gmDraw();
+    drawRouteChips(); renderRouteInfo(); rmDraw();
     return;
   }
   clampZoom();
@@ -1639,15 +1665,15 @@ function initMap(){
   });
   /* ＋ − ⤢ ovládají obě mapy, uživatel nepozná rozdíl */
   document.getElementById('zIn').addEventListener('click', ()=>{
-    if(MAPVIEW==='gm'){ gmap.setZoom(gmap.getZoom()+1); return; }
+    if(MAPVIEW==='rm'){ rmap.zoomIn(); return; }
     zoomAt(VIEWS[MAPVIEW].W/2, VIEWS[MAPVIEW].H/2, 1.6);
   });
   document.getElementById('zOut').addEventListener('click', ()=>{
-    if(MAPVIEW==='gm'){ gmap.setZoom(gmap.getZoom()-1); return; }
+    if(MAPVIEW==='rm'){ rmap.zoomOut(); return; }
     zoomAt(VIEWS[MAPVIEW].W/2, VIEWS[MAPVIEW].H/2, 1/1.6);
   });
   document.getElementById('zRst').addEventListener('click', ()=>{
-    if(MAPVIEW==='gm'){ gmFitPlan(); return; }
+    if(MAPVIEW==='rm'){ rmFitPlan(); return; }
     const z=zs(); z.k=1; z.x=0; z.y=0; applyZoom();
   });
   drawMapCatChips();
@@ -1668,7 +1694,7 @@ function mapVisible(it){
 }
 /* přepnutí pohledu kreslené mapy — jen záloha, když Google nejede */
 function setView(v){
-  if(MAPVIEW===v || MAPVIEW==='gm' || !VIEWS[v]) return;
+  if(MAPVIEW===v || MAPVIEW==='rm' || !VIEWS[v]) return;
   MAPVIEW = v;
   closeBubble();
   buildMap(); applyZoom();
@@ -1783,13 +1809,13 @@ function worldToStage(p){
 function closeBubble(){
   selId = null;
   document.getElementById('mapBub').hidden = true;
-  if(MAPVIEW==='gm') gmDots(); else drawDots();
+  if(MAPVIEW==='rm') rmDots(); else drawDots();
 }
 function selectPlace(id){
   const it = byId(id); if(!it) return;
-  if(MAPVIEW!=='all' && MAPVIEW!=='gm' && viewOf(it.reg)!==MAPVIEW) return; /* bod tenhle pohled nezobrazuje */
+  if(MAPVIEW!=='all' && MAPVIEW!=='rm' && viewOf(it.reg)!==MAPVIEW) return; /* bod tenhle pohled nezobrazuje */
   selId = id;
-  if(MAPVIEW==='gm') gmDots(); else drawDots();
+  if(MAPVIEW==='rm') rmDots(); else drawDots();
   const b = document.getElementById('mapBub');
   b.innerHTML =
     '<button class="x" data-bubx aria-label="Zavřít">×</button>'+
@@ -1817,12 +1843,11 @@ function positionBubble(){
   const it = byId(selId);
   if(!it){ b.hidden = true; return; }
   let p;
-  if(MAPVIEW==='gm'){
-    /* zeměpisné souřadnice → pixely v mapě, přes projekci Googlu */
-    const pr = gmOv && gmOv.getProjection && gmOv.getProjection();
-    if(!pr) return; /* mapa se ještě nevykreslila — dokreslí se při dalším snímku */
-    const q = pr.fromLatLngToContainerPixel(new google.maps.LatLng(it.ll[0], it.ll[1]));
-    const el = document.getElementById('gmap'), stage = el.parentElement;
+  if(MAPVIEW==='rm'){
+    /* zeměpisné souřadnice → pixely v mapě, přes projekci MapLibre */
+    if(!rmap) return; /* mapa se ještě nevykreslila — dokreslí se při dalším snímku */
+    const q = rmap.project([it.ll[1], it.ll[0]]);
+    const el = document.getElementById('rmap'), stage = el.parentElement;
     const tr = el.getBoundingClientRect(), gr = stage.getBoundingClientRect();
     p = {x:q.x + (tr.left-gr.left), y:q.y + (tr.top-gr.top), sw:tr.width, sh:tr.height, ox:tr.left-gr.left, oy:tr.top-gr.top};
   } else {
@@ -1973,8 +1998,8 @@ document.addEventListener('click', e=>{
   if(r){
     routeMode = r.dataset.route;
     const day = (routeMode!=='all' && routeMode!=='none') ? +routeMode : null;
-    if(MAPVIEW==='gm'){
-      gmFitPlan(); gmDraw(); drawRouteChips(); renderRouteInfo();
+    if(MAPVIEW==='rm'){
+      rmFitPlan(); rmDraw(); drawRouteChips(); renderRouteInfo();
       return;
     }
     const want = day===null ? null : viewForDay(day);
@@ -1983,7 +2008,7 @@ document.addEventListener('click', e=>{
     return;
   }
   const mc = e.target.closest('[data-mcat]');
-  if(mc){ mapCat = mc.dataset.mcat; drawMapCatChips(); if(MAPVIEW==='gm') gmDots(); else drawDots(); }
+  if(mc){ mapCat = mc.dataset.mcat; drawMapCatChips(); if(MAPVIEW==='rm') rmDots(); else drawDots(); }
 });
 
 /* ================= FILTRY + KATALOG ================= */
@@ -2145,7 +2170,7 @@ document.addEventListener('click', e=>{
     const id = f.dataset.fav;
     S.fav.includes(id) ? S.fav = S.fav.filter(x=>x!==id) : S.fav.push(id);
     saveState(); renderCatalog();
-    if(MAPVIEW==='gm') gmDots(); else drawDots();
+    if(MAPVIEW==='rm') rmDots(); else drawDots();
     if(selId===id) selectPlace(id);
     return;
   }
@@ -2789,247 +2814,248 @@ function addCustom(){
   S.custom.push(v); inp.value=''; saveState(); renderChecklist();
 }
 
-/* ================= SKUTEČNÁ MAPA (GOOGLE) =================
-   Jedna mapa, žádné přepínače. Podklad je Google, ale obarvený do papíru
-   a inkoustu jako zbytek appky — cizí POI a popisky silnic jsou pryč, ať
-   je vidět jen to naše: body podle kategorií, trasy dnů a čísla zastávek.
+/* ================= SKUTEČNÁ MAPA =================
+   MapLibre nad dlaždicemi OpenFreeMap. Podklad je světlý (Positron) a hned
+   po načtení ho přebarvíme do palety appky — papír místo bílé, tlumené
+   popisky, tmavě zelené hranice, jezera v naší modré. Vlastní jsou i body:
+   barva podle kategorie, srdíčka u vybraných, trasy dnů a čísla zastávek.
 
-   Klíč se do stránky vkládá při buildu z proměnné prostředí (build.js),
-   v repozitáři je jen zástupný text. Ve zdroji stránky klíč být musí —
-   jinak to u map Google nejde — proto je omezený na doménu v Google Cloud
-   Console. Když klíč chybí, nenačte se, nebo ho Google odmítne, appka se
-   tiše vrátí ke kreslené mapě a napíše důvod do konzole. */
-const GKEY = '__GMAPS_KEY__';
-/* zástupný text je krátký, takže sem neprojde a lokálně jede kreslená mapa */
-const gmHasKey = () => /^[A-Za-z0-9_-]{20,}$/.test(GKEY);
+   Žádný klíč, žádná fakturace, žádný vodoznak. Když se knihovna, styl nebo
+   dlaždice nenačtou (typicky bez signálu u jezer), appka se tiše vrátí ke
+   kreslené mapě a důvod napíše do konzole. */
+const MLIB = 'https://unpkg.com/maplibre-gl@5.16.0/dist/maplibre-gl.js';
+const MCSS = 'https://unpkg.com/maplibre-gl@5.16.0/dist/maplibre-gl.css';
+const TILES_URL = 'https://tiles.openfreemap.org/styles/positron';
 
-/* Barvy mapy. Papír, inkoust, tlumené popisky — stejná paleta jako appka. */
-const GSTYLE = [
-  {elementType:'geometry', stylers:[{color:'#F1EADA'}]},
-  {elementType:'labels.text.fill', stylers:[{color:'#6E6754'}]},
-  {elementType:'labels.text.stroke', stylers:[{color:'#F6F0E1'},{weight:3}]},
-  {elementType:'labels.icon', stylers:[{visibility:'off'}]},
-  {featureType:'administrative', elementType:'geometry.stroke', stylers:[{color:'#CFC2A2'}]},
-  {featureType:'administrative.country', elementType:'geometry.stroke', stylers:[{color:'#A09374'},{weight:1.3}]},
-  {featureType:'administrative.country', elementType:'labels.text.fill', stylers:[{color:'#57503F'}]},
-  {featureType:'administrative.land_parcel', stylers:[{visibility:'off'}]},
-  {featureType:'administrative.locality', elementType:'labels.text.fill', stylers:[{color:'#4A4436'}]},
-  {featureType:'administrative.neighborhood', stylers:[{visibility:'off'}]},
-  {featureType:'landscape.man_made', elementType:'geometry', stylers:[{color:'#EFE8D6'}]},
-  {featureType:'landscape.natural', elementType:'geometry', stylers:[{color:'#EDE6D2'}]},
-  {featureType:'landscape.natural.terrain', elementType:'geometry', stylers:[{color:'#E5DCC2'}]},
-  {featureType:'poi', stylers:[{visibility:'off'}]},
-  {featureType:'poi.park', elementType:'geometry', stylers:[{visibility:'on'},{color:'#DDE5CB'}]},
-  {featureType:'road', elementType:'geometry', stylers:[{color:'#FFFDF6'}]},
-  {featureType:'road', elementType:'geometry.stroke', stylers:[{color:'#E0D5BC'}]},
-  {featureType:'road', elementType:'labels', stylers:[{visibility:'off'}]},
-  {featureType:'road.arterial', elementType:'geometry', stylers:[{color:'#FBF6E7'}]},
-  {featureType:'road.highway', elementType:'geometry', stylers:[{color:'#F2E3C6'}]},
-  {featureType:'road.highway', elementType:'geometry.stroke', stylers:[{color:'#D7C599'}]},
-  {featureType:'road.local', elementType:'geometry.stroke', stylers:[{color:'#EBE1C8'}]},
-  {featureType:'transit', stylers:[{visibility:'off'}]},
-  {featureType:'water', elementType:'geometry', stylers:[{color:'#A7CBD6'}]},
-  {featureType:'water', elementType:'labels.text.fill', stylers:[{color:'#3D6875'}]},
-  {featureType:'water', elementType:'labels.text.stroke', stylers:[{color:'#DCEBEF'},{weight:2.5}]}
-];
+/* barvy podkladu — stejná paleta jako zbytek appky */
+const MC = {
+  paper:'#F6F0E1', land:'#F1EADA', green:'#E3E7D3', water:'#A7CBD6',
+  road:'#FFFDF6', roadLine:'#E0D5BC', big:'#F3E7CD', bigLine:'#DCC79B',
+  border:'#2F4F3A', text:'#5C5544', halo:'#F6F0E1', building:'#EAE2CD'
+};
 
-let gmap = null, gmOv = null, gmLn = [], gmNum = [], gmHome = null;
-const gmById = new Map();
-let gmSetKey = '', gmDead = false;
+let rmap = null, rmMk = new Map(), rmNum = [], rmHome = null, rmSetKey = '', rmDead = false;
 
-/* Načtení knihovny. Jednou, na první otevření záložky Mapa — kdo ji
-   neotevře, nepošle Googlu ani jeden požadavek. */
-function gmLoad(){
-  if(window.google && window.google.maps) return Promise.resolve();
-  if(gmLoad._p) return gmLoad._p;
-  gmLoad._p = new Promise((res, rej)=>{
+/* ---- načtení knihovny; až při prvním otevření záložky Mapa ---- */
+function rmLoad(){
+  if(window.maplibregl) return Promise.resolve();
+  if(rmLoad._p) return rmLoad._p;
+  rmLoad._p = new Promise((res, rej)=>{
+    const css = document.createElement('link');
+    css.rel = 'stylesheet'; css.href = MCSS;
+    document.head.appendChild(css);
     const s = document.createElement('script');
-    s.async = true;
-    s.src = 'https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(GKEY)+
-            '&v=weekly&language=cs&region=CZ&loading=async&callback=__gmReady';
-    window.__gmReady = ()=>res();
-    s.onerror = ()=>rej(new Error('knihovna se nestáhla'));
+    s.src = MLIB; s.async = true;
+    s.onload = ()=> window.maplibregl ? res() : rej(new Error('knihovna dorazila prázdná'));
+    s.onerror = ()=> rej(new Error('knihovna se nestáhla'));
     setTimeout(()=>rej(new Error('načítání trvalo přes 9 s')), 9000);
     document.head.appendChild(s);
   });
-  return gmLoad._p;
+  return rmLoad._p;
 }
-/* Google křičí sem, když klíč nesedí (špatná doména, nezapnuté Maps JavaScript API). */
-window.gm_authFailure = function(){
-  console.error('Google mapa: klíč odmítnut — v Google Cloud Console zkontroluj, '+
-    'že je zapnuté Maps JavaScript API a že doména '+location.host+' je v omezení klíče.');
-  gmFail();
-};
 
-function gmBoot(){
-  if(gmap || gmDead) return;
-  if(!gmHasKey()){ gmDead = true; console.info('Mapa: klíč ke Google mapám není v buildu — jedu na kreslené.'); return; }
-  /* U jezer bez signálu nemá cenu čekat na timeout — kreslená mapa je hned
-     a jakmile se síť vrátí, Google se zkusí načíst znovu. */
+function rmBoot(){
+  if(rmap || rmDead) return;
+  /* U jezer bez signálu nemá cenu čekat — kreslená mapa je hned a jakmile
+     se síť vrátí, zkusíme to znovu. */
   if(navigator.onLine === false){ console.info('Mapa: bez signálu — kreslená mapa, zkusím to znova, až bude síť.'); return; }
-  gmShell(true);
-  gmLoad().then(()=>{
-    if(!(window.google && google.maps && google.maps.Map)) throw new Error('knihovna dorazila prázdná');
-    gmInit();
-  }).catch(err=>{
-    console.warn('Google mapa nejede ('+err.message+') — jedu na kreslené.');
-    gmFail();
+  rmLoad().then(rmInit).catch(err=>{
+    console.warn('Mapa s podkladem nejede ('+err.message+') — jedu na kreslené.');
+    rmFail();
   });
 }
-/* přepnutí plátna: Google nahoru, kreslená dolů (nebo naopak) */
-function gmShell(on){
-  const el = document.getElementById('gmap'), svg = document.getElementById('bigsvg');
-  if(el) el.hidden = !on;
-  if(svg) svg.hidden = !!on;
+/* odkrytí podkladu. Kreslená mapa se neskrývá — jen ji podklad překryje,
+   takže se nemůže stát, že by byly vidět obě. */
+function rmShell(on){
+  const el = document.getElementById('rmap');
+  if(el) el.classList.toggle('on', !!on);
 }
-function gmFail(){
-  gmDead = true; gmap = null;
-  gmShell(false);
-  if(MAPVIEW==='gm'){ MAPVIEW = 'all'; buildMap(); applyZoom(); }
+function rmFail(){
+  rmDead = true;
+  if(rmap){ try{ rmap.remove(); }catch(e){} }
+  rmap = null;
+  rmShell(false);
+  if(MAPVIEW==='rm'){ MAPVIEW = 'all'; buildMap(); applyZoom(); }
 }
-function gmInit(){
-  const el = document.getElementById('gmap');
-  el.innerHTML = '';
-  el.classList.add('on');
-  gmap = new google.maps.Map(el, {
-    center:{lat:47.55, lng:13.35}, zoom:7,
-    styles:GSTYLE,
-    disableDefaultUI:true,      /* ovládání máme vlastní, v barvách appky */
-    gestureHandling:'greedy',   /* na mobilu jede posun jedním prstem */
-    clickableIcons:false,
-    keyboardShortcuts:false,
-    minZoom:5, maxZoom:18
+function rmInit(){
+  const el = document.getElementById('rmap');
+  rmap = new maplibregl.Map({
+    container: el,
+    style: TILES_URL,
+    center: [13.35, 47.55], zoom: 6.2,
+    minZoom: 4, maxZoom: 17,
+    attributionControl: {compact: true},
+    dragRotate: false, pitchWithRotate: false, touchZoomRotate: {around: 'center'}
   });
-  /* projekce pro bublinu — overlay jen kvůli přepočtu souřadnic na pixely */
-  gmOv = new google.maps.OverlayView();
-  gmOv.onAdd = function(){};
-  gmOv.onRemove = function(){};
-  gmOv.draw = function(){ positionBubble(); };
-  gmOv.setMap(gmap);
-  gmap.addListener('click', ()=>closeBubble());
-  MAPVIEW = 'gm';
-  gmFitPlan();
-  gmDraw();
-  drawRouteChips();
-  renderRouteInfo();
+  rmap.touchZoomRotate.disableRotation();
+  rmap.on('load', ()=>{
+    rmPaint();
+    rmRouteLayers();
+    MAPVIEW = 'rm';
+    rmShell(true);   /* až teď — podklad je obarvený a připravený */
+    rmFitPlan();
+    rmDraw();
+    drawRouteChips();
+    renderRouteInfo();
+  });
+  /* chybějící dlaždice mapu nezabijou — podklad prostě zůstane papírový */
+  rmap.on('error', e=>{
+    const m = (e && e.error && e.error.message) || '';
+    if(/style|Failed to fetch/i.test(m) && !rmap.isStyleLoaded()){
+      console.warn('Mapa: styl podkladu se nenačetl ('+m+') — jedu na kreslené.');
+      rmFail();
+    }
+  });
+  rmap.on('click', e=>{ if(!e.originalEvent.__dot) closeBubble(); });
+  rmap.on('move', positionBubble);
+}
+
+/* ---- přebarvení podkladu do palety ----
+   Jdeme po vrstvách stylu podle typu a názvu, ať to přežije i změnu
+   poskytovatele dlaždic — nespoléháme na konkrétní id. */
+function rmPaint(){
+  const set = (id, prop, val)=>{ try{ rmap.setPaintProperty(id, prop, val); }catch(e){} };
+  const lay = (id, prop, val)=>{ try{ rmap.setLayoutProperty(id, prop, val); }catch(e){} };
+  /* česky, kde to dlaždice umí — Mnichov místo München */
+  const cesky = ['coalesce', ['get','name:cs'], ['get','name:latin'], ['get','name']];
+  const casing = id => /casing|outline/i.test(id);
+  rmap.getStyle().layers.forEach(L=>{
+    const id = L.id, t = L.type;
+    if(t==='background'){ set(id,'background-color', MC.paper); return; }
+    if(/water|ocean|sea|lake|river/i.test(id)){
+      if(t==='fill') set(id,'fill-color', MC.water);
+      if(t==='line') set(id,'line-color', MC.water);
+      if(t==='symbol'){ set(id,'text-color','#3D6875'); set(id,'text-halo-color','#DCEBEF'); lay(id,'text-field', cesky); }
+      return;
+    }
+    if(t==='fill'){
+      if(/park|wood|forest|grass|green|landcover|scrub/i.test(id)) set(id,'fill-color', MC.green);
+      else if(/building/i.test(id)) set(id,'fill-color', MC.building);
+      else set(id,'fill-color', MC.land);
+      return;
+    }
+    if(t==='line'){
+      if(/boundary|admin|border/i.test(id)){ set(id,'line-color', MC.border); set(id,'line-opacity',.5); }
+      else if(/motorway|trunk|primary|major/i.test(id)) set(id,'line-color', casing(id) ? MC.bigLine : MC.big);
+      else if(/road|street|highway|bridge|tunnel|transportation/i.test(id)) set(id,'line-color', casing(id) ? MC.roadLine : MC.road);
+      else set(id,'line-color', MC.roadLine);
+      return;
+    }
+    if(t==='symbol'){
+      set(id,'text-color', MC.text); set(id,'text-halo-color', MC.halo); set(id,'text-halo-width',1.6);
+      lay(id,'text-field', cesky);
+      if(/poi|shop|amenity/i.test(id)) lay(id,'visibility','none'); /* cizí podniky do naší mapy nepatří */
+    }
+  });
+}
+
+/* ---- trasy dnů ---- */
+function rmRouteLayers(){
+  rmap.addSource('trasy', {type:'geojson', data:{type:'FeatureCollection', features:[]}});
+  rmap.addLayer({id:'trasy-plne', type:'line', source:'trasy',
+    filter:['!', ['get','dash']],
+    layout:{'line-cap':'round','line-join':'round'},
+    paint:{'line-color':['get','barva'], 'line-width':4.5, 'line-opacity':.85}});
+  rmap.addLayer({id:'trasy-carkovane', type:'line', source:'trasy',
+    filter:['get','dash'],
+    layout:{'line-cap':'butt'},
+    paint:{'line-color':['get','barva'], 'line-width':3.6, 'line-opacity':.9, 'line-dasharray':[2,2]}});
+}
+function rmRoutes(){
+  if(!rmap || !rmap.getSource('trasy')) return;
+  const feats = [];
+  if(routeMode!=='none'){
+    buildLegs().filter(l=> routeMode==='all' ? true : l.di===+routeMode).forEach(l=>{
+      const A = l.a==='home' ? CB_LL : (byId(l.a)||{}).ll;
+      const B = l.b==='home' ? CB_LL : (byId(l.b)||{}).ll;
+      if(!A || !B) return;
+      feats.push({type:'Feature', properties:{barva:DAYC[l.di % NDAYS], dash:!!l.dash},
+        geometry:{type:'LineString', coordinates:[[A[1],A[0]],[B[1],B[0]]]}});
+    });
+  }
+  rmap.getSource('trasy').setData({type:'FeatureCollection', features:feats});
 }
 
 /* ---- body ---- */
-/* Klasický Marker, ne AdvancedMarker: ten chce mapId, a s mapId Google
-   ignoruje náš styl a mapa by vypadala jako kterákoli jiná. */
-function gmIcon(it, sel){
-  const c = CATS[it.cat].color, line = sel ? '#201D17' : '#FFFDF6';
-  /* co máš srdíčkem, je i na mapě srdíčko — stejně jako v kreslené */
-  if(S.fav.includes(it.id)) return {
-    path:HEART, scale: sel ? 1.15 : .92, fillColor:c, fillOpacity:1,
-    strokeColor:line, strokeWeight: sel ? 2.2 : 1.8,
-    anchor:new google.maps.Point(0, 4.5)
-  };
-  return {
-    path: google.maps.SymbolPath.CIRCLE,
-    scale: sel ? 8.4 : 6.4,
-    fillColor: c, fillOpacity: 1,
-    strokeColor: line, strokeWeight: sel ? 2.8 : 2.2
-  };
+function rmDotEl(it, sel){
+  const d = document.createElement('button');
+  d.type = 'button';
+  d.className = 'rdot' + (sel ? ' sel' : '') + (S.fav.includes(it.id) ? ' fav' : '');
+  d.style.setProperty('--c', CATS[it.cat].color);
+  d.setAttribute('aria-label', it.name);
+  d.title = it.name;
+  d.addEventListener('click', ev=>{ ev.stopPropagation(); ev.__dot = true; selectPlace(it.id); });
+  return d;
 }
-function gmDots(){
-  if(!gmap) return;
+function rmDots(){
+  if(!rmap) return;
   const want = ITEMS.filter(mapVisible);
   const key = want.map(i=>i.id).join(',');
-  if(key !== gmSetKey){
-    gmById.forEach(m=>m.setMap(null));
-    gmById.clear();
+  if(key !== rmSetKey){
+    rmMk.forEach(m=>m.remove()); rmMk.clear();
     want.forEach(it=>{
-      const mk = new google.maps.Marker({
-        position:{lat:it.ll[0], lng:it.ll[1]}, map:gmap, title:it.name,
-        icon:gmIcon(it, false), zIndex:20, optimized:true
-      });
-      mk.addListener('click', ()=>selectPlace(it.id));
-      gmById.set(it.id, mk);
+      const mk = new maplibregl.Marker({element:rmDotEl(it, selId===it.id)})
+        .setLngLat([it.ll[1], it.ll[0]]).addTo(rmap);
+      rmMk.set(it.id, mk);
     });
-    gmSetKey = key;
+    rmSetKey = key;
+    return;
   }
-  /* vybraný bod se jen přebarví, ať při kliku nic neposkakuje */
-  gmById.forEach((mk, id)=>{
-    const sel = selId === id, it = byId(id);
-    if(!it) return;
-    mk.setIcon(gmIcon(it, sel));
-    mk.setZIndex(sel ? 90 : 20);
-  });
-}
-/* ---- trasy dnů ---- */
-function gmRoutes(){
-  if(!gmap) return;
-  gmLn.forEach(l=>l.setMap(null)); gmLn = [];
-  if(routeMode==='none') return;
-  buildLegs().filter(l=> routeMode==='all' ? true : l.di===+routeMode).forEach(l=>{
-    const A = l.a==='home' ? CB_LL : (byId(l.a)||{}).ll;
-    const B = l.b==='home' ? CB_LL : (byId(l.b)||{}).ll;
-    if(!A || !B) return;
-    const c = DAYC[l.di % NDAYS];
-    const path = [{lat:A[0], lng:A[1]}, {lat:B[0], lng:B[1]}];
-    /* čárkovaně = přejezd mezi dny (ráno z noclehu), plně = program dne */
-    gmLn.push(new google.maps.Polyline(l.dash ? {
-      map:gmap, path, strokeOpacity:0, zIndex:2,
-      icons:[{icon:{path:'M 0,-1 0,1', strokeColor:c, strokeOpacity:.9, strokeWeight:3.6, scale:3}, offset:'0', repeat:'13px'}]
-    } : {
-      map:gmap, path, strokeColor:c, strokeOpacity:.85, strokeWeight:4.5, zIndex:3
-    }));
+  /* jen přebarvit — při kliku nic neposkakuje */
+  rmMk.forEach((mk, id)=>{
+    const e = mk.getElement();
+    e.classList.toggle('sel', selId===id);
+    e.classList.toggle('fav', S.fav.includes(id));
   });
 }
 /* ---- čísla zastávek vybraného dne + domov ---- */
-function gmStops(){
-  if(!gmap) return;
-  gmNum.forEach(m=>m.setMap(null)); gmNum = [];
-  const one = routeMode!=='all' && routeMode!=='none';
-  if(one){
+function rmStops(){
+  if(!rmap) return;
+  rmNum.forEach(m=>m.remove()); rmNum = [];
+  if(routeMode!=='all' && routeMode!=='none'){
     let n = 1;
     (S.days[+routeMode]||[]).forEach(id=>{
       const it = byId(id); if(!it) return;
-      const c = DAYC[+routeMode % NDAYS];
-      const mk = new google.maps.Marker({
-        position:{lat:it.ll[0], lng:it.ll[1]}, map:gmap, title:(n)+'. '+it.name, zIndex:70,
-        icon:{path:google.maps.SymbolPath.CIRCLE, scale:12, fillColor:c, fillOpacity:1, strokeColor:'#FFFDF6', strokeWeight:2},
-        label:{text:String(n), color:'#FFFDF6', fontSize:'12px', fontWeight:'700', fontFamily:'Karla, sans-serif'}
-      });
-      mk.addListener('click', ()=>selectPlace(it.id));
-      gmNum.push(mk);
+      const e = document.createElement('button');
+      e.type = 'button'; e.className = 'rstop'; e.textContent = String(n);
+      e.style.setProperty('--c', DAYC[+routeMode % NDAYS]);
+      e.setAttribute('aria-label', n+'. '+it.name);
+      e.addEventListener('click', ev=>{ ev.stopPropagation(); ev.__dot = true; selectPlace(id); });
+      rmNum.push(new maplibregl.Marker({element:e}).setLngLat([it.ll[1], it.ll[0]]).addTo(rmap));
       n++;
     });
   }
-  if(gmHome) gmHome.setMap(null);
-  gmHome = new google.maps.Marker({
-    position:{lat:CB_LL[0], lng:CB_LL[1]}, map:gmap, title:'České Budějovice — odsud se vyjíždí', zIndex:50,
-    icon:{path:google.maps.SymbolPath.CIRCLE, scale:6.5, fillColor:'#201D17', fillOpacity:1, strokeColor:'#FFFDF6', strokeWeight:2.2}
-  });
+  if(!rmHome){
+    const h = document.createElement('div');
+    h.className = 'rhome'; h.title = 'České Budějovice — odsud se vyjíždí';
+    rmHome = new maplibregl.Marker({element:h}).setLngLat([CB_LL[1], CB_LL[0]]).addTo(rmap);
+  }
 }
-function gmDraw(){
-  if(!gmap) return;
-  gmDots(); gmRoutes(); gmStops(); positionBubble();
+function rmDraw(){
+  if(!rmap) return;
+  rmDots(); rmRoutes(); rmStops(); positionBubble();
 }
 /* ---- výřez ---- */
-function gmFit(lls){
-  if(!gmap || !lls.length) return;
-  if(lls.length===1){ gmap.setCenter({lat:lls[0][0], lng:lls[0][1]}); gmap.setZoom(13); return; }
-  const b = new google.maps.LatLngBounds();
-  lls.forEach(l=>b.extend({lat:l[0], lng:l[1]}));
-  gmap.fitBounds(b, {top:56, right:34, bottom:56, left:34});
-  /* dvě místa vedle sebe by jinak vyjela na maximum a nebylo by vidět okolí */
-  google.maps.event.addListenerOnce(gmap, 'idle', ()=>{ if(gmap.getZoom() > 14) gmap.setZoom(14); });
+function rmFit(lls){
+  if(!rmap || !lls.length) return;
+  if(lls.length===1){ rmap.easeTo({center:[lls[0][1], lls[0][0]], zoom:12}); return; }
+  let a=90,b=-90,c=180,d=-180;
+  lls.forEach(l=>{ a=Math.min(a,l[0]); b=Math.max(b,l[0]); c=Math.min(c,l[1]); d=Math.max(d,l[1]); });
+  rmap.fitBounds([[c,a],[d,b]], {padding:{top:48, right:34, bottom:48, left:34}, maxZoom:13, duration:600});
 }
-/* vrátil se signál a mapa je zrovna otevřená → zkus Google znovu */
-window.addEventListener('online', ()=>{
-  if(!document.getElementById('tab-mapa').hidden) gmBoot();
-});
 /* výchozí výřez: co je v plánu, jinak celá oblast i s domovem */
-function gmFitPlan(){
-  if(!gmap) return;
+function rmFitPlan(){
+  if(!rmap) return;
   const day = (routeMode!=='all' && routeMode!=='none') ? +routeMode : null;
   const ids = day!==null ? (S.days[day]||[]) : S.days.flat();
   const lls = ids.map(byId).filter(Boolean).map(i=>i.ll);
-  if(lls.length){ gmFit(lls.concat([day!==null ? ptLL(dayAnchorId(day)) : CB_LL])); return; }
-  gmFit(ITEMS.map(i=>i.ll).concat([CB_LL]));
+  if(lls.length){ rmFit(lls.concat([day!==null ? ptLL(dayAnchorId(day)) : CB_LL])); return; }
+  rmFit(ITEMS.map(i=>i.ll).concat([CB_LL]));
 }
+/* vrátil se signál a mapa je zrovna otevřená → zkus podklad znovu */
+window.addEventListener('online', ()=>{
+  if(!document.getElementById('tab-mapa').hidden){ rmDead = false; rmBoot(); }
+});
 
 /* ================= NÁPOVĚDA =================
    Otazník u každé věci. Texty říkají hlavně to, co jinak není vidět:
@@ -3042,7 +3068,7 @@ reg:['Kde','Filtr podle oblasti. Regiony jdou zhruba v pořadí, jak se jimi pro
 sort:['Seřadit','<b>🌿 můj tip</b> řadí podle toho, jak moc místo sedne Nikole. <b>★ hodnocení</b> podle Googlu. <b>📍 nejblíž dni</b> měří vzdušnou čáru od poslední zastávky dne, do kterého zrovna přidáváš — nahoře je to, co máš cestou.'],
 nik:['🌿 Pro Nikolu','Moje hodnocení, ne Googlu. <b>5</b> = bio farma nebo tichá příroda, zdarma nebo skoro. <b>4</b> = klidné a lokální, snese víkendový provoz. <b>3</b> = fajn, ale komerční nebo rodinné rušno. <b>2</b> = davy, fronty, drahé atrakce.'],
 gr:['Hodnocení Google','Hvězdičky a počet recenzí z Map Google, ověřené v srpnu 2026. Kde číslo chybí, nepodařilo se ho spolehlivě dohledat — radši nic než vymyšlené.'],
-mapa:['Mapa','Skutečná mapa Google, jen obarvená do stejné palety jako appka, ať v ní jsou vidět naše body a ne cizí reklamy. Barva bodu = kategorie (legenda dole), tmavý bod jsou Budějovice. Klikni na bod a vyskočí bublina — z ní se dá místo rovnou přidat do dne, otevřít v navigaci nebo si o něm něco přečíst. Posouvá se tažením, přibližuje štípnutím, kolečkem nebo tlačítky vpravo dole; <b>⤢</b> vrátí výřez na tvůj plán. Bez signálu Google mapa nenaskočí a appka se sama přepne na kreslenou — plánování jede dál.'],
+mapa:['Mapa','Skutečná mapa, obarvená do stejné palety jako appka — papírový podklad, tlumené popisky, ať jsou vidět naše body a ne cizí reklamy. Barva bodu = kategorie (legenda dole), tmavý bod jsou Budějovice. Klikni na bod a vyskočí bublina — z ní se dá místo rovnou přidat do dne, otevřít v navigaci nebo si o něm něco přečíst. Posouvá se tažením, přibližuje štípnutím, kolečkem nebo tlačítky vpravo dole; <b>⤢</b> vrátí výřez na tvůj plán. Bez signálu podklad nenaskočí a appka se sama přepne na kreslenou — plánování jede dál.'],
 route:['Trasa na mapě','Vyber den a mapa se na něj přiblíží a očísluje zastávky. Plná čára je program dne, čárkovaná ranní přejezd z místa, kde jsi spal. U každého dne uvidíš kilometry a čas jízdy.'],
 mapcat:['Co ukázat','Nechá na mapě jen jeden typ míst. <b>Jen můj plán</b> ukáže zastávky z plánu a srdíčka. Zastávky vybraného dne jsou vidět vždycky, i když do filtru nepatří.'],
 tpl:['Hotové návrhy','Tři a pět dní jsou moje sestavy laděné pro Nikolu — klid, farmy a menší kempy místo davů. <b>Od čtyř dnů</b> se jede přes Millstätter See do Dolomit. Načtením se přepíše to, co máš teď, ale pak si to můžeš přeskládat.'],
@@ -3317,8 +3343,8 @@ function switchTab(name){
     document.getElementById('tab-'+n).hidden = (n!==name);
   });
   if(name==='dnes') renderDnes();
-  /* Google mapa se načte až tady — kdo mapu neotevře, nepošle Googlu nic */
-  if(name==='mapa'){ gmBoot(); applyZoom(); }
+  /* podklad mapy se stahuje až tady — kdo mapu neotevře, nestáhne nic */
+  if(name==='mapa'){ rmBoot(); applyZoom(); }
 }
 document.querySelector('.tabs').addEventListener('click', e=>{
   const t = e.target.closest('.tab'); if(!t) return;
