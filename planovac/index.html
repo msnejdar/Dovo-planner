@@ -164,9 +164,22 @@ svg text{font-family:'Fraunces',Georgia,serif}
 .dayclear{border:none;background:none;color:var(--mut);font:inherit;font-size:12.5px;cursor:pointer;text-decoration:underline}
 .pitem{display:flex;align-items:center;gap:9px;padding:8px 0}
 .pitem .dot{width:10px;height:10px;border-radius:50%;flex:none}
-.pitem .pn{flex:1;min-width:0}
-.pitem .pn b{font-weight:700}
+/* jméno v plánu je tlačítko — klik rozbalí detail místa pod řádkem */
+.pitem .pn{
+  flex:1;min-width:0;text-align:left;background:none;border:0;padding:0;
+  font:inherit;color:inherit;cursor:pointer;
+}
+.pitem .pn b{font-weight:700;border-bottom:1.5px dotted var(--line)}
+.pitem .pn:hover b,.pitem .pn[aria-expanded="true"] b{border-bottom-color:var(--gastro)}
 .pitem .pn small{display:block;color:var(--mut);font-size:12px}
+.pdet{
+  padding:10px 12px 12px;margin:0 0 8px 34px;
+  background:#FFFDF6;border:1.5px solid var(--line);border-radius:12px;
+}
+.pdet[hidden]{display:none}
+.pdesc{font-size:14px;color:#4a4436;margin-top:7px}
+.pdet .linkrow{margin-top:10px}
+@media (max-width:560px){ .pdet{margin-left:0} }
 .pbtn{border:1.5px solid var(--line);background:#fff;border-radius:9px;width:29px;height:29px;font-size:13px;cursor:pointer;color:var(--ink);flex:none}
 .transfer{
   display:flex;align-items:center;gap:8px;color:var(--mut);font-size:12px;font-weight:700;
@@ -1411,7 +1424,7 @@ function buildICS(events, stampMs){
     L.push('DTEND:'+icsStamp(e.end));
     L.push('SUMMARY:'+icsEscape(e.title));
     if(e.loc) L.push('LOCATION:'+icsEscape(e.loc));
-    if(e.desc) L.push('DESCRIPTION:'+icsEscape(e.desc));
+    if(e.desc) L.push('DESCRIPTION:'+icsEscape(String(e.desc).replace(/<\/?b>/g,'')));
     L.push('END:VEVENT');
   });
   L.push('END:VCALENDAR');
@@ -1491,6 +1504,10 @@ function smoothPath(pts){
 }
 /* text do SVG/HTML */
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+/* Popisy míst smějí mít <b> na zvýraznění toho podstatného (zákaz psů,
+   minimální pobyt). Nejdřív se escapuje všechno, pak se vrátí zpátky
+   jenom <b> — žádná jiná značka ani atribut se do stránky nedostane. */
+function rich(s){ return esc(s).replace(/&lt;b&gt;/g,'<b>').replace(/&lt;\/b&gt;/g,'</b>'); }
 /* jméno na mapu: bez upřesnění za tečkou a zkrácené, ať popisky nepřerostou body */
 function shortName(it, max){
   max = max || 21;
@@ -1826,10 +1843,7 @@ function selectPlace(id){
     grHtml(it) + nikHtml(it) +
     (it.price?'<div class="bubdesc"><b>'+esc(it.price)+'</b></div>':'')+
     (it.warn?'<div class="warnrow" style="margin-top:6px">⚠<span>'+esc(it.warn)+'</span></div>':'')+
-    '<div class="linkrow"><a class="gnav" href="'+navUrl(it)+'" target="_blank" rel="noopener">🧭 Navigovat</a>'+
-      (it.web?'<a href="'+it.web+'" target="_blank" rel="noopener">📖 Číst ↗</a>':'')+
-      '<a href="'+gUrl(it)+'" target="_blank" rel="noopener">Google</a>'+
-      '<button class="abtn'+(S.fav.includes(id)?' on':'')+'" data-fav="'+id+'">'+(S.fav.includes(id)?'♥':'♡')+'</button></div>'+
+    linkRow(it, {nahled:false, srdce:true})+
     '<div class="cardacts" style="margin-top:9px">'+
       '<button class="addbtn'+(S.days[activeDay()].includes(id)?' inday':'')+'" data-quick="'+id+'" style="--dc:'+DAYC[activeDay()%NDAYS]+'">'+
         (S.days[activeDay()].includes(id)?'✓ v dni '+(activeDay()+1):'+ do dne '+(activeDay()+1))+'</button>'+
@@ -2114,12 +2128,20 @@ function metaFor(it){
   return parts.join(' · ');
 }
 /* genMini žije v prvním <script> — lokální projekce funguje pro všechny regiony */
-function linkRow(it){
+/* Odkazy k jednomu místu. Stejná řada v katalogu, v plánu i v bublině na
+   mapě, ať se uživatel neučí dvě různá tlačítka — liší se jen tím, co dává
+   v daném místě smysl: náhled mapky patří jen do katalogu, srdíčko a skok
+   na mapu jen tam, kde není mapa rovnou vedle. */
+function linkRow(it, o){
+  o = o || {};
+  const fav = S.fav.includes(it.id);
   return '<div class="linkrow">'+
     '<a class="gnav lite" href="'+navUrl(it)+'" target="_blank" rel="noopener">🧭 Navigovat</a>'+
-    (it.web?'<a href="'+it.web+'" target="_blank" rel="noopener">📖 Přečíst si o tom ↗</a>':'')+
-    '<button class="mapbtn" data-map="'+it.id+'">📍 Náhled</button>'+
     '<a href="'+gUrl(it)+'" target="_blank" rel="noopener">Google Maps</a>'+
+    (it.web?'<a href="'+it.web+'" target="_blank" rel="noopener">📖 Přečíst si o tom ↗</a>':'')+
+    (o.nahled===false?'':'<button class="mapbtn" data-map="'+it.id+'">📍 Náhled</button>')+
+    (o.namape?'<button class="mapbtn" data-showmap="'+it.id+'">🗺 Ukázat na mapě</button>':'')+
+    (o.srdce?'<button class="abtn'+(fav?' on':'')+'" data-fav="'+it.id+'" aria-label="'+(fav?'Odebrat z výběru':'Přidat do výběru')+'">'+(fav?'♥':'♡')+'</button>':'')+
   '</div>';
 }
 function renderCatalog(){
@@ -2152,7 +2174,7 @@ function renderCatalog(){
       (it.price?'<div class="price">'+esc(it.price)+'</div>':'')+'</div>'+
       '<div class="cardmeta">'+metaFor(it)+(otherDay>=0?' · <b style="color:'+DAYC[otherDay%NDAYS]+'">už v dni '+(otherDay+1)+'</b>':'')+'</div>'+
       grHtml(it) + nikHtml(it) +
-      '<p class="carddesc">'+esc(it.desc)+'</p>'+
+      '<p class="carddesc">'+rich(it.desc)+'</p>'+
       (it.warn?'<div class="warnrow">⚠<span>'+esc(it.warn)+'</span></div>':'')+
       linkRow(it)+
       '<div class="mini" id="mm-'+it.id+'" hidden></div>'+
@@ -2174,6 +2196,13 @@ document.addEventListener('click', e=>{
     saveState(); renderCatalog();
     if(MAPVIEW==='rm') rmDots(); else drawDots();
     if(selId===id) selectPlace(id);
+    return;
+  }
+  const sm = e.target.closest('[data-showmap]');
+  if(sm){
+    switchTab('mapa');
+    window.scrollTo({top:0});
+    selectPlace(sm.dataset.showmap);
     return;
   }
   const mb = e.target.closest('[data-map]');
@@ -2309,6 +2338,15 @@ function dayStops(di){
   if(di===lastIdx) stops.push(CB_LL);
   return stops;
 }
+/* Co se ukáže po rozkliknutí místa v plánu: hodnocení, popis a odkazy.
+   Záměrně stejný obsah jako v bublině na mapě, jen naskládaný pod sebe. */
+function placeDetail(it){
+  return grHtml(it) + nikHtml(it) +
+    (it.eat?'<p class="pdesc"><b>Co si dát:</b> '+rich(it.eat)+'</p>':'')+
+    (it.walk?'<p class="pdesc"><b>Chůze:</b> '+esc(it.walk)+'</p>':'')+
+    '<p class="pdesc">'+rich(it.desc)+'</p>'+
+    linkRow(it, {nahled:false, namape:true, srdce:true});
+}
 function renderPlan(){
   const P = calcPlan();
   PLANKM = P.days.reduce((s,d)=>s+d.km,0);
@@ -2323,11 +2361,12 @@ function renderPlan(){
         '<button class="grip" aria-label="Přetáhnout">⠿</button>'+
         '<span class="dot" style="background:'+CATS[r.it.cat].color+'"></span>'+
         '<span class="clock">'+fmtClock(r.arrive)+'</span>'+
-        '<span class="pn"><b>'+esc(r.it.name)+'</b><small>'+metaFor(r.it)+(r.it.price?' · '+esc(r.it.price):'')+'</small></span>'+
+        '<button class="pn" data-pdet="'+di+'-'+ix+'" aria-expanded="false" aria-controls="pd-'+di+'-'+ix+'">'+'<b>'+esc(r.it.name)+'</b><small>'+metaFor(r.it)+(r.it.price?' · '+esc(r.it.price):'')+'</small></button>'+
         '<button class="pbtn" data-mv="-1" data-day="'+di+'" data-ix="'+ix+'" aria-label="Nahoru">↑</button>'+
         '<button class="pbtn" data-mv="1" data-day="'+di+'" data-ix="'+ix+'" aria-label="Dolů">↓</button>'+
         '<button class="pbtn mv" data-moveopen="'+di+'-'+ix+'" aria-label="Přesunout do jiného dne">den</button>'+
         '<button class="pbtn" data-rm data-day="'+di+'" data-ix="'+ix+'" aria-label="Odebrat">✕</button></div>';
+      inner += '<div class="pdet" id="pd-'+di+'-'+ix+'" hidden>'+placeDetail(r.it)+'</div>';
       inner += '<div class="movepick" id="mp-'+di+'-'+ix+'">'+
         S.days.map((d,j)=>'<button data-moveto="'+di+'-'+ix+'-'+j+'"'+(j===di?' class="cur"':'')+'>Den '+(j+1)+'</button>').join('')+
       '</div>';
@@ -2369,6 +2408,12 @@ document.addEventListener('click', e=>{
   if(rm){ S.days[+rm.dataset.day].splice(+rm.dataset.ix,1); pruneDone(); saveState(); renderAll(); return; }
   const cl = e.target.closest('[data-clear]');
   if(cl){ S.days[+cl.dataset.clear]=[]; pruneDone(); saveState(); renderAll(); return; }
+  const pd = e.target.closest('[data-pdet]');
+  if(pd){
+    const el = document.getElementById('pd-'+pd.dataset.pdet);
+    if(el){ el.hidden = !el.hidden; pd.setAttribute('aria-expanded', String(!el.hidden)); }
+    return;
+  }
   const mo = e.target.closest('[data-moveopen]');
   if(mo){ const el = document.getElementById('mp-'+mo.dataset.moveopen); if(el) el.classList.toggle('open'); return; }
   const mt = e.target.closest('[data-moveto]');
@@ -3181,7 +3226,7 @@ function renderDnes(){
           '<div class="bcclock" style="min-width:auto;display:inline-block;margin-right:8px">'+fmtClock(r.arrive)+'</div>'+
           '<span class="bcname">'+esc(r.it.name)+'</span>'+
           '<div class="bcmeta">'+esc(r.it.t)+' · '+CATS[r.it.cat].label+' · '+(r.it.cat==='kemp'?'🌙 nocleh':'⏱ ~'+fmtMin(r.it.dur))+'</div>'+
-          '<div class="bcdesc">'+esc(r.it.desc)+'</div>'+
+          '<div class="bcdesc">'+rich(r.it.desc)+'</div>'+
           (issue?'<div class="warnrow" style="margin-top:6px">⚠<span>'+esc(issue)+'</span></div>':'')+
           (r.it.warn?'<div class="warnrow soft">ℹ<span>'+esc(r.it.warn)+'</span></div>':'')+
           '<div class="bcacts">'+
