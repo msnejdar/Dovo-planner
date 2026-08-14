@@ -249,6 +249,20 @@ Poznámka `nn` = 3–8 slov, proč. Body dolů: vstupné za podívanou, hluk
 silnice, autobusové zájezdy. Body nahoru: samoobsluha na důvěru, senné
 mléko, ticho.
 
+**Kategorie `stani` — spaní v autě mimo kemp.** Patří sem jen místa,
+kde je nocleh v obytném voze **oficiálně vyhrazený** (obecní stání,
+placené parkoviště s povoleným nocováním). Žádné divoké spaní z fór —
+pravidla se liší stát od státu a pokuty jdou do tisíců eur:
+- **Horní Rakousy** (Salzkammergut) — v autě přespat smíš tam, kde smíš
+  parkovat, ale nesmíš u toho *kempovat* (stoleček, židle, markýza).
+- **Korutany** — kempování mimo kemp zakázané, vysoké pokuty. Na jihu
+  spoléhej jen na kemp nebo vyhrazené stání.
+- **Jižní Tyrolsko** — totéž; existují jen jednotlivá povolená
+  parkoviště, jinde je to zakázané.
+V kódu se `stani` chová jako nocleh přes `isNight(it)` — nemá program,
+padá na konec dne a počítá se do rozpočtu za noc. Když přibude další
+kategorie na spaní, stačí rozšířit `isNight`.
+
 **U koupání (`plaz`) a kempů (`kemp`) platí zvlášť:**
 - **Koupání** — rozhoduje samota, nic jiného. Být tam sám = 5. Zázemí,
   skluzavky, mola a rodiny táhnou dolů, i když je voda sebehezčí.

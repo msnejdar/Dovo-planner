@@ -756,12 +756,13 @@ svg text{font-family:'Fraunces',Georgia,serif}
 const CATS = {
   plaz:   {label:'Koupání',        color:'#1D7A99'},
   kemp:   {label:'Kempy & noclehy',color:'#2F7D4F'},
+  stani:  {label:'Spaní v autě',   color:'#4A5C6A'},
   vylet:  {label:'Výlety',         color:'#DFA320'},
   gastro: {label:'Farmy & nákup',  color:'#D95A34'},
   pek:    {label:'Pekárny & kavárny', color:'#8A5A33'},
   rest:   {label:'Na oběd',        color:'#C2497F'}
 };
-const TINTS = {plaz:'#E4EFF3',kemp:'#E7F0E3',vylet:'#F7EDD2',gastro:'#F9E4D8',pek:'#F0E4D2',rest:'#F6E3ED'};
+const TINTS = {plaz:'#E4EFF3',kemp:'#E7F0E3',stani:'#E3E8EC',vylet:'#F7EDD2',gastro:'#F9E4D8',pek:'#F0E4D2',rest:'#F6E3ED'};
 const REGS = {
   cesta:'Po cestě', irr:'Irrsee', mon:'Mondsee', att:'Attersee', fus:'Fuschlsee',
   wol:'Wolfgangsee', isc:'Bad Ischl', goi:'Bad Goisern', hal:'Hallstatt & Gosau', tra:'Traunsee & Gmunden',
@@ -770,6 +771,9 @@ const REGS = {
 /* [min, km] z ČB po silnici — jih dle OSRM 8/2026: Döbriach 392 km/4:34 (A10),
    Toblach 462 km/5:57 (nejrychleji přes Felbertauern), Misurina/Cortina ~490 km */
 const FROM_CB = {cesta:[45,40], irr:[170,215], mon:[165,215], att:[150,195], fus:[185,235], wol:[190,240], isc:[185,230], goi:[200,245], hal:[210,255], tra:[140,175], jih:[275,390], dol:[355,460], cor:[380,490]};
+/* Nocleh není jen kemp — stání pro obytné vozy se chová stejně: nemá
+   program, patří na konec dne a počítá se do rozpočtu za noc. */
+const isNight = it => it.cat==='kemp' || it.cat==='stani';
 const CB_LL = [48.9747,14.4744];
 const enc = encodeURIComponent;
 const CNTRY = it => (it.reg==='dol'||it.reg==='cor') ? 'Italien' : 'Österreich';
@@ -818,8 +822,22 @@ const ITEMS = [
  desc:'Farma přímo u nejteplejšího jezera. Zázemí jednoduché, cena podstatně nižší než u velkých kempů — na jednu noc v Californii ideální poměr. <b>Ceník nikde nezveřejňují</b>, cenu i volné místo si musíš zavolat (+43 6234 7081 nebo +43 6234 20027). Stání pro obytné vozy 1. 4. – 31. 10.'},
 {id:'k5',cat:'kemp',reg:'irr',ll:[47.9307,13.3116],t:'Oberhofen am Irrsee',dur:0,night:25,gr:[4.5,85],nik:5,nn:'nejmenší a nejtišší ze všech',name:'Camping Moosmühle · Oberhofen',price:'ceník jen telefonicky · +43 676 4023004',
  desc:'Malý rodinný kemp s loukou u vody a milými majiteli. Sprchy pamatují lepší časy — bereš, co Californie nedá. <b>Vlastní web nefunguje a ceník nikde není</b>, volej +43 676 4023004.'},
-{id:'k6',cat:'kemp',reg:'att',ll:[47.8866,13.5239],t:'Nußdorf am Attersee',dur:0,night:39,gr:[4.1,16],nik:2,nn:'praktické parkoviště, žádná romantika',name:'Stellplatz Nußdorf',price:'38,80 € + kWh',
+{id:'s1',cat:'stani',reg:'att',ll:[47.8866,13.5239],t:'Nußdorf am Attersee',dur:0,night:39,gr:[4.1,16],nik:3,nn:'samoobsluha 24/7, blízko k vodě',name:'Stellplatz Nußdorf',price:'38,80 € + kWh',
  desc:'Nocleh bez kempu: samoobslužné stání 24/7 se závorou, voda a výlevka v ceně, elektřina po kWh. K jezeru 1,1 km, obchod vedle.'},
+{id:'s2',cat:'stani',reg:'hal',ll:[47.54944,13.67742],t:'Obertraun',dur:0,night:22,nik:5,nn:'osm stání na břehu, Hallstatt přes vodu',name:'Stání u Freibadu Winkl · Obertraun',price:'22 € / 24 h + taxa 3 €/os',web:'https://www.obertraun.ooe.gv.at/Wohnmobilstellplaetze_Obertraun_am_Hallstaettersee_bei_der_Freibadeanlage_Winkl',q:'Wohnmobilstellplatz Obertraun Winkl',
+ desc:'Osm vyhrazených stání přímo na břehu Hallstättersee, s Hallstattem přes vodu — na obecním parkovišti u koupaliště Winkl. Platí se u automatu (EasyPark, mince nebo karta, <b>bankovky ne</b>): hodina 1 €, celý den 22 €. Vlastní výdejní místo na vodu a proud (jen mince), výlevka na šedou vodu zdarma. WC, převlékárny a studená sprcha jsou v areálu koupaliště. Otevřeno celoročně, v mrazech ale bez vody, WC i sprchy.'},
+{id:'s3',cat:'stani',reg:'isc',ll:[47.71456,13.62498],t:'Bad Ischl',dur:0,night:12,nik:3,nn:'v centru u řeky, ale bez výlevky',name:'Stání u Kaiservilly · Bad Ischl',price:'2 €/h · max 12 € za den',web:'https://badischl.salzkammergut.at/oesterreich-poi/detail/430003542/wohnmobilstellplatz-kaiservilla.html',q:'Wohnmobilstellplatz Kaiservilla Bad Ischl',
+ desc:'Sedm stání na parkovišti u Kaiservilly, přímo u řeky Ischl a kousek od centra — z auta dojdeš na páteční trh i k Zaunerovi. Pitná voda je, proud přes CEE za 1 € na noc, <b>výlevka na šedou ani černou vodu tu není</b>. Asfalt, osvětleno.'},
+{id:'s4',cat:'stani',reg:'hal',ll:[47.58767,13.53737],t:'Gosau',dur:0,night:18,nik:4,nn:'klid v údolí, obchod i pekárna kousek',name:'Stání Schlosspark · Gosau',price:'ceník na automatu',web:'https://www.gosau.ooe.gv.at/Unser_Gosautal/Parkplaetze/Parking/Wohnmobilstellplaetze',q:'Wohnmobilstellplatz Schlosspark Gosau',
+ desc:'Osm stání v klidném koutu Gosau, pár minut od obchodu, pekárny a zastávky autobusu — dobrá základna na ranní Gosausee, než dorazí zájezdy. Platí se u automatu (EasyPark, karta nebo mince, <b>bankovky ne</b>) a <b>rezervovat nejde</b>. Obec má stání ještě u Sportplatzu (4 místa) a na Kohlstattu.'},
+{id:'s5',cat:'stani',reg:'hal',ll:[47.58108,13.53539],t:'Gosau',dur:0,night:18,nik:4,nn:'záloha, když je Schlosspark plný',name:'Stání u Sportplatzu · Gosau',price:'ceník na automatu',web:'https://www.gosau.ooe.gv.at/Unser_Gosautal/Parkplaetze/Parking/Wohnmobilstellplaetze',q:'Sportplatz Gosau',
+ desc:'Čtyři stání u sportoviště, stejně klidná jako Schlosspark a o dvě minuty dál. Hodí se jako záloha — míst je málo a nerezervují se, takže se vyplatí mít v hlavě obě.'},
+{id:'s6',cat:'stani',reg:'dol',ll:[46.72500,12.21937],t:'Toblach',dur:0,night:18,nik:3,nn:'holé parkoviště, zato smíš zůstat',name:'Parkoviště pro obytné vozy · Toblach',price:'18 € / 24 h',warn:'V Jižním Tyrolsku se mimo kempy a vyhrazená stání spát nesmí — tady to povolené je, o kus dál už ne.',web:'https://www.camperonline.it/sosta-camper/aree-di-sosta/dobbiaco/537',q:'Parkplatz Wohnmobil Rienzstraße Toblach',
+ desc:'Velké parkoviště na jižním okraji Toblachu, kde je nocování <b>výslovně povolené</b> — v Jižním Tyrolsku se jinak mimo kempy spát nesmí. Žádné služby: proud ani voda tu nejsou, výlevka taky ne. Ber to jako levné a legální místo na přespání mezi Braies a Tre Cime, ne jako kemp. Přesnou polohu i sazbu si zkontroluj na místě.'},
+{id:'s7',cat:'stani',reg:'dol',ll:[46.73992,12.36797],t:'Winnebach u San Candida',dur:0,night:38,nik:2,nn:'velké a daleko, ale se službami',name:'Area sosta camper · Winnebach',price:'~38 €/den · od konce srpna ~30 €',warn:'Údaje jsou z katalogu pro campery, ne od provozovatele — cenu si ověř telefonem.',web:'https://www.camperonline.it/sosta-camper/aree-di-sosta/italia/trentino-alto-adige/area-sosta-e-parking-camper/2985',q:'Area sosta camper Prato alla Drava San Candido',
+ desc:'Osmdesát pět stání se štěrkovým povrchem, přípojkou na proud a sprchami za poplatek — na rakouské hranici deset kilometrů východně od San Candida, tedy pořádný kus od Toblachu. Velké a neosobní, ale když jsou kempy plné, tady místo bývá. Cenu ověř telefonem (+39 0474 910039), údaje jsou z campereského katalogu, ne od provozovatele.'},
+{id:'s8',cat:'stani',reg:'cor',ll:[46.58392,12.25498],t:'Misurina',dur:0,night:20,nik:3,nn:'u jezera v 1750 m, ráno máš Tre Cime',name:'Area sosta camper · Misurina',price:'20 €/den',warn:'Stání je ve svahu, podlož kola. Sazbu ověř na automatu.',web:'https://www.camperonline.it/sosta-camper/aree-di-sosta/cortina/662',q:'Area sosta camper Misurina',
+ desc:'Asi dvacet stání podél silnice na severním konci Misuriny, kousek od kempu — asfalt, ale <b>ve svahu</b>, tak si vyber místo a podlož kola. Bez obsluhy, platí se u automatu mincemi nebo přes EasyPark. Odtud startuje mýtná silnice k Tre Cime, takže ráno vyrazíš dřív než všichni ostatní. Údaje jsou z campereského katalogu — sazbu si ověř na automatu.'},
 {id:'k7',cat:'kemp',reg:'wol',ll:[47.7390,13.4005],t:'Abersee',dur:0,night:45,gr:[4.6,1125],nik:3,nn:'hezký, ale velký a jen na celý týden',name:'Paradiescamping Birkenstrand',price:'35,50–62,90 € pro dva · v VII–VIII min. 7 nocí',web:'https://www.paradiescamping.at/de/camping-stellplatz-wolfgangsee/stellplaetze-in-oesterrreich-am-see/',
  desc:'Vlastní pláž, sauna, půjčovna SUP a kajaků, čerstvé pečivo v recepci. <b>V červenci a srpnu berou jen pobyty na 7 nocí</b> (v červnu 5) — na projíždějící výlet to nevyjde, spíš na týden na jednom místě. Hlavní sezóna 30. 6. – 5. 9. 2026, ceny pro dva vč. vozidla, bez taxy a elektřiny (měří se po kWh). Check-in 11–12 a 13:30–18 h.'},
 {id:'k8',cat:'kemp',reg:'wol',ll:[47.7429,13.4333],t:'St. Wolfgang',dur:0,night:45,gr:[4.6,495],nik:5,nn:'čtyřicet parcel, všechny s výhledem',name:'Seeterrassencamping Wolfgangsee',price:'od 38 € pro dva · ověř telefonem',
@@ -1258,7 +1276,7 @@ const WEBS = {
   k2:'https://www.nussbaumer-mondsee.com/camping/',
   k4:'https://mondsee.salzkammergut.at/oesterreich-unterkunft/detail/430000173/camping-maier.html',
   k5:'https://mondsee.salzkammergut.at/oesterreich-unterkunft/detail/430011915/camping-moosmuehle.html',
-  k6:'https://attersee-attergau.salzkammergut.at/oesterreich-unterkunft/detail/430031678/camper-stellplatz-nussdorf-am-attersee.html',
+  s1:'https://attersee-attergau.salzkammergut.at/oesterreich-unterkunft/detail/430031678/camper-stellplatz-nussdorf-am-attersee.html',
   k8:'https://seeterrassencamping.at/',
   k11:'https://www.camping-park-am-see.at/',
   /* výlety */
@@ -1377,9 +1395,9 @@ function surpriseDay(mood, anchorLL, rnd){
   /* druhá zastávka hlavní kategorie, když je poblíž něco dalšího */
   const more = near(hub, good.filter(i=>i.cat===M.main && !chosen.includes(i) && hav(hub,i.ll)<20));
   if(more.length && rnd()<0.7) chosen.push(more[0]);
-  const camp = near(hub, good.filter(i=>i.cat==='kemp' && hav(hub,i.ll)<32))[0];
-  /* pořadí: co nejmíň objíždění od kotvy, kemp vždy na konec */
-  const rest = chosen.filter(i=>i.cat!=='kemp');
+  const camp = near(hub, good.filter(i=>isNight(i) && hav(hub,i.ll)<32))[0];
+  /* pořadí: co nejmíň objíždění od kotvy, nocleh vždy na konec */
+  const rest = chosen.filter(i=>!isNight(i));
   const out = [];
   let cur = anchorLL || hub;
   while(rest.length){
@@ -1839,7 +1857,7 @@ function selectPlace(id){
   b.innerHTML =
     '<button class="x" data-bubx aria-label="Zavřít">×</button>'+
     '<div class="bubname">'+esc(it.name)+'</div>'+
-    '<div class="bubmeta" style="color:'+CATS[it.cat].color+'">'+[esc(it.t),CATS[it.cat].label,(it.cat==='kemp'?'🌙 nocleh':'⏱ ~'+fmtMin(it.dur))].join(' · ')+'</div>'+
+    '<div class="bubmeta" style="color:'+CATS[it.cat].color+'">'+[esc(it.t),CATS[it.cat].label,(isNight(it)?'🌙 nocleh':'⏱ ~'+fmtMin(it.dur))].join(' · ')+'</div>'+
     grHtml(it) + nikHtml(it) +
     (it.price?'<div class="bubdesc"><b>'+esc(it.price)+'</b></div>':'')+
     (it.warn?'<div class="warnrow" style="margin-top:6px">⚠<span>'+esc(it.warn)+'</span></div>':'')+
@@ -2124,7 +2142,7 @@ function fmtMin(m){
 function metaFor(it){
   const parts = [it.t, CATS[it.cat].label];
   if(it.walk) parts.push(it.walk);
-  parts.push(it.cat==='kemp' ? '🌙 nocleh' : '⏱ ~'+fmtMin(it.dur));
+  parts.push(isNight(it) ? '🌙 nocleh' : '⏱ ~'+fmtMin(it.dur));
   return parts.join(' · ');
 }
 /* genMini žije v prvním <script> — lokální projekce funguje pro všechny regiony */
@@ -2251,9 +2269,9 @@ function syncAlp(){
 }
 function insertSmart(di, id){
   const it = byId(id), arr = S.days[di];
-  if(it.cat==='kemp'){ arr.push(id); return; }
+  if(isNight(it)){ arr.push(id); return; }
   const anchor = dayAnchor(di);
-  const kempIdx = arr.findIndex(x=>byId(x).cat==='kemp');
+  const kempIdx = arr.findIndex(x=>isNight(byId(x)));
   const maxPos = kempIdx===-1 ? arr.length : kempIdx;
   let best=0, bestCost=Infinity;
   for(let pos=0; pos<=maxPos; pos++){
@@ -2268,8 +2286,8 @@ function sortAllDays(){
   S.days.forEach((day,di)=>{
     if(day.length<2) return;
     const anchor = dayAnchor(di);
-    const kemps = day.filter(x=>byId(x).cat==='kemp');
-    let rest = day.filter(x=>byId(x).cat!=='kemp');
+    const kemps = day.filter(x=>isNight(byId(x)));
+    let rest = day.filter(x=>!isNight(byId(x)));
     const out=[]; let cur=anchor;
     while(rest.length){
       rest.sort((a,b)=>hav(cur,byId(a).ll)-hav(cur,byId(b).ll));
@@ -2304,9 +2322,9 @@ function calcPlan(){
       else if(prev.di !== di){ leg = est(prev.it.ll, it.ll); lab = '🚐 ráno od: '+prev.it.name.split(' ·')[0]; }
       else { leg = est(prev.it.ll, it.ll); lab = '🚐'; }
       days[di].drive += leg[0]; days[di].km += leg[1];
-      if(it.cat!=='kemp') days[di].dur += (it.dur||0);
+      if(!isNight(it)) days[di].dur += (it.dur||0);
       const arrive = clock + leg[0];
-      clock = arrive + (it.cat==='kemp' ? 0 : (it.dur||0));
+      clock = arrive + (isNight(it) ? 0 : (it.dur||0));
       days[di].rows.push({it, leg, lab, arrive, leave:clock});
       prev = {it, di};
     });
@@ -3110,7 +3128,7 @@ window.addEventListener('online', ()=>{
 const HELP = {
 trip:['Souhrn cesty','Kilometry i čas za volantem jsou součet <b>všech</b> přejezdů — včetně ranních mezi dny a návratu domů. Cena je z Rozpočtu a platí pro dva. Odpočet naskočí, jakmile v Plánu vyplníš datum odjezdu.'],
 addday:['Přidávám do','Vyber den a všechna tlačítka <b>+ do dne</b> v katalogu budou přidávat právě do něj. Číslo u dne říká, kolik zastávek už tam máš. Druhý klik na tlačítko místo zase vyndá, <b>⋯</b> nabídne jiný den.'],
-cat:['Co hledáš','Filtr podle typu místa. <b>🌿 Pro Nikolu</b> nechá jen ta s hodnocením 4 a víc, tedy klid a poctivé řemeslo. <b>Vybrané ♥</b> jsou ta, co sis označil srdíčkem.'],
+cat:['Co hledáš','Filtr podle typu místa. <b>🌿 Pro Nikolu</b> nechá jen ta s hodnocením 4 a víc, tedy klid a poctivé řemeslo. <b>Vybrané ♥</b> jsou ta, co sis označil srdíčkem.<br><br><b>Spaní v autě</b> jsou místa, kde se smí přespat a nejsou to kempy — obecní stání pro obytné vozy. Všechna v seznamu jsou oficiálně vyhrazená, žádné divoké spaní. To je totiž jinde jinak: v <b>Horních Rakousích</b> (Salzkammergut) se v autě přespat smí tam, kde smíš parkovat, ale nesmíš u toho <i>kempovat</i> — žádný stoleček, židle ani markýza. V <b>Korutanech</b> je kempování mimo kemp zakázané a pokuty jdou do tisíců eur, takže na cestě na jih spoléhej jen na kemp nebo vyhrazené stání. V <b>Jižním Tyrolsku</b> platí totéž — proto je u Toblachu placené parkoviště, kde je nocování výslovně povolené.'],
 reg:['Kde','Filtr podle oblasti. Regiony jdou zhruba v pořadí, jak se jimi projíždí: nejdřív Rakousko od severu, pak cesta na jih přes Korutany a nakonec Itálie.'],
 sort:['Seřadit','<b>🌿 můj tip</b> řadí podle toho, jak moc místo sedne Nikole. <b>★ hodnocení</b> podle Googlu. <b>📍 nejblíž dni</b> měří vzdušnou čáru od poslední zastávky dne, do kterého zrovna přidáváš — nahoře je to, co máš cestou.'],
 nik:['🌿 Pro Nikolu','Moje hodnocení, ne Googlu. <b>5</b> = bio farma nebo tichá příroda, zdarma nebo skoro. <b>4</b> = klidné a lokální, snese víkendový provoz. <b>3</b> = fajn, ale komerční nebo rodinné rušno. <b>2</b> = davy, fronty, drahé atrakce.'],
@@ -3225,7 +3243,7 @@ function renderDnes(){
         '<div style="flex:1;min-width:0">'+
           '<div class="bcclock" style="min-width:auto;display:inline-block;margin-right:8px">'+fmtClock(r.arrive)+'</div>'+
           '<span class="bcname">'+esc(r.it.name)+'</span>'+
-          '<div class="bcmeta">'+esc(r.it.t)+' · '+CATS[r.it.cat].label+' · '+(r.it.cat==='kemp'?'🌙 nocleh':'⏱ ~'+fmtMin(r.it.dur))+'</div>'+
+          '<div class="bcmeta">'+esc(r.it.t)+' · '+CATS[r.it.cat].label+' · '+(isNight(r.it)?'🌙 nocleh':'⏱ ~'+fmtMin(r.it.dur))+'</div>'+
           '<div class="bcdesc">'+rich(r.it.desc)+'</div>'+
           (issue?'<div class="warnrow" style="margin-top:6px">⚠<span>'+esc(issue)+'</span></div>':'')+
           (r.it.warn?'<div class="warnrow soft">ℹ<span>'+esc(r.it.warn)+'</span></div>':'')+
